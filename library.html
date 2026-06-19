@@ -144,6 +144,12 @@ button{font-family:inherit;}
         </figure>
       </sc-for>
     </div>
+    <sc-if value="{{ hasMore }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:36px 0 6px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#6f6552;">
+        <span style="display:inline-flex;width:6px;height:6px;border-radius:50%;background:var(--ember,#d2823f);animation:oaabGlow 1.1s ease-in-out infinite;"></span>
+        Loading more thumbnails
+      </div>
+    </sc-if>
   </div>
 </section>
 
@@ -161,7 +167,7 @@ button{font-family:inherit;}
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { data: null, active: 'All', tags: [], query: '', tagOpen: false };
+  state = { data: null, active: 'All', tags: [], query: '', tagOpen: false, limit: 60 };
 
   componentDidMount() {
     // Pick up an initial tag filter from the URL hash (e.g. #tag=Telvanni),
@@ -177,6 +183,19 @@ class Component extends DCLogic {
       }
     };
     document.addEventListener('mousedown', this._onDocDown, true);
+
+    // Grow the rendered window as the user nears the bottom, so we never build
+    // (or fetch images for) thousands of cells up front.
+    this._onScroll = () => {
+      if (this._raf) return;
+      this._raf = requestAnimationFrame(() => {
+        this._raf = null;
+        const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 1600;
+        if (nearBottom) this.maybeGrow();
+      });
+    };
+    window.addEventListener('scroll', this._onScroll, { passive: true });
+    window.addEventListener('resize', this._onScroll, { passive: true });
 
     const REPO = 'https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main';
     const THUMB = REPO + '/assets/images/library/thumbnails/meshes/';
@@ -245,6 +264,23 @@ class Component extends DCLogic {
 
   componentWillUnmount() {
     if (this._onDocDown) document.removeEventListener('mousedown', this._onDocDown, true);
+    if (this._onScroll) {
+      window.removeEventListener('scroll', this._onScroll);
+      window.removeEventListener('resize', this._onScroll);
+    }
+    if (this._raf) cancelAnimationFrame(this._raf);
+  }
+
+  // After each render, top up the window if the viewport still isn't filled
+  // (e.g. right after a filter reset on a tall screen).
+  componentDidUpdate() {
+    if (this._onScroll) this._onScroll();
+  }
+
+  // Reveal another chunk of results, capped at the filtered total.
+  maybeGrow() {
+    if ((this.state.limit || 60) >= (this._filteredCount || 0)) return;
+    this.setState(s => ({ limit: (s.limit || 60) + 60 }));
   }
 
   // Extract a TOML array literal (key = [ "a", "b", ... ]) by key, returning the
@@ -365,7 +401,11 @@ class Component extends DCLogic {
       (x.name || '').toLowerCase().indexOf(q) !== -1
     );
 
-    const items = filtered.map(x => ({
+    // Only materialise the leading window of results; the rest mount as the
+    // user scrolls (see maybeGrow). _filteredCount lets maybeGrow know the cap.
+    this._filteredCount = filtered.length;
+    const limit = this.state.limit || 60;
+    const items = filtered.slice(0, limit).map(x => ({
       id: x.id,
       name: x.name || '',
       hasName: !!(x.name && x.name.length),
@@ -373,6 +413,7 @@ class Component extends DCLogic {
       img: x.img,
       nif: x.mesh || (x.img || ''),
     }));
+    const hasMore = filtered.length > items.length;
 
     const tagLabel = noTags ? '' : (selTags.length === 1 ? selTags[0] : selTags.length + ' tags');
 
@@ -393,8 +434,8 @@ class Component extends DCLogic {
       total,
       query: this.state.query || '',
       hasQuery: !!q,
-      onSearch: (e) => this.setState({ query: e.target.value }),
-      clearSearch: () => this.setState({ query: '' }),
+      onSearch: (e) => this.setState({ query: e.target.value, limit: 60 }),
+      clearSearch: () => this.setState({ query: '', limit: 60 }),
       typeCount: types.length,
       tabs,
       allRow,
@@ -412,19 +453,20 @@ class Component extends DCLogic {
       activeLabel: active === 'All' ? 'All objects' : active,
       tagLabel,
       hasTagFilter: !noTags,
-      shownCount: items.length,
-      isEmpty: !!d && items.length === 0,
+      hasMore,
+      shownCount: filtered.length,
+      isEmpty: !!d && filtered.length === 0,
       pickTab: (e) => {
         const label = e.currentTarget.dataset.ttab;
-        this.setState({ active: label });
+        this.setState({ active: label, limit: 60 });
         window.scrollTo({ top: Math.min(window.scrollY, 620), behavior: 'auto' });
       },
       pickTag: (e) => {
         const label = e.currentTarget.dataset.tag;
-        if (e.currentTarget.dataset.all === '1') { this.setState({ tags: [] }); return; }
+        if (e.currentTarget.dataset.all === '1') { this.setState({ tags: [], limit: 60 }); return; }
         const cur = this.state.tags || [];
         const next = cur.indexOf(label) !== -1 ? cur.filter(l => l !== label) : cur.concat(label);
-        this.setState({ tags: next });
+        this.setState({ tags: next, limit: 60 });
       },
     };
   }
