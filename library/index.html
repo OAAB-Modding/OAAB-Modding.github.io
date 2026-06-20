@@ -71,7 +71,7 @@ button{font-family:inherit;}
 <div data-tabbar="" style="position:sticky;top:61px;z-index:40;background:rgba(18,14,11,0.92);backdrop-filter:saturate(140%) blur(12px);-webkit-backdrop-filter:saturate(140%) blur(12px);border-bottom:1px solid #221c15;">
   <div style="max-width:1180px;margin:0 auto;padding:12px 32px 13px;">
     <div style="display:flex;align-items:flex-start;gap:16px;padding-bottom:12px;border-bottom:1px solid #221c15;">
-      <span style="flex:0 0 auto;width:38px;padding-top:11px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#6f6552;">Type</span>
+      <span style="flex:0 0 auto;width:58px;padding-top:11px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#6f6552;">Type</span>
       <div data-tabscroll="" style="flex:1 1 auto;display:flex;flex-wrap:wrap;gap:8px;">
         <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="12">
           <button data-ttab="{{ tab.label }}" onClick="{{ pickTab }}" style="flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;font-family:'EB Garamond',serif;font-size:15px;font-weight:{{ tab.fw }};padding:8px 16px;border-radius:999px;background:{{ tab.bg }};color:{{ tab.fg }};border:1px solid {{ tab.bd }};cursor:pointer;white-space:nowrap;transition:all .18s;">
@@ -82,7 +82,7 @@ button{font-family:inherit;}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:12px;margin-top:12px;">
-      <span style="flex:0 0 auto;width:38px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#6f6552;">Tags</span>
+      <span style="flex:0 0 auto;width:58px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#6f6552;">Tags</span>
       <div data-tagdd="" style="position:relative;flex:0 0 auto;">
         <button onClick="{{ toggleTags }}" style="display:inline-flex;align-items:center;gap:10px;font-family:'EB Garamond',serif;font-size:15px;color:{{ tagBtnFg }};background:{{ tagBtnBg }};border:1px solid {{ tagBtnBd }};border-radius:9px;padding:10px 14px;cursor:pointer;white-space:nowrap;transition:all .18s;" style-hover="border-color:#9a92d6;">
           <span style="display:inline-flex;width:7px;height:7px;border-radius:50%;background:#9a92d6;opacity:{{ tagDotOp }};"></span>
@@ -116,7 +116,7 @@ button{font-family:inherit;}
     </div>
     <sc-if value="{{ hasReleases }}" hint-placeholder-val="{{ false }}">
     <div style="display:flex;align-items:center;gap:12px;margin-top:12px;">
-      <span style="flex:0 0 auto;width:38px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#6f6552;">Release</span>
+      <span style="flex:0 0 auto;width:58px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#6f6552;">Release</span>
       <div data-reldd="" style="position:relative;flex:0 0 auto;">
         <button onClick="{{ toggleRel }}" style="display:inline-flex;align-items:center;gap:10px;min-width:158px;justify-content:space-between;font-family:'EB Garamond',serif;font-size:15px;color:{{ relBtnFg }};background:{{ relBtnBg }};border:1px solid {{ relBtnBd }};border-radius:9px;padding:10px 14px;cursor:pointer;white-space:nowrap;transition:all .18s;" style-hover="border-color:#9a92d6;">
           <span style="display:inline-flex;align-items:center;gap:10px;"><span style="display:inline-flex;width:7px;height:7px;border-radius:50%;background:#9a92d6;opacity:{{ relDotOp }};"></span><span>{{ relSummary }}</span></span>
