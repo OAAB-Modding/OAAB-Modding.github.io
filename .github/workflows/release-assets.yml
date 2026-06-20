@@ -1,0 +1,42 @@
+# Regenerates release-assets.json whenever a new OAAB_Data release is published,
+# or on manual dispatch. Diffs only X.Y.0 tags, each against the previous X.Y.0.
+name: Build release-assets manifest
+
+on:
+  # Fire when a release is published in the Data repo (requires a repository_dispatch
+  # sender in that repo, or run on this repo's own release events / a schedule).
+  release:
+    types: [published]
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 6 * * 1'   # weekly safety net, Mondays 06:00 UTC
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate manifest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # public-repo reads, ~1000/hr
+        run: node scripts/build-release-assets.mjs
+
+      - name: Commit if changed
+        run: |
+          if [ -n "$(git status --porcelain release-assets.json)" ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add release-assets.json
+            git commit -m "chore: refresh release-assets manifest"
+            git push
+          else
+            echo "No manifest changes."
+          fi

@@ -11,7 +11,7 @@
 <meta property="og:url" content="https://oaab.dev/library/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/OAAB-Modding/OAAB-Modding.github.io@main/assets/images/general/og-image.png">
-<script src="/support.js"></script>
+<script src="../support.js"></script>
 </head>
 <body>
 <x-dc>
@@ -114,6 +114,45 @@ button{font-family:inherit;}
         </sc-if>
       </div>
     </div>
+    <sc-if value="{{ hasReleases }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;align-items:center;gap:12px;margin-top:12px;">
+      <span style="flex:0 0 auto;width:38px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#6f6552;">Release</span>
+      <div data-reldd="" style="position:relative;flex:0 0 auto;">
+        <button onClick="{{ toggleRel }}" style="display:inline-flex;align-items:center;gap:10px;min-width:158px;justify-content:space-between;font-family:'EB Garamond',serif;font-size:15px;color:{{ relBtnFg }};background:{{ relBtnBg }};border:1px solid {{ relBtnBd }};border-radius:9px;padding:10px 14px;cursor:pointer;white-space:nowrap;transition:all .18s;" style-hover="border-color:#9a92d6;">
+          <span style="display:inline-flex;align-items:center;gap:10px;"><span style="display:inline-flex;width:7px;height:7px;border-radius:50%;background:#9a92d6;opacity:{{ relDotOp }};"></span><span>{{ relSummary }}</span></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;opacity:.7;transition:transform .2s;transform:rotate({{ relChevronDeg }}deg);"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <sc-if value="{{ relOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;top:calc(100% + 8px);left:0;z-index:60;width:238px;background:#15100b;border:1px solid #322a20;border-radius:12px;box-shadow:0 18px 44px rgba(0,0,0,0.55);padding:6px;animation:oaabFade .14s ease both;">
+            <button data-all="1" onClick="{{ pickRel }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;font-family:'EB Garamond',serif;font-size:14.5px;color:{{ relAllRow.labelColor }};background:transparent;border:none;border-radius:8px;padding:9px 11px;cursor:pointer;text-align:left;transition:background .14s;" style-hover="background:#1e1812;">
+              <span style="display:inline-flex;align-items:center;gap:10px;"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:5px;background:{{ relAllRow.checkBg }};border:1px solid {{ relAllRow.checkBd }};font-size:11px;line-height:1;color:#161019;">{{ relAllRow.mark }}</span>Show all releases</span>
+            </button>
+            <div style="height:1px;background:#221c15;margin:5px 4px;"></div>
+            <div data-tabscroll="" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:1px;">
+              <sc-for list="{{ relMenu }}" as="rel" hint-placeholder-count="5">
+                <button data-rel="{{ rel.version }}" data-all="0" onClick="{{ pickRel }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;font-family:'EB Garamond',serif;font-size:14.5px;background:transparent;border:none;border-radius:8px;padding:8px 11px;cursor:pointer;text-align:left;transition:background .14s;" style-hover="background:#1e1812;">
+                  <span style="display:inline-flex;align-items:center;gap:10px;color:{{ rel.labelColor }};"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:5px;background:{{ rel.checkBg }};border:1px solid {{ rel.checkBd }};font-size:11px;line-height:1;color:#161019;">{{ rel.mark }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:13.5px;letter-spacing:.02em;">{{ rel.version }}</span></span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:{{ rel.countColor }};">{{ rel.count }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+      <sc-if value="{{ hasRelFilter }}" hint-placeholder-val="{{ false }}">
+        <div style="display:inline-flex;gap:6px;align-items:center;">
+          <sc-for list="{{ relModes }}" as="m" hint-placeholder-count="3">
+            <button data-mode="{{ m.key }}" onClick="{{ setRelMode }}" style="font-family:'EB Garamond',serif;font-size:14px;padding:7px 14px;border-radius:8px;background:{{ m.bg }};color:{{ m.fg }};border:1px solid {{ m.bd }};cursor:pointer;transition:all .18s;" style-hover="border-color:#5a5380;">{{ m.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <div style="flex:1 1 auto;"></div>
+      <span style="flex:0 0 auto;display:inline-flex;align-items:center;gap:15px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#6f6552;">
+        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:3px;background:rgba(210,130,63,0.94);"></span>New</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:3px;background:transparent;border:1px solid rgba(154,146,214,0.7);"></span>Updated</span>
+      </span>
+    </div>
+    </sc-if>
   </div>
 </div>
 
@@ -124,6 +163,9 @@ button{font-family:inherit;}
         <h2 style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:28px;color:#f1e8d8;margin:0;">{{ activeLabel }}</h2>
         <sc-if value="{{ hasTagFilter }}" hint-placeholder-val="{{ false }}">
           <span style="display:inline-flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#b3a8c4;border:1px solid #3a3350;border-radius:999px;padding:4px 11px;"><span style="width:6px;height:6px;border-radius:50%;background:#9a92d6;"></span>{{ tagLabel }}</span>
+        </sc-if>
+        <sc-if value="{{ hasRelFilter }}" hint-placeholder-val="{{ false }}">
+          <span style="display:inline-flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#e7b07a;border:1px solid #4a3526;border-radius:999px;padding:4px 11px;"><span style="width:6px;height:6px;border-radius:50%;background:#d2823f;"></span>{{ relSummary }}</span>
         </sc-if>
       </div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.05em;color:#80735f;text-transform:uppercase;">{{ shownCount }} thumbnails</div>
@@ -142,6 +184,9 @@ button{font-family:inherit;}
           <div style="position:relative;aspect-ratio:1/1;background:radial-gradient(120% 120% at 50% 18%,#221913 0%,#140f0a 72%);overflow:hidden;">
             <img src="{{ it.img }}" alt="{{ it.id }}" loading="lazy" decoding="async" draggable="{{ no }}" onError="{{ imgErr }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:12px;pointer-events:none;">
             <span style="position:absolute;left:9px;top:9px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#d8c7ad;background:rgba(12,9,6,0.66);backdrop-filter:blur(3px);padding:3px 7px;border-radius:5px;">{{ it.type }}</span>
+            <sc-if value="{{ it.relShow }}" hint-placeholder-val="{{ false }}">
+              <span title="Touched in OAAB_Data {{ it.relVer }}" style="position:absolute;right:9px;top:9px;display:inline-flex;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;letter-spacing:.03em;padding:3px 7px 3px 6px;border-radius:5px;background:{{ it.relBg }};color:{{ it.relFg }};border:1px solid {{ it.relBd }};backdrop-filter:blur(3px);box-shadow:0 1px 5px rgba(0,0,0,0.32);"><span style="font-size:10px;line-height:1;">{{ it.relGlyph }}</span>{{ it.relVer }}</span>
+            </sc-if>
           </div>
           <figcaption style="padding:11px 12px 13px;border-top:1px solid #221c15;display:flex;flex-direction:column;gap:3px;min-height:0;">
             <code style="font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.35;color:#e7b07a;word-break:break-word;">{{ it.id }}</code>
@@ -175,7 +220,7 @@ button{font-family:inherit;}
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { data: null, active: 'All', tags: [], query: '', tagOpen: false, limit: 60 };
+  state = { data: null, active: 'All', tags: [], query: '', tagOpen: false, limit: 60, relData: [], releases: [], relMode: 'all', relOpen: false };
 
   componentDidMount() {
     // Pick up an initial tag filter from the URL hash (e.g. #tag=Telvanni),
@@ -186,11 +231,21 @@ class Component extends DCLogic {
     }
 
     this._onDocDown = (e) => {
-      if (this.state.tagOpen && !(e.target.closest && e.target.closest('[data-tagdd]'))) {
+      const t = e.target;
+      if (this.state.tagOpen && !(t.closest && t.closest('[data-tagdd]'))) {
         this.setState({ tagOpen: false });
+      }
+      if (this.state.relOpen && !(t.closest && t.closest('[data-reldd]'))) {
+        this.setState({ relOpen: false });
       }
     };
     document.addEventListener('mousedown', this._onDocDown, true);
+
+    // Release provenance is derived live from the per-release mesh diffs the
+    // site publishes under assets/data/library/ (mesh_diff_<from>_to_<to>.json).
+    // Each diff lists the .nif meshes added/modified in that span; we map those
+    // mesh paths back to object_ids through records.json once it's loaded (see
+    // loadMeshDiffs, called from the records .then below).
 
     // Grow the rendered window as the user nears the bottom, so we never build
     // (or fetch images for) thousands of cells up front.
@@ -269,6 +324,7 @@ class Component extends DCLogic {
           .map(k => ({ label: k, count: counts[k] }))
           .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
         this.setState({ data: { total: items.length, types, items } });
+        this.loadMeshDiffs(REPO, items);
       })
       .catch(e => console.error('library data load failed', e));
   }
@@ -286,6 +342,66 @@ class Component extends DCLogic {
   // (e.g. right after a filter reset on a tall screen).
   componentDidUpdate() {
     if (this._onScroll) this._onScroll();
+  }
+
+  // Normalise a mesh path to a lowercase, forward-slash key beginning at
+  // "oaab/". records.json stores "OAAB\\m\\foo.nif"; the diffs store full repo
+  // paths like "00 Core/meshes/oaab/m/foo.nif" (and patch sub-folders) — both
+  // collapse to the same key so a changed file lines up with its catalogue id.
+  meshKey(p) {
+    const fwd = String(p || '').replace(/\\/g, '/').toLowerCase();
+    const i = fwd.lastIndexOf('oaab/');
+    return i === -1 ? null : fwd.slice(i);
+  }
+
+  // Build the Release facet (relData) from the published mesh diffs. One mesh
+  // can back several object_ids, so a single changed file may badge multiple
+  // library cards. Releases are returned newest-first; the newest entry that
+  // contains an id wins its default card badge.
+  loadMeshDiffs(repo, items) {
+    const meshToIds = Object.create(null);
+    items.forEach(x => {
+      const k = this.meshKey(x.mesh);
+      if (!k) return;
+      (meshToIds[k] || (meshToIds[k] = [])).push(x.id);
+    });
+
+    // Version chain — each adjacent pair has a mesh_diff_<from>_to_<to>.json.
+    // Append new versions here as releases ship.
+    const CHAIN = ['1.9.0', '1.10.0', '1.11.0', '1.12.0', '1.13.0', '1.14.0',
+      '1.15.0', '1.16.0', '2.0.0', '2.1.0', '2.2.0', '2.3.0', '2.4.0',
+      '2.5.0', '2.6.0'];
+    const BASE = repo + '/assets/data/library/';
+
+    const jobs = [];
+    for (let i = 1; i < CHAIN.length; i++) {
+      const from = CHAIN[i - 1], to = CHAIN[i];
+      const url = BASE + 'mesh_diff_' + from + '_to_' + to + '.json';
+      jobs.push(
+        fetch(url)
+          .then(r => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+          .then(diff => {
+            const added = new Set(), modified = new Set();
+            (diff.meshes || []).forEach(m => {
+              // A = added, M = modified; ignore deletions/anything else.
+              if (m.status !== 'A' && m.status !== 'M') return;
+              const ids = meshToIds[this.meshKey(m.path)];
+              if (!ids) return; // mesh has no catalogued (non-deprecated) thumbnail
+              const bucket = m.status === 'A' ? added : modified;
+              ids.forEach(id => bucket.add(id));
+            });
+            // An id added & modified in the same span counts as added.
+            modified.forEach(id => { if (added.has(id)) modified.delete(id); });
+            return { version: diff.to || to, added: [...added].sort(), modified: [...modified].sort() };
+          })
+          .catch(e => { console.warn('mesh diff load failed: ' + to, e); return null; })
+      );
+    }
+
+    Promise.all(jobs).then(rows => {
+      const releases = rows.filter(r => r && (r.added.length || r.modified.length)).reverse();
+      this.setState({ relData: releases });
+    });
   }
 
   // Reveal another chunk of results, capped at the filtered total.
@@ -405,9 +521,70 @@ class Component extends DCLogic {
       return selTags.some(s => tl.indexOf(s) !== -1);
     });
 
+    // ---- Release provenance ----------------------------------------------
+    // relData is newest-first, so the first release containing an id is the
+    // most recent one that touched it — that's the id's default card badge.
+    const relData = this.state.relData || [];
+    const relSels = this.state.releases || [];
+    const relMode = this.state.relMode || 'all';
+    const relSet = {};   // version -> { added:Set, modified:Set }
+    const relMap = {};   // id -> { version, status } (newest touch)
+    relData.forEach(r => {
+      const a = new Set(r.added || []);
+      const m = new Set(r.modified || []);
+      relSet[r.version] = { added: a, modified: m };
+      a.forEach(id => { if (!relMap[id]) relMap[id] = { version: r.version, status: 'added' }; });
+      m.forEach(id => { if (!relMap[id]) relMap[id] = { version: r.version, status: 'modified' }; });
+    });
+
+    // Release menu counts reflect the current Type selection (like tag counts).
+    const relCounts = {};
+    relData.forEach(r => {
+      const s = relSet[r.version];
+      relCounts[r.version] = typeFiltered.reduce(
+        (n, x) => n + ((s.added.has(x.id) || s.modified.has(x.id)) ? 1 : 0), 0);
+    });
+
+    // Apply the release filter on top of the tag filter. Multiple releases are
+    // OR'd together (show assets touched in ANY selected release).
+    const activeRels = relSels.filter(v => relSet[v]);
+    let relFiltered = tagFiltered;
+    if (activeRels.length) {
+      relFiltered = tagFiltered.filter(x => activeRels.some(v => {
+        const s = relSet[v];
+        const inA = s.added.has(x.id), inM = s.modified.has(x.id);
+        if (relMode === 'added') return inA;
+        if (relMode === 'modified') return inM;
+        return inA || inM;
+      }));
+    }
+
+    const mkRelRow = (version, count, isAll) => {
+      const on = isAll ? relSels.length === 0 : relSels.indexOf(version) !== -1;
+      const dim = (!isAll && count === 0);
+      return {
+        version,
+        count: isAll ? '' : count,
+        mark: on ? '\u2713' : '',
+        checkBg: on ? '#9a92d6' : 'transparent',
+        checkBd: on ? '#9a92d6' : '#4a4234',
+        labelColor: on ? '#efe9f6' : (dim ? '#5a5346' : '#cabfdb'),
+        countColor: dim ? '#5a5346' : '#80735f',
+      };
+    };
+    const relAllRow = mkRelRow('', 0, true);
+    const relMenu = relData.map(r => mkRelRow(r.version, relCounts[r.version], false));
+    const relMode_ = (k, label) => ({
+      key: k, label,
+      bg: relMode === k ? 'rgba(154,146,214,0.16)' : 'transparent',
+      fg: relMode === k ? '#efe9f6' : '#9a8d77',
+      bd: relMode === k ? '#5a5380' : '#322a20',
+    });
+    const relModes = [relMode_('all', 'All'), relMode_('added', 'New'), relMode_('modified', 'Updated')];
+
     // Text search applied on top, matching ID or name (case-insensitive).
     const q = (this.state.query || '').trim().toLowerCase();
-    const filtered = !q ? tagFiltered : tagFiltered.filter(x =>
+    const filtered = !q ? relFiltered : relFiltered.filter(x =>
       (x.id || '').toLowerCase().indexOf(q) !== -1 ||
       (x.name || '').toLowerCase().indexOf(q) !== -1
     );
@@ -416,14 +593,39 @@ class Component extends DCLogic {
     // user scrolls (see maybeGrow). _filteredCount lets maybeGrow know the cap.
     this._filteredCount = filtered.length;
     const limit = this.state.limit || 60;
-    const items = filtered.slice(0, limit).map(x => ({
-      id: x.id,
-      name: x.name || '',
-      hasName: !!(x.name && x.name.length),
-      type: x.type,
-      img: x.img,
-      nif: x.mesh || (x.img || ''),
-    }));
+    const REL_ADDED = { bg: 'rgba(210,130,63,0.94)', fg: '#1a120a', bd: 'rgba(210,130,63,0.94)', glyph: '+' };
+    const REL_UPD = { bg: 'rgba(154,146,214,0.18)', fg: '#cdc5ea', bd: 'rgba(154,146,214,0.55)', glyph: '\u21bb' };
+    const items = filtered.slice(0, limit).map(x => {
+      // When releases are selected, the badge reflects the newest selected
+      // release that touched the asset; otherwise it shows the newest release
+      // overall that touched it (relMap).
+      // Only badge cards when at least one release tag is selected.
+      let prov = null;
+      if (activeRels.length) {
+        for (let i = 0; i < relData.length; i++) {
+          const v = relData[i].version;
+          if (activeRels.indexOf(v) === -1) continue;
+          const s = relSet[v];
+          if (s.added.has(x.id)) { prov = { version: v, status: 'added' }; break; }
+          if (s.modified.has(x.id)) { prov = { version: v, status: 'modified' }; break; }
+        }
+      }
+      const sty = prov ? (prov.status === 'added' ? REL_ADDED : REL_UPD) : REL_UPD;
+      return {
+        id: x.id,
+        name: x.name || '',
+        hasName: !!(x.name && x.name.length),
+        type: x.type,
+        img: x.img,
+        nif: x.mesh || (x.img || ''),
+        relShow: !!prov,
+        relVer: prov ? prov.version : '',
+        relGlyph: sty.glyph,
+        relBg: sty.bg,
+        relFg: sty.fg,
+        relBd: sty.bd,
+      };
+    });
     const hasMore = filtered.length > items.length;
 
     const tagLabel = noTags ? '' : (selTags.length === 1 ? selTags[0] : selTags.length + ' tags');
@@ -436,10 +638,10 @@ class Component extends DCLogic {
         const id = e.currentTarget.dataset.eid;
         if (!id) return;
         // Format A — Unicode text (CF_UNICODETEXT)
-        e.dataTransfer.setData('text/plain', 'mwse-cs-object:' + id);
-        // Format B — HTML Format, element carrying data-mwse-object
+        e.dataTransfer.setData('text/plain', 'cs-object:' + id);
+        // Format B — HTML Format, element carrying data-cs-object
         e.dataTransfer.setData('text/html',
-          '<div data-mwse-object="' + id + '">' + id + '</div>');
+          '<div data-cs-object="' + id + '">' + id + '</div>');
         e.dataTransfer.effectAllowed = 'copy';
       },
       total,
@@ -464,6 +666,28 @@ class Component extends DCLogic {
       activeLabel: active === 'All' ? 'All objects' : active,
       tagLabel,
       hasTagFilter: !noTags,
+      // ---- release facet ----
+      relMenu,
+      relAllRow,
+      relModes,
+      relOpen: !!this.state.relOpen,
+      hasReleases: relData.length > 0,
+      hasRelFilter: relSels.length > 0,
+      relSummary: relSels.length === 0 ? 'All releases' : (relSels.length === 1 ? relSels[0] : relSels.length + ' releases'),
+      relDotOp: relSels.length ? '1' : '0',
+      relChevronDeg: this.state.relOpen ? '180' : '0',
+      relBtnFg: relSels.length ? '#efe9f6' : '#cabfdb',
+      relBtnBg: relSels.length ? 'rgba(154,146,214,0.12)' : '#15100b',
+      relBtnBd: relSels.length ? '#5a5380' : '#322a20',
+      toggleRel: () => this.setState(s => ({ relOpen: !s.relOpen, tagOpen: false })),
+      pickRel: (e) => {
+        if (e.currentTarget.dataset.all === '1') { this.setState({ releases: [], relMode: 'all', relOpen: false, limit: 60 }); return; }
+        const v = e.currentTarget.dataset.rel || '';
+        const cur = this.state.releases || [];
+        const next = cur.indexOf(v) !== -1 ? cur.filter(x => x !== v) : cur.concat(v);
+        this.setState({ releases: next, limit: 60 });
+      },
+      setRelMode: (e) => this.setState({ relMode: e.currentTarget.dataset.mode, limit: 60 }),
       hasMore,
       shownCount: filtered.length,
       isEmpty: !!d && filtered.length === 0,
