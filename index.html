@@ -11,7 +11,7 @@
 <meta property="og:url" content="https://oaab.dev/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/OAAB-Modding/OAAB-Modding.github.io@main/assets/images/general/og-image.png">
-<script src="/support.js"></script>
+<script src="support.js"></script>
 </head>
 <body>
 <x-dc>
@@ -467,9 +467,11 @@ class Component extends DCLogic {
   // Headline counts come straight from OAAB_Data's own mod page (modId 49042, Morrowind gameId 100):
   // dependent-mod count (the "Requirements → mods requiring this file" total), endorsements, and version.
   async loadStats() {
+    // Paint the cached numbers instantly so there's no flash of the fallbacks,
+    // but ALWAYS continue to the live fetch below and update when it returns.
     try {
       const c = JSON.parse(localStorage.getItem('oaab_stats_v1') || 'null');
-      if (c && c.ts && (Date.now() - c.ts < 864e5) && c.stats) { this.applyStats(c.stats); return; }
+      if (c && c.stats) { this.applyStats(c.stats); }
     } catch (e) {}
     try {
       const query = 'query($filter: ModsFilter){ mods(filter: $filter, count: 1){ nodes { endorsements version modRequirements { modsRequiringThisMod(count: 1){ totalCount } } } } }';
