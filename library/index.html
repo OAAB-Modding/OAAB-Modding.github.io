@@ -229,7 +229,50 @@ class Component extends DCLogic {
     gridWidth: 0, virtualStartRow: 0, virtualEndRow: 8,
   };
 
+  encodeFilterUrl() {
+    const p = new URLSearchParams();
+    p.set('popout', '1');
+    if (this.state.active && this.state.active !== 'All') p.set('type', this.state.active);
+    (this.state.tags || []).forEach(t => { if (t) p.append('tag', t); });
+    if (this.state.query) p.set('q', this.state.query);
+    (this.state.releases || []).forEach(r => { if (r) p.append('release', r); });
+    if (this.state.relMode && this.state.relMode !== 'all') p.set('relMode', this.state.relMode);
+    return location.pathname + '?' + p.toString();
+  }
+
+  readFilterUrl() {
+    const next = {};
+    try {
+      const p = new URLSearchParams(location.search || '');
+      const type = p.get('type');
+      if (type) next.active = type;
+      const tags = p.getAll('tag').filter(Boolean);
+      if (tags.length) next.tags = tags;
+      const q = p.get('q');
+      if (q != null) next.query = q;
+      const releases = p.getAll('release').filter(Boolean);
+      if (releases.length) next.releases = releases;
+      const relMode = p.get('relMode');
+      if (relMode === 'all' || relMode === 'added' || relMode === 'modified') next.relMode = relMode;
+    } catch (e) {}
+
+    // Pick up an initial tag filter from the URL hash (e.g. #tag=Telvanni),
+    // used by the home page's library links. Query params win when both exist.
+    if (!next.tags) {
+      const hm = /[#&]tag=([^&]+)/.exec(location.hash || '');
+      if (hm) {
+        try { next.tags = [decodeURIComponent(hm[1])]; } catch (e) {}
+      }
+    }
+    return next;
+  }
+
   componentDidMount() {
+    const initialFilters = this.readFilterUrl();
+    if (Object.keys(initialFilters).length) {
+      try { this.setState(initialFilters); } catch (e) {}
+    }
+
     // In popout mode, remember it for this window and tidy the address bar so
     // the ?popout=1 query string isn't shown (the browser's own URL bar on a
     // popup window can't be removed by the page, but we keep it clean).
@@ -240,13 +283,6 @@ class Component extends DCLogic {
           history.replaceState(null, '', location.pathname + location.hash);
         }
       } catch (e) {}
-    }
-
-    // Pick up an initial tag filter from the URL hash (e.g. #tag=Telvanni),
-    // used by the home page's library links.
-    const hm = /[#&]tag=([^&]+)/.exec(location.hash || '');
-    if (hm) {
-      try { this.setState({ tags: [decodeURIComponent(hm[1])] }); } catch (e) {}
     }
 
     this._onDocDown = (e) => {
@@ -767,7 +803,7 @@ class Component extends DCLogic {
         const left = Math.max(0, Math.round(sx + (window.outerWidth - w) / 2));
         const top = Math.max(0, Math.round(sy + (window.outerHeight - h) / 2));
         const win = window.open(
-          location.pathname + '?popout=1',
+          this.encodeFilterUrl(),
           'oaab_library_popout',
           'popup=yes,width=' + w + ',height=' + h + ',left=' + left + ',top=' + top
         );
