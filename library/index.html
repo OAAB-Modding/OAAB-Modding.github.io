@@ -171,7 +171,13 @@ button{font-family:inherit;}
         <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:3px;background:transparent;border:1px solid rgba(154,146,214,0.7);"></span>Updated</span>
       </span>
       </sc-if>
-      <button onClick="{{ toggleCompact }}" title="{{ compactTitle }}" style="order:{{ ctrlBtnOrder }};flex:0 0 auto;margin-left:{{ ctrlBtnMargin }};display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:9px;background:{{ compactBg }};border:1px solid {{ compactBd }};color:{{ compactFg }};cursor:pointer;transition:all .18s;" style-hover="border-color:#9a92d6;">
+      <div style="order:{{ ctrlBtnOrder }};flex:0 0 auto;margin-left:{{ ctrlBtnMargin }};display:inline-flex;align-items:center;gap:9px;height:42px;padding:0 13px;border-radius:9px;background:#15100b;border:1px solid #322a20;">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:10px;height:10px;color:#80735f;flex:0 0 auto;"><rect x="6" y="6" width="12" height="12" rx="1.6"></rect></svg>
+        <input type="range" min="0.5" max="3" step="0.1" value="{{ scale }}" onInput="{{ onScale }}" title="Thumbnail size" aria-label="Thumbnail size" style="width:104px;accent-color:#d2823f;cursor:pointer;background:transparent;">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:16px;height:16px;color:#80735f;flex:0 0 auto;"><rect x="3" y="3" width="18" height="18" rx="1.6"></rect></svg>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#9a8d77;min-width:38px;text-align:right;">{{ scalePct }}</span>
+      </div>
+      <button onClick="{{ toggleCompact }}" title="{{ compactTitle }}" style="order:{{ ctrlBtnOrder }};flex:0 0 auto;margin-left:0;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:9px;background:{{ compactBg }};border:1px solid {{ compactBd }};color:{{ compactFg }};cursor:pointer;transition:all .18s;" style-hover="border-color:#9a92d6;">
         <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:17px;height:17px;"><rect x="3" y="3" width="7" height="7" rx="1.4"></rect><rect x="14" y="3" width="7" height="7" rx="1.4"></rect><rect x="3" y="14" width="7" height="7" rx="1.4"></rect><rect x="14" y="14" width="7" height="7" rx="1.4"></rect></svg>
       </button>
       <sc-if value="{{ anyFilter }}" hint-placeholder-val="{{ false }}">
@@ -262,6 +268,10 @@ class Component extends DCLogic {
     relData: [], releases: [], relMode: 'all', relOpen: false,
     gridWidth: 0, virtualStartRow: 0, virtualEndRow: 8,
     compact: (typeof localStorage !== 'undefined' && localStorage.getItem('oaab_compact') === '1'),
+    scale: (function () {
+      try { const v = parseFloat(localStorage.getItem('oaab_scale')); return (v >= 0.5 && v <= 3) ? v : 1; }
+      catch (e) { return 1; }
+    })(),
   };
 
   componentDidMount() {
@@ -485,8 +495,9 @@ class Component extends DCLogic {
 
   gridMetrics(width) {
     const compact = !!this.state.compact;
-    const gap = compact ? 10 : 14;
-    const minCardWidth = compact ? 112 : 176;
+    const scale = this.state.scale || 1;
+    const gap = Math.round((compact ? 10 : 14) * scale);
+    const minCardWidth = Math.round((compact ? 112 : 176) * scale);
     const captionHeight = compact ? 0 : 78;
     const columns = Math.max(1, Math.floor((Math.max(0, width) + gap) / (minCardWidth + gap)));
     const cardWidth = compact ? minCardWidth : (Math.max(minCardWidth, width) - gap * (columns - 1)) / columns;
@@ -806,9 +817,16 @@ class Component extends DCLogic {
       no: false,
       comfortable,
       compact,
-      gridCols: compact ? 'repeat(auto-fill,112px)' : 'repeat(auto-fill,minmax(176px,1fr))',
-      gridGap: compact ? 10 : 14,
-      imgPad: compact ? 7 : 12,
+      gridCols: compact ? ('repeat(auto-fill,' + Math.round(112 * (this.state.scale || 1)) + 'px)') : ('repeat(auto-fill,minmax(' + Math.round(176 * (this.state.scale || 1)) + 'px,1fr))'),
+      gridGap: Math.round((compact ? 10 : 14) * (this.state.scale || 1)),
+      imgPad: Math.round((compact ? 7 : 12) * (this.state.scale || 1)),
+      scale: this.state.scale || 1,
+      scalePct: Math.round((this.state.scale || 1) * 100) + '%',
+      onScale: (e) => {
+        const v = Math.max(0.5, Math.min(3, parseFloat(e.target.value) || 1));
+        try { localStorage.setItem('oaab_scale', String(v)); } catch (err) {}
+        this.setState({ scale: v });
+      },
       compactBg: compact ? 'rgba(154,146,214,0.12)' : '#15100b',
       compactBd: compact ? '#5a5380' : '#322a20',
       compactFg: compact ? '#efe9f6' : '#9a8d77',
