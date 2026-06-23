@@ -267,7 +267,7 @@ class Component extends DCLogic {
     data: null, active: 'All', tags: [], query: '', tagOpen: false, typeOpen: false,
     relData: [], releases: [], relMode: 'all', relOpen: false,
     gridWidth: 0, virtualStartRow: 0, virtualEndRow: 8,
-    compact: (typeof localStorage !== 'undefined' && localStorage.getItem('oaab_compact') === '1'),
+    compact: (typeof localStorage !== 'undefined' && localStorage.getItem('oaab_compact_v2') === '1'),
     scale: (function () {
       try { const v = parseFloat(localStorage.getItem('oaab_scale')); return (v >= 0.5 && v <= 3) ? v : 1; }
       catch (e) { return 1; }
@@ -833,7 +833,7 @@ class Component extends DCLogic {
       compactTitle: compact ? 'Compact thumbnails \u2014 click for comfortable view' : 'Comfortable thumbnails \u2014 click for compact view',
       toggleCompact: () => this.setState(s => {
         const next = !s.compact;
-        try { localStorage.setItem('oaab_compact', next ? '1' : '0'); } catch (e) {}
+        try { localStorage.setItem('oaab_compact_v2', next ? '1' : '0'); } catch (e) {}
         return { compact: next };
       }),
       isPopout,
