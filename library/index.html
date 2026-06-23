@@ -782,7 +782,7 @@ class Component extends DCLogic {
         nif: x.mesh || (x.img || ''),
         tip: comfortable
           ? (x.mesh || x.img || '')
-          : (x.id + (x.name ? '  \u00b7  ' + x.name : '') + (x.type ? '\n' + x.type : '') + (x.mesh ? '\n' + x.mesh : '')),
+          : ((x.type ? x.type + '\n' : '') + x.id + (x.name ? '  \u00b7  ' + x.name : '') + (x.mesh ? '\n' + x.mesh : '')),
         relShow: !!prov && comfortable,
         relVer: prov ? prov.version : '',
         relGlyph: sty.glyph,
