@@ -1,0 +1,100 @@
+/* ==========================================================================
+   OAAB — shared base styles
+   Single source of truth for the reset, page defaults, and animations used
+   across every page (home, releases, library, FAQ). Linked from each page's
+   <helmet> so the rules below are defined once instead of in every HTML file.
+
+   Per-element styling stays inline on the components themselves; only the
+   genuinely shared, page-level CSS lives here.
+   ========================================================================== */
+
+/* --- Reset & page defaults ------------------------------------------------ */
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px; /* offset for the fixed top nav on anchor jumps */
+}
+
+body {
+  margin: 0;
+  background: #100d0a;
+  color: #e7dccb;
+  font-family: 'EB Garamond', Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: rgba(210, 130, 63, 0.32); color: #fff; }
+
+a { color: inherit; text-decoration: none; }
+
+button { font-family: inherit; }
+
+/* --- Custom scrollbars (filter/type/tag dropdowns, library tab bar) ------- */
+[data-tabscroll]::-webkit-scrollbar { height: 6px; width: 6px; }
+[data-tabscroll]::-webkit-scrollbar-thumb { background: #2e271e; border-radius: 3px; }
+
+/* --- Animations ----------------------------------------------------------- */
+
+/* Drifting ash motes rising over the home hero. */
+@keyframes oaabMote {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  12%  { opacity: .5; }
+  82%  { opacity: .32; }
+  100% { transform: translateY(-240px) translateX(30px); opacity: 0; }
+}
+
+/* Soft ember glow that pulses over hero imagery. */
+@keyframes oaabGlow {
+  0%, 100% { opacity: .45; }
+  50%      { opacity: .8; }
+}
+
+/* Pulsing "live" dot on release/ecosystem status indicators. */
+@keyframes oaabPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(210, 130, 63, 0.45); }
+  50%      { box-shadow: 0 0 0 6px rgba(210, 130, 63, 0); }
+}
+
+/* Reveal used by accordions, dropdown menus, and grid cards. */
+@keyframes oaabFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Release article body -------------------------------------------------
+   Used only by the individual release pages (releases/<version>/). The notes
+   are injected verbatim from GitHub as a markup blob, so they're styled by
+   class here rather than with per-element inline styles. Harmless on pages
+   that have no .rbody element.
+   ------------------------------------------------------------------------- */
+.rbody { font-family: 'EB Garamond', serif; color: #c4b79f; font-size: 18.5px; line-height: 1.72; }
+.rbody p { margin: 0 0 20px; text-wrap: pretty; }
+.rbody p.lead { font-size: 22px; line-height: 1.6; color: #d9cbb2; margin-bottom: 30px; }
+.rbody h2 { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 34px; line-height: 1.08; color: #f1e8d8; margin: 54px 0 6px; letter-spacing: -.01em; }
+.rbody h3 { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 25px; line-height: 1.15; color: #ece2d2; margin: 38px 0 10px; }
+.rbody ul { margin: 0 0 22px; padding-left: 0; list-style: none; }
+.rbody li { position: relative; padding-left: 22px; margin: 0 0 8px; font-size: 17px; line-height: 1.55; color: #b3a690; }
+.rbody li:before { content: ""; position: absolute; left: 4px; top: 11px; width: 5px; height: 5px; border-radius: 50%; background: #d2823f; }
+.rbody a { color: #d2823f; border-bottom: 1px solid rgba(210, 130, 63, 0.38); transition: color .2s, border-color .2s; }
+.rbody a:hover { color: #e7b07a; border-color: #e7b07a; }
+.rbody code { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; background: #1d160e; border: 1px solid #2c241b; border-radius: 5px; padding: 2px 6px; color: #d9cbb2; }
+.rbody blockquote { margin: 0 0 22px; padding: 16px 22px; border-left: 2px solid #d2823f; background: #16110b; border-radius: 0 10px 10px 0; color: #bcae97; font-style: italic; font-size: 17.5px; line-height: 1.65; }
+.rbody figure { margin: 8px 0 28px; border: 1px solid #2c241b; border-radius: 12px; overflow: hidden; background: #0c0a07; }
+.rbody figure img { display: block; width: 100%; height: auto; }
+.rbody hr { border: none; border-top: 1px solid #2b241c; margin: 46px 0; }
+.rbody details.cl { border: 1px solid #2c241b; border-radius: 10px; background: #16110b; margin: 0 0 12px; overflow: hidden; }
+.rbody details.cl summary { cursor: pointer; list-style: none; padding: 15px 18px; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 23px; color: #ece2d2; display: flex; align-items: center; gap: 11px; transition: color .2s; }
+.rbody details.cl summary::-webkit-details-marker { display: none; }
+.rbody details.cl summary:before { content: "\25B8"; color: #d2823f; font-size: 15px; transition: transform .2s; display: inline-block; flex: none; }
+.rbody details.cl[open] summary:before { transform: rotate(90deg); }
+.rbody details.cl summary:hover { color: #fff; }
+.rbody details.cl[open] summary { border-bottom: 1px solid #221c15; }
+.rbody details.cl ul { margin: 0; padding: 16px 22px 18px; }
+.rbody details.cl li { margin-bottom: 7px; }
+.rbody .dl-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 34px; }
+.rbody .dl-btn { display: inline-flex; align-items: center; gap: 8px; font-family: 'EB Garamond', serif; font-size: 16px; font-weight: 600; padding: 12px 22px; border-radius: 8px; background: #d2823f; color: #1a120a; border: 1px solid #d2823f; transition: filter .2s, box-shadow .25s; }
+.rbody .dl-btn:hover { filter: brightness(1.08); box-shadow: 0 8px 24px rgba(210, 130, 63, 0.28); }
+.rbody .dl-btn.ghost { background: transparent; color: #e7dccb; border-color: #463b2d; }
+.rbody .dl-btn.ghost:hover { border-color: #d2823f; color: #d2823f; box-shadow: none; }
