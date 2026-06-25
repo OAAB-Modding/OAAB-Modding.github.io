@@ -22,62 +22,62 @@
 <link rel="stylesheet" href="../style.css">
 </helmet>
 
-<div data-root="" class="oaab-s-001">
+<div data-root="" class="site-root-fill">
 
-<nav class="oaab-s-002">
-  <a href="/#top" class="oaab-s-003">
-    <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB — Of Ash and Blight" class="oaab-s-004">
-    <span class="oaab-s-005">Of Ash<br>&amp; Blight</span>
+<nav class="site-nav">
+  <a href="/#top" class="brand-link">
+    <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB — Of Ash and Blight" class="brand-logo">
+    <span class="brand-mark-text">Of Ash<br>&amp; Blight</span>
   </a>
-  <div class="oaab-s-006">
-    <div class="oaab-s-007">
-      <a href="/releases/" class="oaab-s-008 oaab-s-009">Releases</a>
-      <a href="/#mods" class="oaab-s-008 oaab-s-009">Mods</a>
-      <a href="/library/" class="oaab-s-008 oaab-s-009">Library</a>
-      <a href="https://www.oaab.dev/wiki" target="_blank" rel="noopener" class="oaab-s-008 oaab-s-010">Wiki</a>
-      <a href="/faq/" class="oaab-s-011">FAQ</a>
+  <div class="site-nav-actions">
+    <div class="site-nav-links">
+      <a href="/releases/" class="nav-link">Releases</a>
+      <a href="/#mods" class="nav-link">Mods</a>
+      <a href="/library/" class="nav-link">Library</a>
+      <a href="https://www.oaab.dev/wiki" target="_blank" rel="noopener" class="nav-link nav-link--wiki">Wiki</a>
+      <a href="/faq/" class="nav-link-current">FAQ</a>
     </div>
-    <a href="https://discord.gg/g5E2HUp" target="_blank" class="oaab-s-012 oaab-s-013">Join Discord</a>
+    <a href="https://discord.gg/g5E2HUp" target="_blank" class="site-nav-cta">Join Discord</a>
   </div>
 </nav>
 
-<header class="oaab-s-014">
-  <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/screenshots/crypts.png" alt="" class="oaab-s-015">
-  <div class="oaab-s-016"></div>
-  <div class="oaab-s-017"></div>
-  <div class="oaab-s-018">
-    <div class="oaab-s-019">Questions &amp; Answers</div>
-    <h1 class="oaab-s-020">Frequently asked questions.</h1>
-    <p class="oaab-s-021">What OAAB_Data is, how to build on it, what it needs to run, and how the project is shared.</p>
+<header class="faq-hero">
+  <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/screenshots/crypts.png" alt="" class="faq-hero-image">
+  <div class="page-hero-glow"></div>
+  <div class="faq-hero-shade"></div>
+  <div class="page-hero-inner">
+    <div class="eyebrow-ember-wide">Questions &amp; Answers</div>
+    <h1 class="faq-hero-title">Frequently asked questions.</h1>
+    <p class="page-hero-copy-wide">What OAAB_Data is, how to build on it, what it needs to run, and how the project is shared.</p>
   </div>
 </header>
 
-<main class="oaab-s-022">
+<main class="faq-main">
   <sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
-    <section class="oaab-s-023">
-      <div class="oaab-s-024">
-        <span class="oaab-s-025">{{ g.num }}</span>
-        <h2 class="oaab-s-026">{{ g.label }}</h2>
+    <section class="faq-group">
+      <div class="faq-group-heading">
+        <span class="faq-group-number">{{ g.num }}</span>
+        <h2 class="faq-group-title">{{ g.label }}</h2>
       </div>
-      <div class="oaab-s-027">
+      <div class="stack-gap-11">
         <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="4">
-          <div style="border:1px solid {{ it.border }};" class="oaab-s-028">
-            <button data-id="{{ it.id }}" onClick="{{ toggle }}" class="oaab-s-029">
-              <span style="color:{{ it.qColor }};" class="oaab-s-030">{{ it.q }}</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="{{ it.iconColor }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate({{ it.chevronDeg }}deg);" class="oaab-s-031"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          <div style="border:1px solid {{ it.border }};" class="faq-item">
+            <button data-id="{{ it.id }}" onClick="{{ toggle }}" class="faq-question-button">
+              <span style="color:{{ it.qColor }};" class="faq-question-text">{{ it.q }}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="{{ it.iconColor }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate({{ it.chevronDeg }}deg);" class="faq-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             <sc-if value="{{ it.open }}" hint-placeholder-val="{{ false }}">
-              <div class="oaab-s-032">
-                <div class="oaab-s-033"></div>
+              <div class="faq-answer">
+                <div class="faq-answer-rule"></div>
                 <sc-for list="{{ it.paras }}" as="p" hint-placeholder-count="1">
-                  <p class="oaab-s-034">{{ p }}</p>
+                  <p class="faq-answer-copy">{{ p }}</p>
                 </sc-for>
                 <sc-if value="{{ it.hasBullets }}" hint-placeholder-val="{{ false }}">
-                  <ul class="oaab-s-035">
+                  <ul class="faq-bullet-list">
                     <sc-for list="{{ it.bullets }}" as="b" hint-placeholder-count="3">
-                      <li class="oaab-s-036"><span class="oaab-s-037">✦</span>
+                      <li class="faq-bullet-item"><span class="faq-bullet-icon">✦</span>
                         <sc-if value="{{ b.href }}" hint-placeholder-val="{{ false }}">
-                          <span><a href="{{ b.href }}" target="_blank" rel="noopener" class="oaab-s-038 oaab-s-039">{{ b.name }}</a>{{ b.rest }}</span>
+                          <span><a href="{{ b.href }}" target="_blank" rel="noopener" class="inline-link-ember">{{ b.name }}</a>{{ b.rest }}</span>
                         </sc-if>
                         <sc-if value="{{ b.plain }}" hint-placeholder-val="{{ true }}">
                           <span>{{ b.name }}</span>
@@ -87,9 +87,9 @@
                   </ul>
                 </sc-if>
                 <sc-if value="{{ it.hasNote }}" hint-placeholder-val="{{ false }}">
-                  <div class="oaab-s-040">
-                    <div class="oaab-s-041">{{ it.noteLabel }}</div>
-                    <p class="oaab-s-042">{{ it.note }}</p>
+                  <div class="faq-note">
+                    <div class="faq-note-label">{{ it.noteLabel }}</div>
+                    <p class="faq-note-copy">{{ it.note }}</p>
                   </div>
                 </sc-if>
               </div>
@@ -100,23 +100,23 @@
     </section>
   </sc-for>
 
-  <div class="oaab-s-043">
-    <h3 class="oaab-s-044">Still have a question?</h3>
-    <p class="oaab-s-045">The Discord is the fastest place to reach the team and the wider OAAB community.</p>
-    <div class="oaab-s-046">
-      <a href="https://discord.gg/g5E2HUp" target="_blank" class="oaab-s-047 oaab-s-048">Join the Discord</a>
-      <a href="https://www.nexusmods.com/morrowind/mods/49042" target="_blank" class="oaab-s-049 oaab-s-050">OAAB_Data on Nexus</a>
+  <div class="callout-card">
+    <h3 class="callout-title">Still have a question?</h3>
+    <p class="callout-copy">The Discord is the fastest place to reach the team and the wider OAAB community.</p>
+    <div class="callout-actions">
+      <a href="https://discord.gg/g5E2HUp" target="_blank" class="btn-primary-sm">Join the Discord</a>
+      <a href="https://www.nexusmods.com/morrowind/mods/49042" target="_blank" class="btn-ghost-sm">OAAB_Data on Nexus</a>
     </div>
   </div>
 </main>
 
-<footer class="oaab-s-051">
-  <div class="oaab-s-052">
-    <div class="oaab-s-053">
-      <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB" class="oaab-s-054">
-      <span class="oaab-s-055">Frequently asked questions · OAAB_Data</span>
+<footer class="site-footer-simple">
+  <div class="site-footer-inner">
+    <div class="inline-cluster-12">
+      <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB" class="footer-logo">
+      <span class="footer-context-text">Frequently asked questions · OAAB_Data</span>
     </div>
-    <a href="/#top" class="oaab-s-056 oaab-s-009">← Back to home</a>
+    <a href="/#top" class="footer-back-link">← Back to home</a>
   </div>
 </footer>
 

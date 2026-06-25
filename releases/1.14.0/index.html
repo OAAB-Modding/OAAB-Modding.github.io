@@ -17,93 +17,93 @@
 <script src="/releases-data.js"></script>
 </helmet>
 
-<div data-root="" class="oaab-s-001">
+<div data-root="" class="site-root-fill">
 
-<nav class="oaab-s-002">
-  <a href="/#top" class="oaab-s-003">
-    <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB — Of Ash and Blight" class="oaab-s-004">
-    <span class="oaab-s-005">Of Ash<br>&amp; Blight</span>
+<nav class="site-nav">
+  <a href="/#top" class="brand-link">
+    <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB — Of Ash and Blight" class="brand-logo">
+    <span class="brand-mark-text">Of Ash<br>&amp; Blight</span>
   </a>
-  <div class="oaab-s-006">
-    <div class="oaab-s-007">
-      <a href="/releases/" class="oaab-s-011">Releases</a>
-      <a href="/#mods" class="oaab-s-008 oaab-s-009">Mods</a>
-      <a href="/library/" class="oaab-s-008 oaab-s-009">Library</a>
-      <a href="https://www.oaab.dev/wiki" target="_blank" rel="noopener" class="oaab-s-008 oaab-s-010">Wiki</a>
-      <a href="/faq/" class="oaab-s-008 oaab-s-009">FAQ</a>
+  <div class="site-nav-actions">
+    <div class="site-nav-links">
+      <a href="/releases/" class="nav-link-current">Releases</a>
+      <a href="/#mods" class="nav-link">Mods</a>
+      <a href="/library/" class="nav-link">Library</a>
+      <a href="https://www.oaab.dev/wiki" target="_blank" rel="noopener" class="nav-link nav-link--wiki">Wiki</a>
+      <a href="/faq/" class="nav-link">FAQ</a>
     </div>
-    <a href="https://discord.gg/g5E2HUp" target="_blank" class="oaab-s-012 oaab-s-013">Join Discord</a>
+    <a href="https://discord.gg/g5E2HUp" target="_blank" class="site-nav-cta">Join Discord</a>
   </div>
 </nav>
 
-<article data-screen-label="Release article" class="oaab-s-261">
-  <div class="oaab-s-262"></div>
-  <div class="oaab-s-263">
-    <a href="/releases/" class="oaab-s-264 oaab-s-009">← All releases</a>
+<article data-screen-label="Release article" class="release-article">
+  <div class="release-article-glow"></div>
+  <div class="article-container">
+    <a href="/releases/" class="back-link">← All releases</a>
 
     <sc-if value="{{ found }}" hint-placeholder-val="{{ true }}">
-      <div class="oaab-s-265">
-        <div class="oaab-s-266">
-          <span>{{ rel.date }}</span><span class="oaab-s-267">·</span><span>by {{ rel.author }}</span>
-          <sc-if value="{{ rel.isLatest }}" hint-placeholder-val="{{ false }}"><span class="oaab-s-268">LATEST</span></sc-if>
+      <div class="release-header-block">
+        <div class="release-meta-row">
+          <span>{{ rel.date }}</span><span class="meta-dot">·</span><span>by {{ rel.author }}</span>
+          <sc-if value="{{ rel.isLatest }}" hint-placeholder-val="{{ false }}"><span class="latest-pill">LATEST</span></sc-if>
         </div>
-        <h1 class="oaab-s-269">Release {{ rel.version }}</h1>
-        <div class="oaab-s-105">
+        <h1 class="release-title">Release {{ rel.version }}</h1>
+        <div class="chip-row">
           <sc-for list="{{ rel.labels }}" as="lab" hint-placeholder-count="6">
-            <span class="oaab-s-106">{{ lab }}</span>
+            <span class="chip">{{ lab }}</span>
           </sc-for>
         </div>
-        <a href="{{ rel.ghUrl }}" target="_blank" rel="noopener" class="oaab-s-270 oaab-s-080">View original discussion on GitHub →</a>
-        <div class="oaab-s-271"></div>
+        <a href="{{ rel.ghUrl }}" target="_blank" rel="noopener" class="external-discussion-link">View original discussion on GitHub →</a>
+        <div class="article-rule"></div>
       </div>
 
       <sc-if value="{{ rel.hasBody }}" hint-placeholder-val="{{ true }}">
         <div class="rbody" data-rbody=""></div>
       </sc-if>
       <sc-if value="{{ rel.noBody }}" hint-placeholder-val="{{ false }}">
-        <div class="oaab-s-272">
-          <div class="oaab-s-273">Full notes</div>
-          <p class="oaab-s-274">{{ rel.excerpt }}</p>
-          <a href="{{ rel.ghUrl }}" target="_blank" rel="noopener" class="oaab-s-275 oaab-s-276">Read the full changelog on GitHub →</a>
+        <div class="missing-notes-card">
+          <div class="card-label">Full notes</div>
+          <p class="missing-notes-copy">{{ rel.excerpt }}</p>
+          <a href="{{ rel.ghUrl }}" target="_blank" rel="noopener" class="github-notes-button">Read the full changelog on GitHub →</a>
         </div>
       </sc-if>
     </sc-if>
 
     <sc-if value="{{ notFound }}" hint-placeholder-val="{{ false }}">
-      <div class="oaab-s-277">
-        <h1 class="oaab-s-278">Release not found</h1>
-        <p class="oaab-s-279">Pick a version from the releases index.</p>
-        <a href="/releases/" class="oaab-s-280">Browse releases →</a>
+      <div class="not-found-card">
+        <h1 class="not-found-title">Release not found</h1>
+        <p class="not-found-copy">Pick a version from the releases index.</p>
+        <a href="/releases/" class="not-found-button">Browse releases →</a>
       </div>
     </sc-if>
   </div>
 </article>
 
 <sc-if value="{{ found }}" hint-placeholder-val="{{ true }}">
-<nav class="oaab-s-281">
+<nav class="release-nav">
   <sc-if value="{{ nav.hasNewer }}" hint-placeholder-val="{{ false }}">
-    <a href="{{ nav.newerHref }}" class="oaab-s-282 oaab-s-283">
-      <span class="oaab-s-284">← Newer</span>
-      <span class="oaab-s-285">Release {{ nav.newerVersion }}</span>
+    <a href="{{ nav.newerHref }}" class="release-nav-card">
+      <span class="release-nav-label">← Newer</span>
+      <span class="release-nav-title">Release {{ nav.newerVersion }}</span>
     </a>
   </sc-if>
   <sc-if value="{{ nav.noNewer }}" hint-placeholder-val="{{ false }}"><span></span></sc-if>
   <sc-if value="{{ nav.hasOlder }}" hint-placeholder-val="{{ false }}">
-    <a href="{{ nav.olderHref }}" class="oaab-s-286 oaab-s-283">
-      <span class="oaab-s-284">Older →</span>
-      <span class="oaab-s-285">Release {{ nav.olderVersion }}</span>
+    <a href="{{ nav.olderHref }}" class="release-nav-card-older">
+      <span class="release-nav-label">Older →</span>
+      <span class="release-nav-title">Release {{ nav.olderVersion }}</span>
     </a>
   </sc-if>
 </nav>
 </sc-if>
 
-<footer class="oaab-s-287">
-  <div class="oaab-s-052">
-    <a href="/#top" class="oaab-s-053">
-      <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB" class="oaab-s-054">
-      <span class="oaab-s-169">Of Ash<br>&amp; Blight</span>
+<footer class="release-footer">
+  <div class="site-footer-inner">
+    <a href="/#top" class="inline-cluster-12">
+      <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB" class="footer-logo">
+      <span class="footer-brand-text">Of Ash<br>&amp; Blight</span>
     </a>
-    <div class="oaab-s-288">Release notes mirrored from GitHub Discussions. The Elder Scrolls III: Morrowind © Bethesda Softworks. OAAB is an unofficial, fan-made community project.</div>
+    <div class="release-footer-copy">Release notes mirrored from GitHub Discussions. The Elder Scrolls III: Morrowind © Bethesda Softworks. OAAB is an unofficial, fan-made community project.</div>
   </div>
 </footer>
 

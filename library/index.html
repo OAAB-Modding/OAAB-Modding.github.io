@@ -22,78 +22,78 @@
 <link rel="stylesheet" href="../style.css">
 </helmet>
 
-<div data-root="" class="oaab-s-001">
+<div data-root="" class="site-root-fill">
 
 <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
-<nav data-nav="" class="oaab-s-002">
-  <a href="/#top" class="oaab-s-003">
-    <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB — Of Ash and Blight" class="oaab-s-004">
-    <span class="oaab-s-005">Of Ash<br>&amp; Blight</span>
+<nav data-nav="" class="site-nav">
+  <a href="/#top" class="brand-link">
+    <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB — Of Ash and Blight" class="brand-logo">
+    <span class="brand-mark-text">Of Ash<br>&amp; Blight</span>
   </a>
-  <div class="oaab-s-006">
-    <div class="oaab-s-007">
-      <a href="/releases/" class="oaab-s-008 oaab-s-009">Releases</a>
-      <a href="/#mods" class="oaab-s-008 oaab-s-009">Mods</a>
-      <a href="/library/" class="oaab-s-011">Library</a>
-      <a href="https://www.oaab.dev/wiki" target="_blank" rel="noopener" class="oaab-s-008 oaab-s-010">Wiki</a>
-      <a href="/faq/" class="oaab-s-008 oaab-s-009">FAQ</a>
+  <div class="site-nav-actions">
+    <div class="site-nav-links">
+      <a href="/releases/" class="nav-link">Releases</a>
+      <a href="/#mods" class="nav-link">Mods</a>
+      <a href="/library/" class="nav-link-current">Library</a>
+      <a href="https://www.oaab.dev/wiki" target="_blank" rel="noopener" class="nav-link nav-link--wiki">Wiki</a>
+      <a href="/faq/" class="nav-link">FAQ</a>
     </div>
-    <a href="https://discord.gg/g5E2HUp" target="_blank" class="oaab-s-012 oaab-s-013">Join Discord</a>
+    <a href="https://discord.gg/g5E2HUp" target="_blank" class="site-nav-cta">Join Discord</a>
   </div>
 </nav>
 </sc-if>
 
 <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
-<header class="oaab-s-176">
-  <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/screenshots/velothi%20tombs.png" alt="" class="oaab-s-177">
-  <div class="oaab-s-016"></div>
-  <div class="oaab-s-178"></div>
-  <div class="oaab-s-018">
-    <div class="oaab-s-019">The Library</div>
-    <h1 class="oaab-s-179">Every asset, catalogued.</h1>
-    <p class="oaab-s-180">A browsable index of OAAB_Data's in-game objects — tilesets, creatures, armor, books, clutter, and more!<br><br>Drag and drop thumbnails directly into the CSSE render window.</p>
+<header class="library-hero">
+  <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/screenshots/velothi%20tombs.png" alt="" class="library-hero-image">
+  <div class="page-hero-glow"></div>
+  <div class="library-hero-shade"></div>
+  <div class="page-hero-inner">
+    <div class="eyebrow-ember-wide">The Library</div>
+    <h1 class="library-hero-title">Every asset, catalogued.</h1>
+    <p class="library-hero-copy">A browsable index of OAAB_Data's in-game objects — tilesets, creatures, armor, books, clutter, and more!<br><br>Drag and drop thumbnails directly into the CSSE render window.</p>
   </div>
 </header>
 </sc-if>
 
-<div data-tabbar="" style="top:{{ tabbarTop }}px;" class="oaab-s-181">
-  <div style="padding:12px {{ barPadX }}px 13px;" class="oaab-s-088">
+<div data-tabbar="" style="top:{{ tabbarTop }}px;" class="library-toolbar">
+  <div style="padding:12px {{ barPadX }}px 13px;" class="container-wide">
     <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
-    <div class="oaab-s-182">
-      <span class="oaab-s-183">Type</span>
-      <div data-tabscroll="" class="oaab-s-184">
+    <div class="library-tabs-row">
+      <span class="filter-label">Type</span>
+      <div data-tabscroll="" class="tab-list">
         <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="12">
-          <button data-ttab="{{ tab.label }}" onClick="{{ pickTab }}" style="font-weight:{{ tab.fw }};background:{{ tab.bg }};color:{{ tab.fg }};border:1px solid {{ tab.bd }};" class="oaab-s-185">
+          <button data-ttab="{{ tab.label }}" onClick="{{ pickTab }}" style="font-weight:{{ tab.fw }};background:{{ tab.bg }};color:{{ tab.fg }};border:1px solid {{ tab.bd }};" class="type-tab">
             <span>{{ tab.label }}</span>
-            <span class="oaab-s-186">{{ tab.count }}</span>
+            <span class="tab-count">{{ tab.count }}</span>
           </button>
         </sc-for>
       </div>
     </div>
     </sc-if>
-    <div style="flex-wrap:{{ rowWrap }};" class="oaab-s-187">
-      <div style="flex:{{ searchFlex }};" class="oaab-s-188">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#80735f" stroke-width="2" class="oaab-s-189"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
-        <input type="text" value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search by ID or name — e.g. AB_r_TombDoor, Bonemold…" spellcheck="false" autocomplete="off" class="oaab-s-190 oaab-s-191">
+    <div style="flex-wrap:{{ rowWrap }};" class="filter-row">
+      <div style="flex:{{ searchFlex }};" class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#80735f" stroke-width="2" class="search-icon"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+        <input type="text" value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search by ID or name — e.g. AB_r_TombDoor, Bonemold…" spellcheck="false" autocomplete="off" class="search-input">
         <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
-          <button onClick="{{ clearSearch }}" title="Clear search" class="oaab-s-192 oaab-s-193">×</button>
+          <button onClick="{{ clearSearch }}" title="Clear search" class="search-clear">×</button>
         </sc-if>
       </div>
       <sc-if value="{{ isPopout }}" hint-placeholder-val="{{ false }}">
-      <div class="oaab-s-194"></div>
+      <div class="popout-break"></div>
       </sc-if>
       <sc-if value="{{ isPopout }}" hint-placeholder-val="{{ false }}">
-      <div data-typedd="" style="order:{{ dropOrder }};" class="oaab-s-195">
-        <button onClick="{{ toggleType }}" style="color:{{ typeBtnFg }};background:{{ typeBtnBg }};border:1px solid {{ typeBtnBd }};" class="oaab-s-196 oaab-s-197">
+      <div data-typedd="" style="order:{{ dropOrder }};" class="dropdown">
+        <button onClick="{{ toggleType }}" style="color:{{ typeBtnFg }};background:{{ typeBtnBg }};border:1px solid {{ typeBtnBd }};" class="dropdown-button-type">
           <span>{{ typeBtnLabel }}</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:rotate({{ typeChevronDeg }}deg);" class="oaab-s-198"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:rotate({{ typeChevronDeg }}deg);" class="dropdown-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <sc-if value="{{ typeOpen }}" hint-placeholder-val="{{ false }}">
-          <div class="oaab-s-199">
-            <div data-tabscroll="" class="oaab-s-200">
+          <div class="dropdown-menu-type">
+            <div data-tabscroll="" class="dropdown-scroll-tall">
               <sc-for list="{{ typeMenu }}" as="ty" hint-placeholder-count="12">
-                <button data-type="{{ ty.label }}" onClick="{{ pickType }}" class="oaab-s-201 oaab-s-202">
-                  <span style="color:{{ ty.labelColor }};" class="oaab-s-203"><span style="background:{{ ty.checkBg }};border:1px solid {{ ty.checkBd }};" class="oaab-s-204">{{ ty.mark }}</span>{{ ty.displayLabel }}</span>
+                <button data-type="{{ ty.label }}" onClick="{{ pickType }}" class="dropdown-row">
+                  <span style="color:{{ ty.labelColor }};" class="menu-label"><span style="background:{{ ty.checkBg }};border:1px solid {{ ty.checkBd }};" class="menu-check">{{ ty.mark }}</span>{{ ty.displayLabel }}</span>
                 </button>
               </sc-for>
             </div>
@@ -101,23 +101,23 @@
         </sc-if>
       </div>
       </sc-if>
-      <div data-tagdd="" style="order:{{ dropOrder }};" class="oaab-s-195">
-        <button onClick="{{ toggleTags }}" style="color:{{ tagBtnFg }};background:{{ tagBtnBg }};border:1px solid {{ tagBtnBd }};" class="oaab-s-205 oaab-s-206">
-          <span style="opacity:{{ tagDotOp }};" class="oaab-s-207"></span>
+      <div data-tagdd="" style="order:{{ dropOrder }};" class="dropdown">
+        <button onClick="{{ toggleTags }}" style="color:{{ tagBtnFg }};background:{{ tagBtnBg }};border:1px solid {{ tagBtnBd }};" class="dropdown-button">
+          <span style="opacity:{{ tagDotOp }};" class="filter-dot"></span>
           <span>{{ tagSummary }}</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:rotate({{ chevronDeg }}deg);" class="oaab-s-198"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:rotate({{ chevronDeg }}deg);" class="dropdown-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <sc-if value="{{ tagOpen }}" hint-placeholder-val="{{ false }}">
-          <div class="oaab-s-208">
-            <button data-all="1" onClick="{{ pickTag }}" style="color:{{ allRow.color }};" class="oaab-s-209 oaab-s-202">
-              <span class="oaab-s-203"><span style="background:{{ allRow.checkBg }};border:1px solid {{ allRow.checkBd }};" class="oaab-s-204">{{ allRow.mark }}</span>Show all tags</span>
+          <div class="dropdown-menu-tags">
+            <button data-all="1" onClick="{{ pickTag }}" style="color:{{ allRow.color }};" class="dropdown-row-all">
+              <span class="menu-label"><span style="background:{{ allRow.checkBg }};border:1px solid {{ allRow.checkBd }};" class="menu-check">{{ allRow.mark }}</span>Show all tags</span>
             </button>
-            <div class="oaab-s-210"></div>
-            <div data-tabscroll="" class="oaab-s-211">
+            <div class="dropdown-divider"></div>
+            <div data-tabscroll="" class="dropdown-scroll">
               <sc-for list="{{ tagMenu }}" as="tag" hint-placeholder-count="14">
-                <button data-tag="{{ tag.label }}" data-all="0" onClick="{{ pickTag }}" class="oaab-s-212 oaab-s-202">
-                  <span style="color:{{ tag.labelColor }};" class="oaab-s-203"><span style="background:{{ tag.checkBg }};border:1px solid {{ tag.checkBd }};" class="oaab-s-204">{{ tag.mark }}</span>{{ tag.label }}</span>
-                  <span style="color:{{ tag.countColor }};" class="oaab-s-213">{{ tag.count }}</span>
+                <button data-tag="{{ tag.label }}" data-all="0" onClick="{{ pickTag }}" class="dropdown-row-split">
+                  <span style="color:{{ tag.labelColor }};" class="menu-label"><span style="background:{{ tag.checkBg }};border:1px solid {{ tag.checkBd }};" class="menu-check">{{ tag.mark }}</span>{{ tag.label }}</span>
+                  <span style="color:{{ tag.countColor }};" class="menu-count">{{ tag.count }}</span>
                 </button>
               </sc-for>
             </div>
@@ -125,22 +125,22 @@
         </sc-if>
       </div>
       <sc-if value="{{ hasReleases }}" hint-placeholder-val="{{ false }}">
-      <div data-reldd="" style="order:{{ dropOrder }};" class="oaab-s-195">
-        <button onClick="{{ toggleRel }}" style="color:{{ relBtnFg }};background:{{ relBtnBg }};border:1px solid {{ relBtnBd }};" class="oaab-s-214 oaab-s-206">
-          <span class="oaab-s-203"><span style="opacity:{{ relDotOp }};" class="oaab-s-207"></span><span>{{ relSummary }}</span></span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:rotate({{ relChevronDeg }}deg);" class="oaab-s-198"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      <div data-reldd="" style="order:{{ dropOrder }};" class="dropdown">
+        <button onClick="{{ toggleRel }}" style="color:{{ relBtnFg }};background:{{ relBtnBg }};border:1px solid {{ relBtnBd }};" class="dropdown-button-release">
+          <span class="menu-label"><span style="opacity:{{ relDotOp }};" class="filter-dot"></span><span>{{ relSummary }}</span></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:rotate({{ relChevronDeg }}deg);" class="dropdown-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <sc-if value="{{ relOpen }}" hint-placeholder-val="{{ false }}">
-          <div class="oaab-s-215">
-            <button data-all="1" onClick="{{ pickRel }}" style="color:{{ relAllRow.labelColor }};" class="oaab-s-209 oaab-s-202">
-              <span class="oaab-s-203"><span style="background:{{ relAllRow.checkBg }};border:1px solid {{ relAllRow.checkBd }};" class="oaab-s-204">{{ relAllRow.mark }}</span>Show all releases</span>
+          <div class="dropdown-menu-release">
+            <button data-all="1" onClick="{{ pickRel }}" style="color:{{ relAllRow.labelColor }};" class="dropdown-row-all">
+              <span class="menu-label"><span style="background:{{ relAllRow.checkBg }};border:1px solid {{ relAllRow.checkBd }};" class="menu-check">{{ relAllRow.mark }}</span>Show all releases</span>
             </button>
-            <div class="oaab-s-210"></div>
-            <div data-tabscroll="" class="oaab-s-211">
+            <div class="dropdown-divider"></div>
+            <div data-tabscroll="" class="dropdown-scroll">
               <sc-for list="{{ relMenu }}" as="rel" hint-placeholder-count="5">
-                <button data-rel="{{ rel.version }}" data-all="0" onClick="{{ pickRel }}" class="oaab-s-212 oaab-s-202">
-                  <span style="color:{{ rel.labelColor }};" class="oaab-s-203"><span style="background:{{ rel.checkBg }};border:1px solid {{ rel.checkBd }};" class="oaab-s-204">{{ rel.mark }}</span><span class="oaab-s-216">{{ rel.version }}</span></span>
-                  <span style="color:{{ rel.countColor }};" class="oaab-s-213">{{ rel.count }}</span>
+                <button data-rel="{{ rel.version }}" data-all="0" onClick="{{ pickRel }}" class="dropdown-row-split">
+                  <span style="color:{{ rel.labelColor }};" class="menu-label"><span style="background:{{ rel.checkBg }};border:1px solid {{ rel.checkBd }};" class="menu-check">{{ rel.mark }}</span><span class="release-version-mono">{{ rel.version }}</span></span>
+                  <span style="color:{{ rel.countColor }};" class="menu-count">{{ rel.count }}</span>
                 </button>
               </sc-for>
             </div>
@@ -148,89 +148,89 @@
         </sc-if>
       </div>
       <sc-if value="{{ hasRelFilter }}" hint-placeholder-val="{{ false }}">
-        <div style="order:{{ dropOrder }};" class="oaab-s-217">
+        <div style="order:{{ dropOrder }};" class="release-mode-group">
           <sc-for list="{{ relModes }}" as="m" hint-placeholder-count="3">
-            <button data-mode="{{ m.key }}" onClick="{{ setRelMode }}" style="background:{{ m.bg }};color:{{ m.fg }};border:1px solid {{ m.bd }};" class="oaab-s-218 oaab-s-219">{{ m.label }}</button>
+            <button data-mode="{{ m.key }}" onClick="{{ setRelMode }}" style="background:{{ m.bg }};color:{{ m.fg }};border:1px solid {{ m.bd }};" class="release-mode-button">{{ m.label }}</button>
           </sc-for>
         </div>
       </sc-if>
-      <span style="order:{{ dropOrder }};" class="oaab-s-220">
-        <span class="oaab-s-221"><span class="oaab-s-222"></span>New</span>
-        <span class="oaab-s-221"><span class="oaab-s-223"></span>Updated</span>
+      <span style="order:{{ dropOrder }};" class="release-legend">
+        <span class="legend-row"><span class="legend-new-swatch"></span>New</span>
+        <span class="legend-row"><span class="legend-updated-swatch"></span>Updated</span>
       </span>
       </sc-if>
-      <div style="order:{{ ctrlBtnOrder }};margin-left:{{ ctrlBtnMargin }};" class="oaab-s-224">
-        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" class="oaab-s-225"><rect x="6" y="6" width="12" height="12" rx="1.6"></rect></svg>
-        <input type="range" min="0.5" max="3" step="0.1" value="{{ scale }}" onInput="{{ onScale }}" title="Thumbnail size" aria-label="Thumbnail size" class="oaab-s-226">
-        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" class="oaab-s-227"><rect x="3" y="3" width="18" height="18" rx="1.6"></rect></svg>
-        <span class="oaab-s-228">{{ scalePct }}</span>
+      <div style="order:{{ ctrlBtnOrder }};margin-left:{{ ctrlBtnMargin }};" class="thumb-scale-control">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" class="scale-icon-small"><rect x="6" y="6" width="12" height="12" rx="1.6"></rect></svg>
+        <input type="range" min="0.5" max="3" step="0.1" value="{{ scale }}" onInput="{{ onScale }}" title="Thumbnail size" aria-label="Thumbnail size" class="scale-slider">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" class="scale-icon-large"><rect x="3" y="3" width="18" height="18" rx="1.6"></rect></svg>
+        <span class="scale-value">{{ scalePct }}</span>
       </div>
-      <button onClick="{{ toggleCompact }}" title="{{ compactTitle }}" style="order:{{ ctrlBtnOrder }};background:{{ compactBg }};border:1px solid {{ compactBd }};color:{{ compactFg }};" class="oaab-s-229 oaab-s-206">
-        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" class="oaab-s-230"><rect x="3" y="3" width="7" height="7" rx="1.4"></rect><rect x="14" y="3" width="7" height="7" rx="1.4"></rect><rect x="3" y="14" width="7" height="7" rx="1.4"></rect><rect x="14" y="14" width="7" height="7" rx="1.4"></rect></svg>
+      <button onClick="{{ toggleCompact }}" title="{{ compactTitle }}" style="order:{{ ctrlBtnOrder }};background:{{ compactBg }};border:1px solid {{ compactBd }};color:{{ compactFg }};" class="icon-button">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" class="icon-svg"><rect x="3" y="3" width="7" height="7" rx="1.4"></rect><rect x="14" y="3" width="7" height="7" rx="1.4"></rect><rect x="3" y="14" width="7" height="7" rx="1.4"></rect><rect x="14" y="14" width="7" height="7" rx="1.4"></rect></svg>
       </button>
       <sc-if value="{{ anyFilter }}" hint-placeholder-val="{{ false }}">
-        <button onClick="{{ clearAll }}" title="Clear all filters" style="order:{{ ctrlBtnOrder }};margin-left:{{ ctrlBtnMargin }};" class="oaab-s-231 oaab-s-232">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="oaab-s-230"><path d="M13.013 3H2l8 9.46V19l4 2v-8.54l.9-1.055"></path><path d="m22 3-5 5"></path><path d="m17 3 5 5"></path></svg>
+        <button onClick="{{ clearAll }}" title="Clear all filters" style="order:{{ ctrlBtnOrder }};margin-left:{{ ctrlBtnMargin }};" class="clear-filters-button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M13.013 3H2l8 9.46V19l4 2v-8.54l.9-1.055"></path><path d="m22 3-5 5"></path><path d="m17 3 5 5"></path></svg>
         </button>
       </sc-if>
     </div>
   </div>
 </div>
 
-<section style="padding:34px {{ secPadX }}px 110px;" class="oaab-s-233">
-  <div class="oaab-s-088">
+<section style="padding:34px {{ secPadX }}px 110px;" class="library-body-section">
+  <div class="container-wide">
     <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
-    <div class="oaab-s-234">
-      <div class="oaab-s-235">
-        <h2 class="oaab-s-044">{{ activeLabel }}</h2>
+    <div class="library-results-header">
+      <div class="library-results-title-row">
+        <h2 class="callout-title">{{ activeLabel }}</h2>
         <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
-          <button onClick="{{ openPopout }}" title="Pop out a minimal window" class="oaab-s-236 oaab-s-050">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="oaab-s-237"><path d="M9 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3"></path><polyline points="14 4 20 4 20 10"></polyline><line x1="20" y1="4" x2="11" y2="13"></line></svg>
+          <button onClick="{{ openPopout }}" title="Pop out a minimal window" class="popout-button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="popout-icon"><path d="M9 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3"></path><polyline points="14 4 20 4 20 10"></polyline><line x1="20" y1="4" x2="11" y2="13"></line></svg>
           </button>
         </sc-if>
         <sc-if value="{{ hasTagFilter }}" hint-placeholder-val="{{ false }}">
-          <span class="oaab-s-238"><span class="oaab-s-239"></span>{{ tagLabel }}</span>
+          <span class="filter-pill-azura"><span class="filter-pill-dot-azura"></span>{{ tagLabel }}</span>
         </sc-if>
         <sc-if value="{{ hasRelFilter }}" hint-placeholder-val="{{ false }}">
-          <span class="oaab-s-240"><span class="oaab-s-241"></span>{{ relSummary }}</span>
+          <span class="filter-pill-ember"><span class="filter-pill-dot-ember"></span>{{ relSummary }}</span>
         </sc-if>
       </div>
-      <div class="oaab-s-242">{{ shownCount }} thumbnails</div>
+      <div class="library-count">{{ shownCount }} thumbnails</div>
     </div>
     </sc-if>
 
     <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
-      <div class="oaab-s-243">
-        <div class="oaab-s-244">No thumbnails in this category yet.</div>
-        <p class="oaab-s-245">These records exist in OAAB_Data but aren't part of the current render set.</p>
+      <div class="empty-state">
+        <div class="empty-state-title">No thumbnails in this category yet.</div>
+        <p class="empty-state-copy">These records exist in OAAB_Data but aren't part of the current render set.</p>
       </div>
     </sc-if>
 
-    <div data-grid="" style="grid-template-columns:{{ gridCols }};gap:{{ gridGap }}px;padding-top:{{ gridPadTop }}px;padding-bottom:{{ gridPadBottom }}px;" class="oaab-s-246">
+    <div data-grid="" style="grid-template-columns:{{ gridCols }};gap:{{ gridGap }}px;padding-top:{{ gridPadTop }}px;padding-bottom:{{ gridPadBottom }}px;" class="asset-grid">
       <sc-for list="{{ items }}" as="it" hint-placeholder-count="18">
-        <figure title="{{ it.tip }}" draggable="{{ yes }}" data-eid="{{ it.id }}" onDragStart="{{ onDrag }}" class="oaab-s-247 oaab-s-118 oaab-s-248">
-          <div class="oaab-s-249">
-            <div key="{{ it.img }}" data-thumb="" class="oaab-s-250">
-              <div data-spin="" class="oaab-s-251">
-                <div class="oaab-s-252"></div>
+        <figure title="{{ it.tip }}" draggable="{{ yes }}" data-eid="{{ it.id }}" onDragStart="{{ onDrag }}" class="asset-card">
+          <div class="asset-thumb-frame">
+            <div key="{{ it.img }}" data-thumb="" class="asset-thumb-layer">
+              <div data-spin="" class="asset-spinner-wrap">
+                <div class="asset-spinner"></div>
               </div>
-              <img src="{{ it.img }}" alt="{{ it.id }}" loading="lazy" decoding="async" draggable="{{ no }}" onLoad="{{ imgLoad }}" onError="{{ imgErr }}" style="padding:{{ imgPad }}px;" class="oaab-s-253">
+              <img src="{{ it.img }}" alt="{{ it.id }}" loading="lazy" decoding="async" draggable="{{ no }}" onLoad="{{ imgLoad }}" onError="{{ imgErr }}" style="padding:{{ imgPad }}px;" class="asset-image">
             </div>
             <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
-            <span class="oaab-s-254">{{ it.type }}</span>
+            <span class="asset-type-label">{{ it.type }}</span>
             </sc-if>
             <sc-if value="{{ it.relShow }}" hint-placeholder-val="{{ false }}">
-              <span title="Touched in OAAB_Data {{ it.relVer }}" style="background:{{ it.relBg }};color:{{ it.relFg }};border:1px solid {{ it.relBd }};" class="oaab-s-255"><span class="oaab-s-256">{{ it.relGlyph }}</span>{{ it.relVer }}</span>
+              <span title="Touched in OAAB_Data {{ it.relVer }}" style="background:{{ it.relBg }};color:{{ it.relFg }};border:1px solid {{ it.relBd }};" class="asset-release-badge"><span class="asset-release-glyph">{{ it.relGlyph }}</span>{{ it.relVer }}</span>
             </sc-if>
             <sc-if value="{{ compact }}" hint-placeholder-val="{{ false }}">
-              <code class="oaab-s-257">{{ it.id }}</code>
+              <code class="asset-id-overlay">{{ it.id }}</code>
             </sc-if>
           </div>
           <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
-          <figcaption class="oaab-s-258">
-            <code class="oaab-s-259">{{ it.id }}</code>
+          <figcaption class="asset-card-body">
+            <code class="asset-id">{{ it.id }}</code>
             <sc-if value="{{ it.hasName }}" hint-placeholder-val="{{ true }}">
-              <span class="oaab-s-260">{{ it.name }}</span>
+              <span class="asset-name">{{ it.name }}</span>
             </sc-if>
           </figcaption>
           </sc-if>
@@ -241,13 +241,13 @@
 </section>
 
 <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
-<footer class="oaab-s-051">
-  <div class="oaab-s-052">
-    <div class="oaab-s-053">
-      <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB" class="oaab-s-054">
-      <span class="oaab-s-055">The Library · OAAB_Data asset index</span>
+<footer class="site-footer-simple">
+  <div class="site-footer-inner">
+    <div class="inline-cluster-12">
+      <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB" class="footer-logo">
+      <span class="footer-context-text">The Library · OAAB_Data asset index</span>
     </div>
-    <a href="/#top" class="oaab-s-056 oaab-s-009">← Back to home</a>
+    <a href="/#top" class="footer-back-link">← Back to home</a>
   </div>
 </footer>
 </sc-if>

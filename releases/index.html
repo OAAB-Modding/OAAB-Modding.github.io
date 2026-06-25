@@ -23,98 +23,98 @@
 <script src="/releases-data.js"></script>
 </helmet>
 
-<div data-root="" class="oaab-s-001">
+<div data-root="" class="site-root-fill">
 
-<nav class="oaab-s-002">
-  <a href="/#top" class="oaab-s-003">
-    <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB — Of Ash and Blight" class="oaab-s-004">
-    <span class="oaab-s-005">Of Ash<br>&amp; Blight</span>
+<nav class="site-nav">
+  <a href="/#top" class="brand-link">
+    <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB — Of Ash and Blight" class="brand-logo">
+    <span class="brand-mark-text">Of Ash<br>&amp; Blight</span>
   </a>
-  <div class="oaab-s-006">
-    <div class="oaab-s-007">
-      <a href="/releases/" class="oaab-s-011">Releases</a>
-      <a href="/#mods" class="oaab-s-008 oaab-s-009">Mods</a>
-      <a href="/library/" class="oaab-s-008 oaab-s-009">Library</a>
-      <a href="https://www.oaab.dev/wiki" target="_blank" rel="noopener" class="oaab-s-008 oaab-s-010">Wiki</a>
-      <a href="/faq/" class="oaab-s-008 oaab-s-009">FAQ</a>
+  <div class="site-nav-actions">
+    <div class="site-nav-links">
+      <a href="/releases/" class="nav-link-current">Releases</a>
+      <a href="/#mods" class="nav-link">Mods</a>
+      <a href="/library/" class="nav-link">Library</a>
+      <a href="https://www.oaab.dev/wiki" target="_blank" rel="noopener" class="nav-link nav-link--wiki">Wiki</a>
+      <a href="/faq/" class="nav-link">FAQ</a>
     </div>
-    <a href="https://discord.gg/g5E2HUp" target="_blank" class="oaab-s-012 oaab-s-013">Join Discord</a>
+    <a href="https://discord.gg/g5E2HUp" target="_blank" class="site-nav-cta">Join Discord</a>
   </div>
 </nav>
 
-<header data-screen-label="Releases header" class="oaab-s-289">
-  <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/screenshots/kwama%20hives.png" alt="" class="oaab-s-177">
-  <div class="oaab-s-290"></div>
-  <div class="oaab-s-178"></div>
-  <div class="oaab-s-018">
-    <div class="oaab-s-019">Releases</div>
-    <h1 class="oaab-s-291">Developer blogs and changelogs.</h1>
-    <p class="oaab-s-021">Learn more about what goes into major OAAB_Data releases.</p>
+<header data-screen-label="Releases header" class="releases-hero">
+  <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/screenshots/kwama%20hives.png" alt="" class="library-hero-image">
+  <div class="releases-hero-glow"></div>
+  <div class="library-hero-shade"></div>
+  <div class="page-hero-inner">
+    <div class="eyebrow-ember-wide">Releases</div>
+    <h1 class="releases-hero-title">Developer blogs and changelogs.</h1>
+    <p class="page-hero-copy-wide">Learn more about what goes into major OAAB_Data releases.</p>
   </div>
 </header>
 
-<section class="oaab-s-292">
-  <div class="oaab-s-293">
-    <span class="oaab-s-091"></span>Latest release
+<section class="latest-release-section">
+  <div class="latest-release-kicker">
+    <span class="pulse-dot"></span>Latest release
   </div>
-  <a href="{{ latest.href }}" class="oaab-s-294 oaab-s-095">
-    <div class="oaab-s-295">
+  <a href="{{ latest.href }}" class="featured-release-card">
+    <div class="featured-release-media">
       <sc-if value="{{ latest.cover }}" hint-placeholder-val="{{ true }}">
-        <img src="{{ latest.cover }}" alt="{{ latest.version }}" class="oaab-s-097">
+        <img src="{{ latest.cover }}" alt="{{ latest.version }}" class="cover-fill">
       </sc-if>
-      <div class="oaab-s-098"></div>
-      <div class="oaab-s-099"></div>
-      <span class="oaab-s-100">Latest · {{ latest.version }}</span>
+      <div class="featured-release-side-shade"></div>
+      <div class="featured-release-bottom-shade"></div>
+      <span class="featured-release-badge">Latest · {{ latest.version }}</span>
     </div>
-    <div class="oaab-s-101">
-      <div class="oaab-s-102">{{ latest.date }} · by {{ latest.author }}</div>
-      <h2 class="oaab-s-296">Release {{ latest.version }}</h2>
-      <p class="oaab-s-104">{{ latest.excerpt }}</p>
-      <div class="oaab-s-105">
+    <div class="featured-release-body">
+      <div class="release-meta">{{ latest.date }} · by {{ latest.author }}</div>
+      <h2 class="featured-release-title">Release {{ latest.version }}</h2>
+      <p class="feature-copy">{{ latest.excerpt }}</p>
+      <div class="chip-row">
         <sc-for list="{{ latest.labels }}" as="lab" hint-placeholder-count="6">
-          <span class="oaab-s-106">{{ lab }}</span>
+          <span class="chip">{{ lab }}</span>
         </sc-for>
       </div>
-      <span class="oaab-s-107">Read the release notes →</span>
+      <span class="read-more-link">Read the release notes →</span>
     </div>
   </a>
 </section>
 
-<section class="oaab-s-297">
-  <div class="oaab-s-298">Earlier releases</div>
-  <div class="oaab-s-299">
+<section class="earlier-releases-section">
+  <div class="earlier-releases-label">Earlier releases</div>
+  <div class="release-grid">
     <sc-for list="{{ rest }}" as="rel" hint-placeholder-count="12">
-      <a href="{{ rel.href }}" class="oaab-s-117 oaab-s-118">
-        <div class="oaab-s-300">
-          <div class="oaab-s-301">{{ rel.version }}</div>
+      <a href="{{ rel.href }}" class="card-link">
+        <div class="release-card-media">
+          <div class="release-card-version-bg">{{ rel.version }}</div>
           <sc-if value="{{ rel.cover }}" hint-placeholder-val="{{ false }}">
-            <img src="{{ rel.cover }}" alt="{{ rel.version }}" loading="lazy" class="oaab-s-097">
+            <img src="{{ rel.cover }}" alt="{{ rel.version }}" loading="lazy" class="cover-fill">
           </sc-if>
-          <div class="oaab-s-302"></div>
-          <span class="oaab-s-303">v{{ rel.version }}</span>
+          <div class="release-card-shade"></div>
+          <span class="release-card-badge">v{{ rel.version }}</span>
         </div>
-        <div class="oaab-s-304">
-          <div class="oaab-s-305">{{ rel.date }}</div>
-          <p class="oaab-s-306">{{ rel.excerpt }}</p>
-          <div class="oaab-s-307">
+        <div class="release-card-body">
+          <div class="release-card-date">{{ rel.date }}</div>
+          <p class="release-card-copy">{{ rel.excerpt }}</p>
+          <div class="release-card-chip-row">
             <sc-for list="{{ rel.chips }}" as="lab" hint-placeholder-count="3">
-              <span class="oaab-s-308">{{ lab }}</span>
+              <span class="release-card-chip">{{ lab }}</span>
             </sc-for>
           </div>
-          <span class="oaab-s-309">Release notes →</span>
+          <span class="release-card-cta">Release notes →</span>
         </div>
       </a>
     </sc-for>
   </div>
 </section>
 
-<footer class="oaab-s-287">
-  <div class="oaab-s-052">
-    <a href="/#top" class="oaab-s-053">
-      <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB" class="oaab-s-054">
-      <span class="oaab-s-169">Of Ash<br>&amp; Blight</span>
+<footer class="release-footer">
+  <div class="site-footer-inner">
+    <a href="/#top" class="inline-cluster-12">
+      <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/general/oaab_logo.png" alt="OAAB" class="footer-logo">
+      <span class="footer-brand-text">Of Ash<br>&amp; Blight</span>
     </a>
-    <div class="oaab-s-288">Release notes mirrored from GitHub Discussions. The Elder Scrolls III: Morrowind © Bethesda Softworks. OAAB is an unofficial, fan-made community project.</div>
+    <div class="release-footer-copy">Release notes mirrored from GitHub Discussions. The Elder Scrolls III: Morrowind © Bethesda Softworks. OAAB is an unofficial, fan-made community project.</div>
   </div>
 </footer>
 
