@@ -70,7 +70,7 @@
               <div class="faq-answer">
                 <div class="faq-answer-rule"></div>
                 <sc-for list="{{ it.paras }}" as="p" hint-placeholder-count="1">
-                  <p class="faq-answer-copy">{{ p }}</p>
+                  <p class="faq-answer-copy"><sc-if value="{{ p.isPlain }}" hint-placeholder-val="{{ true }}">{{ p.text }}</sc-if><sc-if value="{{ p.isRich }}" hint-placeholder-val="{{ false }}"><sc-for list="{{ p.parts }}" as="part" hint-placeholder-count="3"><sc-if value="{{ part.href }}" hint-placeholder-val="{{ false }}"><a href="{{ part.href }}" target="_blank" rel="noopener" class="inline-link-ember">{{ part.text }}</a></sc-if><sc-if value="{{ part.plain }}" hint-placeholder-val="{{ true }}">{{ part.text }}</sc-if></sc-for></sc-if></p>
                 </sc-for>
                 <sc-if value="{{ it.hasBullets }}" hint-placeholder-val="{{ false }}">
                   <ul class="faq-bullet-list">
@@ -200,7 +200,22 @@ class Component extends DCLogic {
           'Non-commercial \u2014 it may never be placed behind a paywall.'
         ], note: 'If the authors can\u2019t be contacted with reasonable effort, you are free to copy and redistribute the material in its entirety for use in Morrowind.', noteLabel: 'Note on contact' },
         { q: 'How can I contribute?', paras: [
-          'New contributors are always welcome. Join the Discord to share what you\u2019re building, or message Melchior_Dahrk on Nexus.'
+          { parts: [
+            { text: 'New contributors are always welcome! Join the ' },
+            { text: 'Discord', href: 'https://discord.gg/g5E2HUp' },
+            { text: ' to share what you\u2019re making, create a ' },
+            { text: 'requested asset', href: 'https://github.com/orgs/OAAB-Modding/projects/1' },
+            { text: ', or message ' },
+            { text: 'Melchior_Dahrk', href: 'https://www.nexusmods.com/profile/MelchiorDahrk' },
+            { text: ' on Nexus to see how you can help out.' }
+          ] },
+          { parts: [
+            { text: 'You can support development of OAAB_Data (and other, satellite projects) by joining our ' },
+            { text: 'Patreon', href: 'https://www.patreon.com/oaab_data' },
+            { text: ' or donating directly on ' },
+            { text: 'Nexus', href: 'https://www.nexusmods.com/profile/MelchiorDahrk' },
+            { text: '.' }
+          ] }
         ] }
       ] }
     ];
@@ -218,7 +233,18 @@ class Component extends DCLogic {
           id,
           q: it.q,
           open: isOpen,
-          paras: it.paras || [],
+          paras: (it.paras || []).map(p => typeof p === 'string'
+            ? { text: p, parts: [], isPlain: true, isRich: false }
+            : {
+              text: '',
+              parts: (p.parts || []).map(part => ({
+                text: part.text || '',
+                href: part.href || '',
+                plain: !part.href
+              })),
+              isPlain: false,
+              isRich: true
+            }),
           bullets: (it.bullets || []).map(b => typeof b === 'string'
             ? { name: b, href: '', rest: '', plain: true }
             : { name: b.name, href: b.href || '', rest: b.rest || '', plain: !b.href }),
