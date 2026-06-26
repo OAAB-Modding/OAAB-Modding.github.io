@@ -403,10 +403,9 @@ class Component extends DCLogic {
 
     Promise.all([
       fetch(REPO + '/assets/data/library/OAAB_Data_filtered.json').then(r => r.json()),
-      fetch(REPO + '/assets/data/library/OAAB_Data_thumbnails.json').then(r => r.json()),
       loadDeprecated,
     ])
-      .then(([records, thumbnails, deprecated]) => {
+      .then(([records, deprecated]) => {
         // Some records carry a raw numeric TES3 record tag instead of a label.
         const TYPE_LABELS = { '1497648962': 'Body Part' };
         const labelType = (t) => {
@@ -420,11 +419,11 @@ class Component extends DCLogic {
           }
           return t || 'Misc';
         };
-        const thumbById = Object.create(null);
-        (thumbnails || []).forEach(t => {
-          if (!t || !t.id || !t.mesh) return;
-          thumbById[t.id] = String(t.mesh).replace(/\\/g, '/').replace(/^oaab\//i, 'oaab/');
-        });
+        const thumbnailPath = (mesh) => {
+          const rel = String(mesh || '').replace(/\\/g, '/').toLowerCase();
+          if (!/^oaab\//.test(rel) || !/\.nif$/.test(rel)) return null;
+          return rel.replace(/\.nif$/, '.webp');
+        };
         const seen = Object.create(null);
         const items = [];
         records.forEach(r => {
@@ -436,7 +435,7 @@ class Component extends DCLogic {
           if (!id || seen[id]) return;
           if (/^AB_[ac]_/i.test(id)) return; // hide body parts (AB_a_*, AB_c_*) from the library
           if (deprecated[id]) return; // skip deprecated IDs
-          const rel = thumbById[id];
+          const rel = thumbnailPath(mesh);
           if (!rel) return;
           seen[id] = 1;
           items.push({
@@ -475,7 +474,7 @@ class Component extends DCLogic {
   }
 
   // Normalise a mesh path to a lowercase, forward-slash key beginning at
-  // "oaab/". OAAB_Data_filtered.json stores "OAAB\\m\\foo.nif"; the diffs store full repo
+  // "oaab/". OAAB_Data_filtered.json stores "oaab\\m\\foo.nif"; the diffs store full repo
   // paths like "00 Core/meshes/oaab/m/foo.nif" (and patch sub-folders) — both
   // collapse to the same key so a changed file lines up with its catalogue id.
   meshKey(p) {
