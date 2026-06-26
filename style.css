@@ -226,6 +226,17 @@ button {
   width: 100%;
   height: auto;
 }
+.rbody p:has(img) {
+  margin: 8px 0 28px;
+}
+.rbody p img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #2c241b;
+  border-radius: 12px;
+  background: #0c0a07;
+}
 .rbody hr {
   border: none;
   border-top: 1px solid #2b241c;
