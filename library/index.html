@@ -20,6 +20,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../style.css">
+<script src="../theme.js"></script>
 </helmet>
 
 <div data-root="" class="site-root-fill">
@@ -38,6 +39,14 @@
       <a href="https://www.oaab.dev/wiki" target="_blank" rel="noopener" class="nav-link nav-link--wiki">Wiki</a>
       <a href="/faq/" class="nav-link">FAQ</a>
     </div>
+    <button type="button" data-theme-toggle="" onClick="{{ toggleTheme }}" aria-label="Toggle light mode" title="Toggle light / dark" class="theme-toggle">
+      <sc-if value="{{ isLight }}" hint-placeholder-val="{{ false }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </sc-if>
+      <sc-if value="{{ isDark }}" hint-placeholder-val="{{ true }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
+      </sc-if>
+    </button>
     <a href="https://discord.gg/g5E2HUp" target="_blank" class="site-nav-cta">Join Discord</a>
   </div>
 </nav>
@@ -261,9 +270,11 @@ class Component extends DCLogic {
       try { const v = parseFloat(localStorage.getItem('oaab_scale')); return (v >= 0.5 && v <= 3) ? v : 1; }
       catch (e) { return 1; }
     })(),
+    theme: (typeof window !== 'undefined' && window.OAAB_THEME) ? window.OAAB_THEME.read() : 'dark',
   };
 
   componentDidMount() {
+    this.initTheme(0);
     // In popout mode, remember it for this window and tidy the address bar so
     // the ?popout=1 query string isn't shown (the browser's own URL bar on a
     // popup window can't be removed by the page, but we keep it clean).
@@ -470,7 +481,31 @@ class Component extends DCLogic {
 
   // Recalculate after data/filter changes because they alter the virtual height.
   componentDidUpdate() {
+    this.applyTheme();
     if (this._onScroll) this._onScroll();
+  }
+
+  applyTheme() { if (window.OAAB_THEME) window.OAAB_THEME.apply(this.state.theme); }
+  initTheme(tries) {
+    if (window.OAAB_THEME) {
+      const t = window.OAAB_THEME.read();
+      window.OAAB_THEME.apply(t);
+      if (t !== this.state.theme) this.setState({ theme: t });
+      return;
+    }
+    if ((tries || 0) < 20) setTimeout(() => this.initTheme((tries || 0) + 1), 50);
+  }
+  themeVals() {
+    const light = this.state.theme === 'light';
+    return {
+      isLight: light,
+      isDark: !light,
+      toggleTheme: () => {
+        const n = light ? 'dark' : 'light';
+        if (window.OAAB_THEME) window.OAAB_THEME.set(n);
+        this.setState({ theme: n });
+      },
+    };
   }
 
   // Normalise a mesh path to a lowercase, forward-slash key beginning at
@@ -572,6 +607,13 @@ class Component extends DCLogic {
     const compact = !!this.state.compact;
     const comfortable = !compact;
 
+    // Theme-aware neutral palette for the toolbar's inline-coloured controls.
+    // Accent (ember/azura) selected states stay the same in both themes.
+    const light = this.state.theme === 'light';
+    const P = light
+      ? { surface: '#fbf7ef', border: '#d8cdb8', muted: '#6a5d49', soft: '#8a7c66', strong: '#2b2218', dim: '#b3a89a', tagText: '#5b5170', tagOn: '#3f3768' }
+      : { surface: '#15100b', border: '#322a20', muted: '#b3a690', soft: '#9a8d77', strong: '#f4ecdd', dim: '#5a5346', tagText: '#cabfdb', tagOn: '#efe9f6' };
+
     // Tag rules: each matches against the object ID. * is a wildcard.
     const TAG_DEFS = this._tagDefs || (this._tagDefs = [
       { label: 'Ashlander',      re: /Ashl|DungBurnt/ },
@@ -635,8 +677,8 @@ class Component extends DCLogic {
       return {
         label, count,
         bg: on ? '#d2823f' : 'transparent',
-        fg: on ? '#15110c' : '#b3a690',
-        bd: on ? '#d2823f' : '#322a20',
+        fg: on ? '#15110c' : P.muted,
+        bd: on ? '#d2823f' : P.border,
         fw: on ? '600' : '400',
       };
     };
@@ -649,8 +691,8 @@ class Component extends DCLogic {
         label, displayLabel,
         mark: on ? '\u2713' : '',
         checkBg: on ? '#d2823f' : 'transparent',
-        checkBd: on ? '#d2823f' : '#4a4234',
-        labelColor: on ? '#f4ecdd' : '#cbbfa6',
+        checkBd: on ? '#d2823f' : P.border,
+        labelColor: on ? P.strong : P.soft,
       };
     };
     const typeMenu = [mkTypeRow('All', 'All objects')].concat(types.map(t => mkTypeRow(t.label, t.label)));
@@ -664,9 +706,9 @@ class Component extends DCLogic {
         count: isAll ? '' : count,
         mark: on ? '\u2713' : '',
         checkBg: on ? '#9a92d6' : 'transparent',
-        checkBd: on ? '#9a92d6' : '#4a4234',
-        labelColor: on ? '#efe9f6' : (dim ? '#5a5346' : '#cabfdb'),
-        countColor: dim ? '#5a5346' : '#80735f',
+        checkBd: on ? '#9a92d6' : P.border,
+        labelColor: on ? P.tagOn : (dim ? P.dim : P.tagText),
+        countColor: dim ? P.dim : P.soft,
       };
     };
     const allRow = mkTagRow('All', 0, true);
@@ -768,9 +810,9 @@ class Component extends DCLogic {
         count: isAll ? '' : count,
         mark: on ? '\u2713' : '',
         checkBg: on ? '#9a92d6' : 'transparent',
-        checkBd: on ? '#9a92d6' : '#4a4234',
-        labelColor: on ? '#efe9f6' : (dim ? '#5a5346' : '#cabfdb'),
-        countColor: dim ? '#5a5346' : '#80735f',
+        checkBd: on ? '#9a92d6' : P.border,
+        labelColor: on ? P.tagOn : (dim ? P.dim : P.tagText),
+        countColor: dim ? P.dim : P.soft,
       };
     };
     const relAllRow = mkRelRow('', 0, true);
@@ -779,14 +821,14 @@ class Component extends DCLogic {
       {
         key: 'added', label: 'New',
         bg: kindOn('added') ? '#d2823f' : 'transparent',
-        fg: kindOn('added') ? '#15110c' : '#9a8d77',
-        bd: kindOn('added') ? '#d2823f' : '#322a20',
+        fg: kindOn('added') ? '#15110c' : P.soft,
+        bd: kindOn('added') ? '#d2823f' : P.border,
       },
       {
         key: 'modified', label: 'Updated',
         bg: kindOn('modified') ? 'rgba(154,146,214,0.16)' : 'transparent',
-        fg: kindOn('modified') ? '#cdc5ea' : '#9a8d77',
-        bd: kindOn('modified') ? '#5a5380' : '#322a20',
+        fg: kindOn('modified') ? (light ? '#4a4173' : '#cdc5ea') : P.soft,
+        bd: kindOn('modified') ? '#5a5380' : P.border,
       },
     ];
 
@@ -876,9 +918,9 @@ class Component extends DCLogic {
         try { localStorage.setItem('oaab_scale', String(v)); } catch (err) {}
         this.setState({ scale: v });
       },
-      compactBg: compact ? 'rgba(154,146,214,0.12)' : '#15100b',
-      compactBd: compact ? '#5a5380' : '#322a20',
-      compactFg: compact ? '#efe9f6' : '#9a8d77',
+      compactBg: compact ? 'rgba(154,146,214,0.12)' : P.surface,
+      compactBd: compact ? '#5a5380' : P.border,
+      compactFg: compact ? (light ? '#4a4173' : '#efe9f6') : P.soft,
       compactTitle: compact ? 'Compact thumbnails \u2014 click for comfortable view' : 'Comfortable thumbnails \u2014 click for compact view',
       toggleCompact: () => this.setState(s => {
         const next = !s.compact;
@@ -937,9 +979,9 @@ class Component extends DCLogic {
       typeMenu,
       typeBtnLabel: active === 'All' ? 'All objects' : active,
       typeChevronDeg: this.state.typeOpen ? '180' : '0',
-      typeBtnFg: active === 'All' ? '#cbbfa6' : '#f4ecdd',
-      typeBtnBg: active === 'All' ? '#15100b' : 'rgba(210,130,63,0.12)',
-      typeBtnBd: active === 'All' ? '#322a20' : '#4a3526',
+      typeBtnFg: active === 'All' ? P.soft : P.strong,
+      typeBtnBg: active === 'All' ? P.surface : 'rgba(210,130,63,0.12)',
+      typeBtnBd: active === 'All' ? P.border : '#4a3526',
       pickType: (e) => this.setState({ active: e.currentTarget.dataset.type, typeOpen: false }),
       searchFlex: isPopout ? '1 1 auto' : '1 1 auto',
       rowWrap: isPopout ? 'wrap' : 'nowrap',
@@ -954,9 +996,9 @@ class Component extends DCLogic {
       tagSummary: noTags ? 'All tags' : (selTags.length === 1 ? selTags[0] : selTags.length + ' tags selected'),
       tagDotOp: noTags ? '0' : '1',
       chevronDeg: this.state.tagOpen ? '180' : '0',
-      tagBtnFg: noTags ? '#cabfdb' : '#efe9f6',
-      tagBtnBg: noTags ? '#15100b' : 'rgba(154,146,214,0.12)',
-      tagBtnBd: noTags ? '#322a20' : '#5a5380',
+      tagBtnFg: noTags ? P.tagText : (light ? '#4a4173' : '#efe9f6'),
+      tagBtnBg: noTags ? P.surface : 'rgba(154,146,214,0.12)',
+      tagBtnBd: noTags ? P.border : '#5a5380',
       items,
       gridPadTop: startRow * metrics.rowPitch,
       gridPadBottom: (rowCount - endRow) * metrics.rowPitch,
@@ -973,9 +1015,9 @@ class Component extends DCLogic {
       relSummary: relSels.length === 0 ? 'All releases' : (relSels.length === 1 ? relSels[0] : relSels.length + ' releases'),
       relDotOp: relSels.length ? '1' : '0',
       relChevronDeg: this.state.relOpen ? '180' : '0',
-      relBtnFg: relSels.length ? '#efe9f6' : '#cabfdb',
-      relBtnBg: relSels.length ? 'rgba(154,146,214,0.12)' : '#15100b',
-      relBtnBd: relSels.length ? '#5a5380' : '#322a20',
+      relBtnFg: relSels.length ? (light ? '#4a4173' : '#efe9f6') : P.tagText,
+      relBtnBg: relSels.length ? 'rgba(154,146,214,0.12)' : P.surface,
+      relBtnBd: relSels.length ? '#5a5380' : P.border,
       toggleRel: () => this.setState(s => ({ relOpen: !s.relOpen, tagOpen: false })),
       pickRel: (e) => {
         if (e.currentTarget.dataset.all === '1') { this.setState({ releases: [], relKinds: ['added', 'modified'], relOpen: false }); return; }
@@ -1009,6 +1051,13 @@ class Component extends DCLogic {
         const cur = this.state.tags || [];
         const next = cur.indexOf(label) !== -1 ? cur.filter(l => l !== label) : cur.concat(label);
         this.setState({ tags: next });
+      },
+      isLight: light,
+      isDark: !light,
+      toggleTheme: () => {
+        const n = light ? 'dark' : 'light';
+        if (window.OAAB_THEME) window.OAAB_THEME.set(n);
+        this.setState({ theme: n });
       },
     };
   }

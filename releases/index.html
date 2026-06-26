@@ -21,6 +21,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../style.css">
 <script src="/releases-data.js"></script>
+<script src="/theme.js"></script>
 </helmet>
 
 <div data-root="" class="site-root-fill">
@@ -38,6 +39,14 @@
       <a href="https://www.oaab.dev/wiki" target="_blank" rel="noopener" class="nav-link nav-link--wiki">Wiki</a>
       <a href="/faq/" class="nav-link">FAQ</a>
     </div>
+    <button type="button" data-theme-toggle="" onClick="{{ toggleTheme }}" aria-label="Toggle light mode" title="Toggle light / dark" class="theme-toggle">
+      <sc-if value="{{ isLight }}" hint-placeholder-val="{{ false }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </sc-if>
+      <sc-if value="{{ isDark }}" hint-placeholder-val="{{ true }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
+      </sc-if>
+    </button>
     <a href="https://discord.gg/g5E2HUp" target="_blank" class="site-nav-cta">Join Discord</a>
   </div>
 </nav>
@@ -191,15 +200,39 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { version: this.hashVersion() };
+  state = { version: this.hashVersion(), theme: (typeof window !== 'undefined' && window.OAAB_THEME) ? window.OAAB_THEME.read() : 'dark' };
 
   componentDidMount() {
+    this.initTheme(0);
     this._onHash = () => this.syncVersionFromHash(true);
     window.addEventListener('hashchange', this._onHash);
     this.syncVersionFromHash(false);
   }
 
-  componentDidUpdate() { this.injectBody(); }
+  componentDidUpdate() { this.applyTheme(); this.injectBody(); }
+
+  applyTheme() { if (window.OAAB_THEME) window.OAAB_THEME.apply(this.state.theme); }
+  initTheme(tries) {
+    if (window.OAAB_THEME) {
+      const t = window.OAAB_THEME.read();
+      window.OAAB_THEME.apply(t);
+      if (t !== this.state.theme) this.setState({ theme: t });
+      return;
+    }
+    if ((tries || 0) < 20) setTimeout(() => this.initTheme((tries || 0) + 1), 50);
+  }
+  themeVals() {
+    const light = this.state.theme === 'light';
+    return {
+      isLight: light,
+      isDark: !light,
+      toggleTheme: () => {
+        const n = light ? 'dark' : 'light';
+        if (window.OAAB_THEME) window.OAAB_THEME.set(n);
+        this.setState({ theme: n });
+      },
+    };
+  }
 
   componentWillUnmount() {
     if (this._onHash) window.removeEventListener('hashchange', this._onHash);
@@ -292,7 +325,7 @@ class Component extends DCLogic {
     const newer = rel && idx > 0 ? all[idx - 1] : null;
     const older = rel && idx < all.length - 1 ? all[idx + 1] : null;
 
-    return {
+    return Object.assign({
       count: all.length,
       latestVersion: latestRaw ? latestRaw.version : '-',
       latest: latest,
@@ -321,7 +354,7 @@ class Component extends DCLogic {
         olderVersion: older ? older.version : '',
         olderHref: older ? link(older.version) : '#',
       },
-    };
+    }, this.themeVals());
   }
 }
 </script>
