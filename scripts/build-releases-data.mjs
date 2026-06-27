@@ -13,7 +13,7 @@
 
 import { writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'releases-data.js');
@@ -26,10 +26,8 @@ const TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 
 const API = 'https://api.github.com/graphql';
 const VERSION_RE = /\bv?(\d+\.\d+\.\d+)\b/i;
-
-if (!TOKEN) {
-  throw new Error('GITHUB_TOKEN or GH_TOKEN is required for the GitHub GraphQL API.');
-}
+const GITHUB_ATTACHMENT_URL_RE = /https:\/\/(?:private-user-images\.githubusercontent\.com|github\.com\/user-attachments\/assets)\/[^"'<>\s)]+/gi;
+const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
 async function graphql(query, variables) {
   const res = await fetch(API, {
@@ -138,6 +136,29 @@ function firstImage(html) {
   return m ? m[2] : null;
 }
 
+function canonicalGithubAttachmentUrl(rawUrl) {
+  let url;
+  try {
+    url = new URL(String(rawUrl || '').replace(/&amp;/g, '&'));
+  } catch (e) {
+    return rawUrl;
+  }
+
+  const host = url.hostname.toLowerCase();
+  const path = url.pathname;
+  const isGithubAttachment =
+    host === 'private-user-images.githubusercontent.com' ||
+    (host === 'github.com' && path.startsWith('/user-attachments/assets/'));
+  if (!isGithubAttachment) return rawUrl;
+
+  const uuid = decodeURIComponent(url.pathname).match(UUID_RE);
+  return uuid ? `https://github.com/user-attachments/assets/${uuid[0].toLowerCase()}` : rawUrl;
+}
+
+function canonicalizeGithubAttachmentUrls(html) {
+  return String(html || '').replace(GITHUB_ATTACHMENT_URL_RE, url => canonicalGithubAttachmentUrl(url));
+}
+
 function normalizeBody(html) {
   let out = String(html || '').trim();
   if (!out) return null;
@@ -146,6 +167,8 @@ function normalizeBody(html) {
     .replace(/<script\b[\s\S]*?<\/script>/gi, '')
     .replace(/<style\b[\s\S]*?<\/style>/gi, '')
     .replace(/<iframe\b[\s\S]*?<\/iframe>/gi, '');
+
+  out = canonicalizeGithubAttachmentUrls(out);
 
   out = out.replace(/<a\b(?![^>]*\btarget=)/gi, '<a target="_blank"');
   out = out.replace(/<a\b(?![^>]*\brel=)/gi, '<a rel="noopener"');
@@ -208,6 +231,10 @@ function renderJs(releases) {
 }
 
 async function main() {
+  if (!TOKEN) {
+    throw new Error('GITHUB_TOKEN or GH_TOKEN is required for the GitHub GraphQL API.');
+  }
+
   const discussions = await fetchDiscussions();
   const releasesByVersion = new Map();
   for (const discussion of discussions) {
@@ -229,7 +256,15 @@ async function main() {
   console.log(`Wrote ${OUT} - ${releases.length} releases from ${DATA_OWNER}/${DATA_REPO} discussions.`);
 }
 
-main().catch(e => {
-  console.error(e);
-  process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch(e => {
+    console.error(e);
+    process.exit(1);
+  });
+}
+
+export {
+  canonicalGithubAttachmentUrl,
+  canonicalizeGithubAttachmentUrls,
+  normalizeBody,
+};

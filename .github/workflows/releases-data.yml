@@ -28,6 +28,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/build-releases-data.mjs
 
+      - name: Validate release image URLs
+        run: node scripts/validate-releases-data.mjs
+
       - name: Commit if changed
         run: |
           if [ -n "$(git status --porcelain releases-data.js)" ]; then
