@@ -86,12 +86,12 @@
   <div class="home-stats-band">
     <div class="home-stats-grid">
       <div class="home-stat-cell">
-        <div class="home-stat-value">{{ endorsements }}</div>
-        <div class="home-stat-label">Nexus endorsements</div>
+        <div class="home-stat-value" data-downloads-value="">{{ downloads }}</div>
+        <div class="home-stat-label">Total downloads</div>
       </div>
       <div class="home-stat-cell">
         <div class="home-stat-value">{{ modCount }}</div>
-        <div class="home-stat-label">Mods built on it</div>
+        <div class="home-stat-label">MODS USING IT</div>
       </div>
       <div class="home-stat-cell">
         <div class="home-stat-value">{{ version }}</div>
@@ -99,7 +99,7 @@
       </div>
       <div class="home-stat-cell-last">
         <div class="home-stat-value">2020</div>
-        <div class="home-stat-label">Crafting since</div>
+        <div class="home-stat-label">INITIAL RELEASE</div>
       </div>
     </div>
   </div>
@@ -279,7 +279,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#d2823f&quot;},&quot;loreColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#9a92d6&quot;},&quot;ashMotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true}}">
 class Component extends DCLogic {
-  state = { scrolled: false, asset: 0, page: 0, modCount: null, endorsements: null, version: null, team: null, theme: 'dark', order: [0, 1, 2, 3, 4, 5, 6].sort(function () { return Math.random() - 0.5; }) };
+  state = { scrolled: false, asset: 0, page: 0, modCount: null, downloads: null, version: null, team: null, theme: 'dark', order: [0, 1, 2, 3, 4, 5, 6].sort(function () { return Math.random() - 0.5; }) };
   _pool = [
     { id: 52781, name: 'OAAB Greater Samarys Tomb', cat: 'Dungeons & Locations', by: 'Varlothen', img: 'https://staticdelivery.nexusmods.com/mods/100/images/thumbnails/52781/52781-1683010655-1472298450.jpeg' },
     { id: 50307, name: 'OAAB & Community Equipment Integration', cat: 'Weapons & Armour', by: 'Lucas9 & team', img: 'https://staticdelivery.nexusmods.com/mods/100/images/thumbnails/50307/50307-1633535938-2076544592.jpeg' },
@@ -314,13 +314,55 @@ class Component extends DCLogic {
     this.loadMods();
     this.loadStats();
     this.loadTeam();
+    // Re-fetch the live download count periodically so it reflects reality.
+    this._statsTimer = setInterval(() => this.loadStats(), 60000);
     this._timer = setInterval(() => this.advance(), 12000);
   }
-  componentDidUpdate() { this.applyStyles(); }
+  componentDidUpdate() {
+    this.applyStyles();
+    // Keep the live ticker authoritative: any React re-render would otherwise
+    // reset the digits to the static target, so re-stamp the current count.
+    if (this._dlValue != null) {
+      const el = document.querySelector('[data-downloads-value]');
+      if (el) el.textContent = Math.round(this._dlValue).toLocaleString();
+    }
+  }
   componentWillUnmount() {
     if (this._onScroll) window.removeEventListener('scroll', this._onScroll);
     if (this._onHash) window.removeEventListener('hashchange', this._onHash);
     if (this._timer) clearInterval(this._timer);
+    if (this._statsTimer) clearInterval(this._statsTimer);
+    if (this._dlRaf) cancelAnimationFrame(this._dlRaf);
+  }
+
+  // --- Downloads ticker ---------------------------------------------------
+  // The number is always the real Nexus download count (fetched live and
+  // re-polled). When a fresh fetch returns a higher value, roll the digits
+  // up to it; we never invent increments.
+  setDownloadsDisplay(n) {
+    this._dlValue = n;
+    const el = document.querySelector('[data-downloads-value]');
+    if (el) el.textContent = Math.round(n).toLocaleString();
+  }
+  animateDownloadsTo(target) {
+    if (typeof target !== 'number' || !isFinite(target)) return;
+    const first = this._dlValue == null;
+    // First reveal rolls up the last digits; later updates roll from the
+    // currently-shown value to the new live one.
+    const from = first ? Math.max(0, Math.floor(target * 0.97)) : this._dlValue;
+    this._dlTarget = target;
+    if (from === target) { this.setDownloadsDisplay(target); return; }
+    if (this._dlRaf) cancelAnimationFrame(this._dlRaf);
+    const dur = Math.max(500, Math.min(1600, Math.abs(target - from) * 10 + (first ? 700 : 250)));
+    const t0 = performance.now();
+    const ease = (t) => 1 - Math.pow(1 - t, 3);
+    const tick = (now) => {
+      const p = Math.min(1, (now - t0) / dur);
+      this.setDownloadsDisplay(from + (target - from) * ease(p));
+      if (p < 1) { this._dlRaf = requestAnimationFrame(tick); }
+      else { this.setDownloadsDisplay(target); }
+    };
+    this._dlRaf = requestAnimationFrame(tick);
   }
   // The DC mounts after the browser's initial hash jump, so cross-page links
   // (index.html#about) land at the top. Re-run the scroll once the
@@ -403,9 +445,11 @@ class Component extends DCLogic {
     if (!stats) return;
     const next = {};
     if (stats.modCount != null) next.modCount = stats.modCount;
-    if (stats.endorsements != null) next.endorsements = stats.endorsements;
+    if (stats.downloads != null) next.downloads = stats.downloads;
     if (stats.version != null) next.version = stats.version;
-    if (Object.keys(next).length) this.setState(next);
+    if (Object.keys(next).length) this.setState(next, () => {
+      if (next.downloads != null) this.animateDownloadsTo(next.downloads);
+    });
   }
   async loadMods() {
     try {
@@ -455,7 +499,7 @@ class Component extends DCLogic {
       if (c && c.stats) { this.applyStats(c.stats); }
     } catch (e) {}
     try {
-      const query = 'query($filter: ModsFilter){ mods(filter: $filter, count: 1){ nodes { endorsements version modRequirements { modsRequiringThisMod(count: 1){ totalCount } } } } }';
+      const query = 'query($filter: ModsFilter){ mods(filter: $filter, count: 1){ nodes { downloads version modRequirements { modsRequiringThisMod(count: 1){ totalCount } } } } }';
       const variables = { filter: { modId: [{ value: '49042' }], gameId: [{ value: '100' }] } };
       const res = await fetch('https://api.nexusmods.com/v2/graphql', {
         method: 'POST',
@@ -470,7 +514,7 @@ class Component extends DCLogic {
       const dep = node.modRequirements && node.modRequirements.modsRequiringThisMod;
       const stats = {
         modCount: (dep && typeof dep.totalCount === 'number') ? dep.totalCount : null,
-        endorsements: (typeof node.endorsements === 'number') ? node.endorsements : null,
+        downloads: (typeof node.downloads === 'number') ? node.downloads : null,
         version: node.version || null,
       };
       try { localStorage.setItem('oaab_stats_v1', JSON.stringify({ ts: Date.now(), stats: stats })); } catch (e) {}
@@ -596,9 +640,9 @@ class Component extends DCLogic {
     const modCountNum = this.state.modCount;
     const modCount = modCountNum != null ? modCountNum.toLocaleString() : '800+';
     const modsHeading = 'More than ' + (modCountNum != null ? (Math.floor(modCountNum / 100) * 100) : 800) + ' mods build on it.';
-    const endorsements = this.state.endorsements != null ? this.state.endorsements.toLocaleString() : '5,159';
+    const downloads = this.state.downloads != null ? this.state.downloads.toLocaleString() : '1,200,000+';
     const rawVer = this.state.version;
-    const version = rawVer ? (/^v/i.test(rawVer) ? rawVer : 'v' + rawVer) : 'v2.6.2';
+    const version = rawVer ? rawVer.replace(/^v/i, '') : '2.6.2';
 
     // Latest release blog, pulled from the shared releases data (newest first).
     const relApi = (typeof window !== 'undefined' && window.OAAB_RELEASES) ? window.OAAB_RELEASES : { all: [] };
@@ -612,7 +656,7 @@ class Component extends DCLogic {
     const out = {
       modCount: modCount,
       modsHeading: modsHeading,
-      endorsements: endorsements,
+      downloads: downloads,
       version: version,
       imgFail: (e) => { e.currentTarget.style.display = 'none'; },
       isLight: this.state.theme === 'light',
