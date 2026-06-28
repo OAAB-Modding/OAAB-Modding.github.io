@@ -991,7 +991,9 @@ class Component extends DCLogic {
     const startIndex = startRow * metrics.columns;
     const endIndex = Math.min(filtered.length, endRow * metrics.columns);
     const REL_ADDED = { bg: 'rgba(210,130,63,0.94)', fg: '#1a120a', bd: 'rgba(210,130,63,0.94)', glyph: '+' };
-    const REL_UPD = { bg: 'rgba(154,146,214,0.18)', fg: '#cdc5ea', bd: 'rgba(154,146,214,0.55)', glyph: '\u21bb' };
+    const REL_UPD = light
+      ? { bg: 'rgba(154,146,214,0.18)', fg: '#352d5e', bd: 'rgba(120,110,185,0.85)', glyph: '\u21bb' }
+      : { bg: 'rgba(154,146,214,0.18)', fg: '#cdc5ea', bd: 'rgba(154,146,214,0.55)', glyph: '\u21bb' };
     const items = filtered.slice(startIndex, endIndex).map(x => {
       // When releases are selected, the badge reflects the newest selected
       // release that touched the asset; otherwise it shows the newest release
