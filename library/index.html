@@ -94,6 +94,16 @@
     </div>
     </sc-if>
     <div style="flex-wrap:{{ rowWrap }};" class="filter-row">
+      <sc-if value="{{ showFilterToggle }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ toggleFilters }}" aria-expanded="{{ filtersOpen }}" style="color:{{ filterToggleFg }};background:{{ filterToggleBg }};border:1px solid {{ filterToggleBd }};" class="filter-toggle-button">
+        <span class="menu-label"><span style="opacity:{{ filterToggleDotOp }};" class="filter-dot"></span><span>{{ filterToggleLabel }}</span></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:rotate({{ filterToggleChevron }}deg);" class="dropdown-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      </sc-if>
+      <sc-if value="{{ isPopout }}" hint-placeholder-val="{{ false }}">
+      <div class="popout-break"></div>
+      </sc-if>
+      <div style="display:{{ filterWrapDisp }};flex-basis:100%;flex-wrap:wrap;align-items:center;gap:12px;" class="filter-collapse">
       <div style="flex:{{ searchFlex }};" class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="#80735f" stroke-width="2" class="search-icon"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
         <input type="text" value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search by ID or name — e.g. AB_r_TombDoor, Bonemold…" spellcheck="false" autocomplete="off" class="search-input">
@@ -101,9 +111,6 @@
           <button onClick="{{ clearSearch }}" title="Clear search" class="search-clear">×</button>
         </sc-if>
       </div>
-      <sc-if value="{{ isPopout }}" hint-placeholder-val="{{ false }}">
-      <div class="popout-break"></div>
-      </sc-if>
       <sc-if value="{{ showTypeMenu }}" hint-placeholder-val="{{ false }}">
       <div data-typedd="" style="order:{{ dropOrder }};" class="dropdown">
         <button onClick="{{ toggleType }}" style="color:{{ typeBtnFg }};background:{{ typeBtnBg }};border:1px solid {{ typeBtnBd }};" class="dropdown-button-type">
@@ -197,6 +204,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M13.013 3H2l8 9.46V19l4 2v-8.54l.9-1.055"></path><path d="m22 3-5 5"></path><path d="m17 3 5 5"></path></svg>
         </button>
       </sc-if>
+      </div>
     </div>
   </div>
 </div>
@@ -283,6 +291,7 @@ class Component extends DCLogic {
   state = {
     data: null, active: 'All', tags: [], query: '', tagOpen: false, typeOpen: false,
     relData: [], releases: [], relKinds: ['added', 'modified'], relOpen: false,
+    filtersOpen: false,
     gridWidth: 0, virtualStartRow: 0, virtualEndRow: 8,
     compact: (typeof localStorage !== 'undefined' && localStorage.getItem('oaab_compact_v2') === '1'),
     vanilla: (typeof localStorage !== 'undefined' && localStorage.getItem('oaab_vanilla') === '1'),
@@ -1029,6 +1038,12 @@ class Component extends DCLogic {
     // shorter mobile nav.
     const narrow = !isPopout && !!this.state.narrow;
 
+    // Active-filter count powers the mobile "Filters" toggle badge.
+    const filterCount =
+      (active !== 'All' ? 1 : 0) + selTags.length + (q ? 1 : 0) + relSels.length +
+      (vanillaOn ? 1 : 0);
+    const filtersOpen = !!this.state.filtersOpen;
+
     return {
       yes: true,
       no: false,
@@ -1071,6 +1086,19 @@ class Component extends DCLogic {
       showChrome: !isPopout,
       showTabBar: !isPopout && !narrow,
       showTypeMenu: isPopout || narrow,
+      // Mobile: collapse the secondary filter controls behind a toggle so the
+      // toolbar doesn't eat the screen. On desktop/popout the wrapper is
+      // display:contents, leaving the existing flex layout untouched.
+      showFilterToggle: narrow,
+      filtersOpen,
+      toggleFilters: () => this.setState(s => ({ filtersOpen: !s.filtersOpen })),
+      filterWrapDisp: narrow ? (filtersOpen ? 'flex' : 'none') : 'contents',
+      filterToggleLabel: filterCount > 0 ? 'Filters · ' + filterCount : 'Filters',
+      filterToggleDotOp: filterCount > 0 ? '1' : '0',
+      filterToggleChevron: filtersOpen ? '180' : '0',
+      filterToggleFg: filtersOpen || filterCount > 0 ? (light ? '#4a4173' : '#efe9f6') : P.tagText,
+      filterToggleBg: filtersOpen || filterCount > 0 ? 'rgba(154,146,214,0.12)' : P.surface,
+      filterToggleBd: filtersOpen || filterCount > 0 ? '#5a5380' : P.border,
       tabbarTop: isPopout ? 0 : (narrow ? 54 : 61),
       barPadX: isPopout ? 12 : (narrow ? 14 : 32),
       secPadX: isPopout ? 12 : (narrow ? 14 : 32),

@@ -1852,6 +1852,22 @@ button {
   gap:12px;
   margin-top:12px;
 }
+/* Mobile-only "Filters" toggle that collapses the secondary filter controls.
+   Hidden on desktop/popout (the toolbar is only rendered when narrow). */
+.filter-toggle-button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex:1 1 100%;
+  font-family:'EB Garamond',serif;
+  font-size:15px;
+  border-radius:9px;
+  padding:10px 16px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:color .18s,background .18s,border-color .18s;
+}
 .search-box {
   position:relative;
   display:flex;
