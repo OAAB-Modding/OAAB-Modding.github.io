@@ -1535,8 +1535,8 @@ button {
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:14px;
-  margin-top:26px;
+  gap:24px;
+  margin-top:38px;
 }
 .member-page-status {
   font-family:'JetBrains Mono',monospace;
@@ -1544,6 +1544,7 @@ button {
   letter-spacing:.08em;
   text-transform:uppercase;
   color:#80735f;
+  padding:0 8px;
 }
 .member-pagination .btn-ghost-compact:disabled {
   opacity:.42;
