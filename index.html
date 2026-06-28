@@ -313,13 +313,20 @@ class Component extends DCLogic {
       const nav = document.querySelector('[data-nav]');
       if (!nav) return;
       const light = this.state.theme === 'light';
-      const s = window.scrollY > 40;
+      // On mobile the layout sets overflow-x:hidden on html/body, which makes the
+      // document element (not the window) the scroll container, so window.scrollY
+      // can stay 0. Read whichever source actually reports the offset.
+      const y = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      const s = y > 40;
       nav.style.background = s ? (light ? 'rgba(244,237,224,0.9)' : 'rgba(16,13,10,0.9)') : 'transparent';
       nav.style.borderBottomColor = s ? (light ? '#ddd2bf' : '#2b241c') : 'transparent';
       nav.style.backdropFilter = nav.style.webkitBackdropFilter = s ? 'saturate(140%) blur(12px)' : 'none';
       nav.classList.toggle('nav-scrolled', s);
     };
     window.addEventListener('scroll', this._onScroll, { passive: true });
+    // Also listen in the capture phase on document so we catch scrolls dispatched
+    // on the scrolling element itself when html/body becomes the scroll container.
+    document.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
     this._onScroll();
     this.scrollToHash();
     this._onHash = () => this.scrollToHash();
@@ -342,7 +349,10 @@ class Component extends DCLogic {
     }
   }
   componentWillUnmount() {
-    if (this._onScroll) window.removeEventListener('scroll', this._onScroll);
+    if (this._onScroll) {
+      window.removeEventListener('scroll', this._onScroll);
+      document.removeEventListener('scroll', this._onScroll, { capture: true });
+    }
     if (this._onHash) window.removeEventListener('hashchange', this._onHash);
     if (this._timer) clearInterval(this._timer);
     if (this._statsTimer) clearInterval(this._statsTimer);
