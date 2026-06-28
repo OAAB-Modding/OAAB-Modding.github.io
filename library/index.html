@@ -47,6 +47,20 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
       </sc-if>
     </button>
+    <details class="nav-burger">
+      <summary class="nav-burger-btn" aria-label="Open menu" title="Menu">
+        <svg class="nav-burger-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
+        <svg class="nav-burger-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+      </summary>
+      <div class="nav-burger-panel">
+        <a href="/releases/" class="nav-burger-link">Releases</a>
+        <a href="/#mods" class="nav-burger-link">Mods</a>
+        <a href="/library/" class="nav-burger-link">Library</a>
+        <a href="https://www.oaab.dev/wiki" target="_blank" rel="noopener" class="nav-burger-link">Wiki</a>
+        <a href="/faq/" class="nav-burger-link">FAQ</a>
+        <a href="https://discord.gg/g5E2HUp" target="_blank" class="nav-burger-cta">Join Discord</a>
+      </div>
+    </details>
     <a href="https://discord.gg/g5E2HUp" target="_blank" class="site-nav-cta">Join Discord</a>
   </div>
 </nav>
@@ -66,7 +80,7 @@
 
 <div data-tabbar="" style="top:{{ tabbarTop }}px;" class="library-toolbar">
   <div style="padding:12px {{ barPadX }}px 13px;" class="container-wide">
-    <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
+    <sc-if value="{{ showTabBar }}" hint-placeholder-val="{{ true }}">
     <div class="library-tabs-row">
       <span class="filter-label">Type</span>
       <div data-tabscroll="" class="tab-list">
@@ -90,7 +104,7 @@
       <sc-if value="{{ isPopout }}" hint-placeholder-val="{{ false }}">
       <div class="popout-break"></div>
       </sc-if>
-      <sc-if value="{{ isPopout }}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{ showTypeMenu }}" hint-placeholder-val="{{ false }}">
       <div data-typedd="" style="order:{{ dropOrder }};" class="dropdown">
         <button onClick="{{ toggleType }}" style="color:{{ typeBtnFg }};background:{{ typeBtnBg }};border:1px solid {{ typeBtnBd }};" class="dropdown-button-type">
           <span>{{ typeBtnLabel }}</span>
@@ -277,10 +291,19 @@ class Component extends DCLogic {
       catch (e) { return 1; }
     })(),
     theme: (typeof window !== 'undefined' && window.OAAB_THEME) ? window.OAAB_THEME.read() : 'dark',
+    narrow: (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(max-width: 820px)').matches : false,
   };
 
   componentDidMount() {
     this.initTheme(0);
+    // Track the mobile breakpoint so the Type filter can collapse from the full
+    // tab row into the compact dropdown (matches style.css's 820px breakpoint).
+    try {
+      this._mql = window.matchMedia('(max-width: 820px)');
+      this._onMql = (e) => this.setState({ narrow: e.matches });
+      if (this._mql.addEventListener) this._mql.addEventListener('change', this._onMql);
+      else if (this._mql.addListener) this._mql.addListener(this._onMql);
+    } catch (e) {}
     // In popout mode, remember it for this window and tidy the address bar so
     // the ?popout=1 query string isn't shown (the browser's own URL bar on a
     // popup window can't be removed by the page, but we keep it clean).
@@ -477,6 +500,10 @@ class Component extends DCLogic {
   }
 
   componentWillUnmount() {
+    if (this._mql && this._onMql) {
+      if (this._mql.removeEventListener) this._mql.removeEventListener('change', this._onMql);
+      else if (this._mql.removeListener) this._mql.removeListener(this._onMql);
+    }
     if (this._onDocDown) document.removeEventListener('mousedown', this._onDocDown, true);
     if (this._onKey) document.removeEventListener('keydown', this._onKey, true);
     if (this._onScroll) {
@@ -997,6 +1024,11 @@ class Component extends DCLogic {
       ? this._isPopout
       : (this._isPopout = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('oaab_popout') === '1') || /[?&]popout=1/.test(location.search || ''));
 
+    // On mobile (non-popout) the wrapping Type tab row is replaced by the
+    // compact Type dropdown, and the toolbar tightens to align with the
+    // shorter mobile nav.
+    const narrow = !isPopout && !!this.state.narrow;
+
     return {
       yes: true,
       no: false,
@@ -1037,9 +1069,11 @@ class Component extends DCLogic {
       },
       isPopout,
       showChrome: !isPopout,
-      tabbarTop: isPopout ? 0 : 61,
-      barPadX: isPopout ? 12 : 32,
-      secPadX: isPopout ? 12 : 32,
+      showTabBar: !isPopout && !narrow,
+      showTypeMenu: isPopout || narrow,
+      tabbarTop: isPopout ? 0 : (narrow ? 54 : 61),
+      barPadX: isPopout ? 12 : (narrow ? 14 : 32),
+      secPadX: isPopout ? 12 : (narrow ? 14 : 32),
       openPopout: () => {
         const w = 1180, h = 820;
         const sx = window.screenLeft != null ? window.screenLeft : (screen.availLeft || 0);
@@ -1091,8 +1125,8 @@ class Component extends DCLogic {
       typeBtnBg: active === 'All' ? P.surface : 'rgba(210,130,63,0.12)',
       typeBtnBd: active === 'All' ? P.border : '#4a3526',
       pickType: (e) => this.setState({ active: e.currentTarget.dataset.type, typeOpen: false }),
-      searchFlex: isPopout ? '1 1 auto' : '1 1 auto',
-      rowWrap: isPopout ? 'wrap' : 'nowrap',
+      searchFlex: narrow ? '1 1 100%' : '1 1 auto',
+      rowWrap: (isPopout || narrow) ? 'wrap' : 'nowrap',
       ctrlBtnOrder: isPopout ? 1 : 0,
       dropOrder: isPopout ? 3 : 0,
       ctrlBtnMargin: isPopout ? '0' : 'auto',

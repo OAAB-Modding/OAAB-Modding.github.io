@@ -3307,3 +3307,425 @@ button {
 /* --- End light mode ------------------------------------------------------- */
 
 /* --- End components ------------------------------------------------------- */
+
+
+/* ==========================================================================
+   RESPONSIVE / MOBILE
+   All rules below are scoped to small viewports (or to the burger nav, which
+   is display:none until a media query reveals it). The desktop layout above
+   is intentionally left untouched. Breakpoint: 820px catches portrait tablets
+   and both orientations of phones; a second landscape query relaxes the hero
+   and grids where the extra width allows it.
+   ========================================================================== */
+
+/* --- Burger nav (hidden on desktop, shown on mobile) ---------------------- */
+.nav-burger {
+  display: none;
+  position: relative;
+}
+.nav-burger-btn {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid rgba(160, 140, 110, 0.45);
+  color: #e7dccb;
+  cursor: pointer;
+  background: transparent;
+  transition: border-color .2s, color .2s;
+}
+.nav-burger-btn::-webkit-details-marker {
+  display: none;
+}
+.nav-burger-btn:hover {
+  border-color: var(--ember, #d2823f);
+  color: var(--ember, #d2823f);
+}
+.nav-burger-btn svg {
+  width: 21px;
+  height: 21px;
+  display: block;
+}
+.nav-burger-close {
+  display: none;
+}
+.nav-burger[open] .nav-burger-open {
+  display: none;
+}
+.nav-burger[open] .nav-burger-close {
+  display: block;
+}
+.nav-burger-panel {
+  position: absolute;
+  top: calc(100% + 11px);
+  right: 0;
+  width: min(80vw, 290px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+  background: #15110c;
+  border: 1px solid #2b241c;
+  border-radius: 13px;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.6);
+  animation: oaabFade .16s ease both;
+  z-index: 60;
+}
+.nav-burger-link {
+  font-family: 'EB Garamond', serif;
+  font-size: 17.5px;
+  color: #d8cbb4;
+  padding: 12px 14px;
+  border-radius: 8px;
+  transition: background .15s, color .15s;
+}
+.nav-burger-link:hover {
+  background: #1e1812;
+  color: var(--ember, #d2823f);
+}
+.nav-burger-cta {
+  margin-top: 7px;
+  text-align: center;
+  font-family: 'EB Garamond', serif;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 13px 14px;
+  border-radius: 8px;
+  background: var(--ember, #d2823f);
+  color: #1a120a;
+  border: 1px solid var(--ember, #d2823f);
+}
+.theme-light .nav-burger-btn {
+  color: #5c5142;
+  border-color: #d8cdb8;
+}
+.theme-light .nav-burger-panel {
+  background: #fbf7ef;
+  border-color: #ddd2bf;
+  box-shadow: 0 22px 54px rgba(60, 45, 25, 0.18);
+}
+.theme-light .nav-burger-link {
+  color: #4a4031;
+}
+.theme-light .nav-burger-link:hover {
+  background: #efe7d6;
+  color: var(--ember, #d2823f);
+}
+
+/* --- Main mobile layout (<=820px) ----------------------------------------- */
+@media (max-width: 820px) {
+  /* Kill horizontal scroll and any fixed-width overflow */
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  .page-hero-copy-wide {
+    width: auto !important;
+    max-width: 100%;
+  }
+
+  /* Nav → brand + (theme toggle, burger) */
+  .home-nav, .site-nav {
+    padding: 11px 16px;
+  }
+  .site-nav-links, .site-nav-cta {
+    display: none;
+  }
+  .nav-burger {
+    display: block;
+  }
+  .site-nav-actions {
+    gap: 11px;
+  }
+  .brand-logo {
+    height: 34px;
+  }
+  .brand-mark-text {
+    font-size: 10.5px;
+    padding-left: 12px;
+    letter-spacing: .26em;
+  }
+
+  /* Section rhythm — tighten generous desktop padding */
+  .section-alt, .section-default, .section-muted,
+  .contribute-section {
+    padding: 64px 18px;
+  }
+
+  /* --- Home hero --- */
+  .home-hero {
+    min-height: auto;
+    padding-top: 104px;
+    padding-bottom: 0;
+  }
+  .home-hero-inner {
+    padding: 0 18px 56px;
+  }
+  .home-hero-copy {
+    margin-top: 22px;
+  }
+  .home-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-top: 30px;
+  }
+  .home-hero-actions .btn-primary-lg,
+  .home-hero-actions .btn-ghost-lg-alt {
+    justify-content: center;
+    width: 100%;
+  }
+  .hero-lockup {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  /* Stats band → 2×2 grid */
+  .home-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .home-stat-cell, .home-stat-cell-last {
+    padding: 17px 18px;
+  }
+  .home-stat-cell:nth-child(2n) {
+    border-right: none;
+  }
+  .home-stat-cell:nth-child(-n + 2) {
+    border-bottom: 1px solid #221c15;
+  }
+  .theme-light .home-stat-cell:nth-child(-n + 2) {
+    border-bottom-color: rgba(190, 170, 138, 0.4);
+  }
+  .home-stat-value {
+    font-size: 28px;
+  }
+
+  /* --- Latest release (was breaking: 2-col grid squished) --- */
+  .section-heading-row,
+  .section-heading-row-wide {
+    align-items: flex-start;
+  }
+  .featured-release-card-home {
+    grid-template-columns: 1fr;
+    margin-top: 28px;
+  }
+  .featured-release-media-home {
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+  /* When stacked, fade from the bottom (not the side) so the badge/cover read */
+  .featured-release-side-shade {
+    background: linear-gradient(180deg, transparent 55%, rgba(22, 17, 11, 0.9) 100%);
+  }
+  .featured-release-body {
+    padding: 24px 22px 26px;
+  }
+  .feature-copy {
+    font-size: 16.5px;
+  }
+
+  /* --- Ecosystem (mobile-specific: 2-up instead of 5-up) --- */
+  .showcase-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 28px;
+  }
+  .inline-cluster-12 {
+    flex-wrap: wrap;
+  }
+  .showcase-title {
+    font-size: 18px;
+  }
+  .showcase-body {
+    padding: 13px 13px 14px;
+  }
+  .section-heading-row-wide .inline-cluster-12 {
+    width: 100%;
+  }
+
+  /* --- Library preview tiles → single column --- */
+  .library-preview-grid {
+    grid-template-columns: 1fr;
+    margin-top: 28px;
+  }
+  .library-preview-tile-large,
+  .library-preview-tile,
+  .library-preview-tile-wide {
+    grid-column: span 1;
+    height: 200px;
+  }
+
+  /* --- Wiki --- */
+  .wiki-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .wiki-copy {
+    margin-top: 22px;
+  }
+  .btn-wiki {
+    justify-self: start;
+    align-self: start;
+  }
+  .wiki-chip-row {
+    margin-top: 30px;
+  }
+
+  /* --- Contribute --- */
+  .contribute-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .contribute-actions .btn-primary-lg,
+  .contribute-actions .btn-ghost-lg {
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* --- Home footer → single column --- */
+  .home-footer {
+    padding: 48px 18px 36px;
+  }
+  .home-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .home-footer-bottom {
+    margin-top: 36px;
+  }
+
+  /* --- Shared page heroes (FAQ / Library / Releases) --- */
+  .faq-hero, .library-hero, .releases-hero {
+    padding: 116px 18px 48px;
+  }
+  .home-hero-copy, .library-hero-copy, .page-hero-copy-wide {
+    max-width: 100%;
+  }
+
+  /* --- FAQ --- */
+  .faq-main {
+    padding: 48px 18px 80px;
+  }
+  .faq-group {
+    margin-bottom: 44px;
+  }
+  .callout-card {
+    padding: 28px 20px;
+  }
+  .callout-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .callout-actions .btn-primary-sm,
+  .callout-actions .btn-ghost-sm {
+    justify-content: center;
+    width: 100%;
+  }
+  .site-footer-simple, .release-footer {
+    padding: 40px 18px;
+  }
+
+  /* --- Releases index --- */
+  .latest-release-section {
+    padding: 48px 18px 24px;
+  }
+  .earlier-releases-section {
+    padding: 28px 18px 80px;
+  }
+  .featured-release-card {
+    grid-template-columns: 1fr;
+  }
+  .featured-release-media {
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+  .release-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* --- Release article --- */
+  .release-article {
+    padding: 104px 18px 36px;
+  }
+  .rbody {
+    font-size: 17.5px;
+  }
+  .rbody h2 {
+    font-size: 28px;
+  }
+  .release-nav {
+    grid-template-columns: 1fr;
+    padding: 0 18px 80px;
+  }
+
+  /* --- Library toolbar + grid --- */
+  .library-tabs-row {
+    gap: 10px;
+  }
+  /* Search takes the first full row; the remaining controls wrap beneath it */
+  .filter-row .search-box {
+    flex: 1 1 100% !important;
+  }
+  .dropdown-button, .dropdown-button-type, .dropdown-button-release {
+    min-width: 0;
+  }
+  .dropdown-menu-tags, .dropdown-menu-type, .dropdown-menu-release {
+    width: min(86vw, 288px);
+  }
+  /* Keep the size slider usable but compact, let it grow to fill its row */
+  .thumb-scale-control {
+    flex: 1 1 160px;
+  }
+  .scale-slider {
+    flex: 1 1 auto;
+    width: auto;
+  }
+  .library-results-header {
+    margin-bottom: 18px;
+  }
+}
+
+/* --- Very small phones --------------------------------------------------- */
+@media (max-width: 420px) {
+  .home-stat-value {
+    font-size: 25px;
+  }
+  .home-stat-label {
+    font-size: 10px;
+  }
+  .brand-mark-text {
+    display: none;
+  }
+}
+
+/* --- Landscape phones (short height): reclaim the extra width ------------- */
+@media (max-width: 900px) and (orientation: landscape) and (max-height: 560px) {
+  .home-hero {
+    min-height: auto;
+    padding-top: 90px;
+    padding-bottom: 30px;
+  }
+  .home-hero-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .home-hero-actions .btn-primary-lg,
+  .home-hero-actions .btn-ghost-lg-alt {
+    width: auto;
+  }
+  .home-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .home-stat-cell:nth-child(-n + 2) {
+    border-bottom: none;
+  }
+  .home-stat-cell:nth-child(2n) {
+    border-right: 1px solid #221c15;
+  }
+  .showcase-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
