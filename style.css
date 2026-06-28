@@ -2840,6 +2840,72 @@ button {
   letter-spacing:.04em;
   color:var(--ember,#d2823f);
 }
+.release-pagination {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:14px;
+  margin-top:46px;
+}
+.page-numbers {
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.page-num,
+.page-arrow {
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  letter-spacing:.04em;
+  color:#cdbfa8;
+  background:transparent;
+  border:1px solid #2c241b;
+  border-radius:7px;
+  cursor:pointer;
+  transition:border-color .18s,color .18s,background .18s;
+}
+.page-num {
+  min-width:36px;
+  height:36px;
+  padding:0 6px;
+}
+.page-arrow {
+  height:36px;
+  padding:0 16px;
+}
+.page-num:hover:not(.page-num--current),
+.page-arrow:hover:not(:disabled) {
+  border-color:var(--ember,#d2823f);
+  color:var(--ember,#d2823f);
+}
+.page-num--current {
+  background:var(--ember,#d2823f);
+  border-color:var(--ember,#d2823f);
+  color:#1a120a;
+  cursor:default;
+}
+.page-arrow:disabled {
+  opacity:.38;
+  cursor:default;
+}
+.page-ellipsis {
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  color:#80735f;
+  padding:0 4px;
+}
+.theme-light .page-num,
+.theme-light .page-arrow {
+  color:#5c5040;
+  border-color:#ddd2bf;
+}
+.theme-light .page-num--current {
+  color:#1a120a;
+}
+.theme-light .page-ellipsis {
+  color:#8a7c66;
+}
 /* --- Light mode ----------------------------------------------------------
    Scoped overrides applied when the home root carries .theme-light. The dark
    palette is the default; these rules remap the warm-black surfaces, parchment

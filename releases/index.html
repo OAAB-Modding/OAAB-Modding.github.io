@@ -65,7 +65,7 @@
   </div>
 </nav>
 
-<sc-if value="{{ showingIndex }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ showLatestArea }}" hint-placeholder-val="{{ true }}">
 <header data-screen-label="Releases header" class="releases-hero">
   <img src="https://cdn.jsdelivr.net/gh/OAAB-Modding/Website@main/assets/images/screenshots/kwama%20hives.png" alt="" class="library-hero-image">
   <div class="releases-hero-glow"></div>
@@ -77,7 +77,7 @@
 </header>
 </sc-if>
 
-<sc-if value="{{ showingIndex }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ showLatestArea }}" hint-placeholder-val="{{ true }}">
 <section class="latest-release-section">
   <div class="latest-release-kicker">
     <span class="pulse-dot"></span>Latest release
@@ -170,10 +170,10 @@
 </sc-if>
 
 <sc-if value="{{ showingIndex }}" hint-placeholder-val="{{ true }}">
-<section class="earlier-releases-section">
+<section data-earlier="" class="earlier-releases-section">
   <div class="earlier-releases-label">Earlier releases</div>
   <div class="release-grid">
-    <sc-for list="{{ rest }}" as="rel" hint-placeholder-count="12">
+    <sc-for list="{{ pageRest }}" as="rel" hint-placeholder-count="12">
       <a href="{{ rel.href }}" class="card-link">
         <div class="release-card-media">
           <div class="release-card-version-bg">{{ rel.version }}</div>
@@ -196,6 +196,18 @@
       </a>
     </sc-for>
   </div>
+  <sc-if value="{{ showPagination }}" hint-placeholder-val="{{ false }}">
+  <nav class="release-pagination" aria-label="Releases pagination">
+    <button type="button" class="page-arrow" disabled="{{ prevDisabled }}" onClick="{{ goPrev }}">&larr; Newer</button>
+    <div class="page-numbers">
+      <sc-for list="{{ pageItems }}" as="pi" hint-placeholder-count="2">
+        <sc-if value="{{ pi.isEllipsis }}" hint-placeholder-val="{{ false }}"><span class="page-ellipsis">{{ pi.label }}</span></sc-if>
+        <sc-if value="{{ pi.isNum }}" hint-placeholder-val="{{ true }}"><button type="button" class="{{ pi.cls }}" aria-current="{{ pi.ariaCurrent }}" onClick="{{ pi.onClick }}">{{ pi.label }}</button></sc-if>
+      </sc-for>
+    </div>
+    <button type="button" class="page-arrow" disabled="{{ nextDisabled }}" onClick="{{ goNext }}">Older &rarr;</button>
+  </nav>
+  </sc-if>
 </section>
 </sc-if>
 
@@ -213,7 +225,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { version: this.hashVersion(), theme: (typeof window !== 'undefined' && window.OAAB_THEME) ? window.OAAB_THEME.read() : 'dark' };
+  state = { version: this.hashVersion(), page: 1, theme: (typeof window !== 'undefined' && window.OAAB_THEME) ? window.OAAB_THEME.read() : 'dark' };
 
   componentDidMount() {
     this.initTheme(0);
@@ -329,6 +341,56 @@ class Component extends DCLogic {
       version: r.version, date: r.date, excerpt: r.excerpt, cover: r.cover || null,
       chips: (r.labels || []).slice(0, 4), href: link(r.version),
     }));
+
+    // --- Pagination: 13 articles per page on the index, latest counts as one ---
+    const PER_FIRST = 12;   // earlier-release cards on page 1 (+ featured latest = 13)
+    const PER_REST = 13;    // earlier-release cards on every later page
+    const totalRest = rest.length;
+    let totalPages = 1;
+    if (totalRest > PER_FIRST) totalPages = 1 + Math.ceil((totalRest - PER_FIRST) / PER_REST);
+    let page = this.state.page || 1;
+    if (page > totalPages) page = totalPages;
+    if (page < 1) page = 1;
+    const isFirstPage = page === 1;
+    let startRest, endRest;
+    if (isFirstPage) { startRest = 0; endRest = Math.min(PER_FIRST, totalRest); }
+    else { startRest = PER_FIRST + (page - 2) * PER_REST; endRest = Math.min(startRest + PER_REST, totalRest); }
+    const pageRest = rest.slice(startRest, endRest);
+
+    const goToPage = (p) => {
+      const np = Math.max(1, Math.min(totalPages, p));
+      if (np === (this.state.page || 1)) return;
+      this.setState({ page: np }, () => {
+        const sec = document.querySelector('[data-earlier]');
+        if (sec) {
+          const y = sec.getBoundingClientRect().top + window.pageYOffset - 80;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+    };
+
+    let nums;
+    if (totalPages <= 7) {
+      nums = [];
+      for (let i = 1; i <= totalPages; i++) nums.push(i);
+    } else {
+      const set = new Set([1, 2, totalPages - 1, totalPages, page - 1, page, page + 1]);
+      const sorted = Array.from(set).filter(n => n >= 1 && n <= totalPages).sort((a, b) => a - b);
+      nums = [];
+      let prev = 0;
+      sorted.forEach(n => { if (prev && n - prev > 1) nums.push('...'); nums.push(n); prev = n; });
+    }
+    const pageItems = nums.map((n, i) => n === '...' ? {
+      key: 'e' + i, isEllipsis: true, isNum: false, label: '…',
+    } : {
+      key: 'p' + n, isEllipsis: false, isNum: true, label: String(n),
+      isCurrent: n === page,
+      ariaCurrent: n === page ? 'page' : undefined,
+      cls: n === page ? 'page-num page-num--current' : 'page-num',
+      onClick: () => goToPage(n),
+    });
     const selectedVersion = this.state.version;
     const cur = this.current();
     const rel = cur.rel;
@@ -345,6 +407,15 @@ class Component extends DCLogic {
       rest: rest,
       showingIndex: !hasSelection,
       showingArticle: hasSelection,
+      showLatestArea: !hasSelection && isFirstPage,
+      pageRest: pageRest,
+      showPagination: !hasSelection && totalPages > 1,
+      pageItems: pageItems,
+      pageLabel: 'Page ' + page + ' of ' + totalPages,
+      prevDisabled: page <= 1,
+      nextDisabled: page >= totalPages,
+      goPrev: () => goToPage(page - 1),
+      goNext: () => goToPage(page + 1),
       found: !!rel,
       notFound: hasSelection && !rel,
       rel: rel ? {
