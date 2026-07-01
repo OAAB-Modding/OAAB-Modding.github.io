@@ -233,8 +233,8 @@
 
     <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
       <div class="empty-state">
-        <div class="empty-state-title">No thumbnails in this category yet.</div>
-        <p class="empty-state-copy">These records exist in OAAB_Data but aren't part of the current render set.</p>
+        <div class="empty-state-title">{{ emptyTitle }}</div>
+        <p class="empty-state-copy">{{ emptyCopy }}</p>
       </div>
     </sc-if>
 
@@ -971,7 +971,8 @@ class Component extends DCLogic {
     ];
 
     // Text search applied on top, matching ID or name (case-insensitive).
-    const q = (this.state.query || '').trim().toLowerCase();
+    const rawQuery = (this.state.query || '').trim();
+    const q = rawQuery.toLowerCase();
     let filtered;
     const queryCache = this._queryCache;
     if (queryCache && queryCache.items === relFiltered && queryCache.query === q) {
@@ -1047,6 +1048,17 @@ class Component extends DCLogic {
     // compact Type dropdown, and the toolbar tightens to align with the
     // shorter mobile nav.
     const narrow = !isPopout && !!this.state.narrow;
+
+    const hasFilterWithoutSearch = active !== 'All' || selTags.length > 0 || relSels.length > 0;
+    let emptyTitle = 'No thumbnails in this category yet.';
+    let emptyCopy = "These records exist in the library data but aren't part of the current thumbnail render set.";
+    if (q) {
+      emptyTitle = 'No matching records.';
+      emptyCopy = 'No object ID or name contains "' + rawQuery + '".';
+    } else if (hasFilterWithoutSearch) {
+      emptyTitle = 'No matching thumbnails.';
+      emptyCopy = 'Try clearing a type, tag, or release filter.';
+    }
 
     // Active-filter count powers the mobile "Filters" toggle badge.
     const filterCount =
@@ -1220,6 +1232,8 @@ class Component extends DCLogic {
       }),
       shownCount: filtered.length,
       isEmpty: !!d && filtered.length === 0,
+      emptyTitle,
+      emptyCopy,
       pickTab: (e) => {
         const label = e.currentTarget.dataset.ttab;
         this.setState({ active: label });
