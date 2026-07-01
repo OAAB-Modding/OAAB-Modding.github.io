@@ -447,8 +447,10 @@ class Component extends DCLogic {
 
     const REPO = 'https://cdn.jsdelivr.net/gh/OAAB-Modding/OAAB-Modding.github.io@main';
     const THUMB = REPO + '/assets/images/library/thumbnails/meshes/';
+    const NPC_THUMB = REPO + '/assets/images/library/thumbnails/npc/';
     const LIGHT_MASK = REPO + '/assets/images/library/masks/marker_light_mask.webp';
     this._THUMB = THUMB;
+    this._NPC_THUMB = NPC_THUMB;
     this._LIGHT_MASK = LIGHT_MASK;
 
     // Data JSON must always reflect the freshly deployed source. jsdelivr caches
@@ -495,24 +497,28 @@ class Component extends DCLogic {
         records.forEach(r => {
           const mesh = (r.mesh || '');
           const norm = mesh.replace(/\\/g, '/');
+          const npc = this.isNpcRecord(r);
           const markerLight = this.isMeshlessLight(r);
           const lightColor = this.labelType(r.type).toLowerCase() === 'light' ? this.lightColorCss(r) : '';
           const lightHex = lightColor ? this.lightColorHex(r) : '';
           const lightRgb = lightColor ? this.lightColorRgb(r) : null;
           // Thumbnails only exist for OAAB-namespaced meshes, except meshless
-          // lights which use the editor light marker tinted by their RGB color.
-          if (!markerLight && !/^oaab\//i.test(norm)) return;
+          // lights which use the editor light marker tinted by their RGB color,
+          // and NPCs whose rendered thumbnails are keyed by record ID because
+          // their mesh field points at animation resources.
+          if (!npc && !markerLight && !/^oaab\//i.test(norm)) return;
           const id = r.id;
           if (!id || seen[id]) return;
           if (deprecated[id]) return; // skip deprecated IDs
-          const rel = markerLight ? 'marker_light.webp' : thumbnailPath(mesh);
-          if (!rel) return;
+          const rel = npc ? null : (markerLight ? 'marker_light.webp' : thumbnailPath(mesh));
+          const img = npc ? this.npcThumbnailUrl(id) : (rel ? THUMB + rel : '');
+          if (!img) return;
           seen[id] = 1;
           items.push({
             id: id,
             name: r.name || '',
             type: labelType(r.type),
-            img: THUMB + rel,
+            img: img,
             mesh: mesh,
             lightTint: markerLight ? lightColor : '',
             lightColor: lightColor,
@@ -613,9 +619,10 @@ class Component extends DCLogic {
   // Map a record's raw type tag to a readable label. Some records carry a raw
   // numeric TES3 record tag instead of a string label.
   labelType(t) {
-    const TYPE_LABELS = { '1497648962': 'Body Part' };
+    const TYPE_LABELS = { '1497648962': 'Body Part', 'npc': 'NPC' };
     t = (t == null ? '' : String(t));
     if (TYPE_LABELS[t]) return TYPE_LABELS[t];
+    if (TYPE_LABELS[t.toLowerCase()]) return TYPE_LABELS[t.toLowerCase()];
     if (/^\d+$/.test(t)) {
       // Decode a 32-bit little-endian record tag (e.g. "BODY").
       let n = parseInt(t, 10), tag = '';
@@ -627,6 +634,15 @@ class Component extends DCLogic {
 
   isMeshlessLight(r) {
     return this.labelType(r && r.type).toLowerCase() === 'light' && !String((r && r.mesh) || '').trim();
+  }
+
+  isNpcRecord(r) {
+    return this.labelType(r && r.type).toLowerCase() === 'npc';
+  }
+
+  npcThumbnailUrl(id) {
+    const key = String(id || '').trim().toLowerCase();
+    return key ? this._NPC_THUMB + key + '.webp' : '';
   }
 
   lightColorCss(r) {
@@ -734,20 +750,21 @@ class Component extends DCLogic {
         (records || []).forEach(r => {
           const mesh = r.mesh || '';
           const norm = mesh.replace(/\\/g, '/').toLowerCase();
+          const npc = this.isNpcRecord(r);
           const markerLight = this.isMeshlessLight(r);
           const lightColor = this.labelType(r.type).toLowerCase() === 'light' ? this.lightColorCss(r) : '';
           const lightHex = lightColor ? this.lightColorHex(r) : '';
           const lightRgb = lightColor ? this.lightColorRgb(r) : null;
-          if (!markerLight && !/\.nif$/.test(norm)) return;
+          if (!npc && !markerLight && !/\.nif$/.test(norm)) return;
           const id = r.id;
           if (!id || seen[id]) return;
           seen[id] = 1;
-          const rel = markerLight ? 'marker_light.webp' : norm.replace(/\.nif$/, '.webp');
+          const rel = npc ? null : (markerLight ? 'marker_light.webp' : norm.replace(/\.nif$/, '.webp'));
           items.push({
             id: id,
             name: r.name || '',
             type: this.labelType(r.type),
-            img: THUMB + rel,
+            img: npc ? this.npcThumbnailUrl(id) : THUMB + rel,
             mesh: mesh,
             lightTint: markerLight ? lightColor : '',
             lightColor: lightColor,
