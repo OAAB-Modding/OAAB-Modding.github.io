@@ -577,15 +577,10 @@ class Component extends DCLogic {
   }
 
   isHiddenBodyPart(r) {
-    const id = String((r && r.id) || '').toLowerCase();
-    const hasBodyPartPrefix =
-      id.indexOf('a_') === 0 ||
-      id.indexOf('c_') === 0 ||
-      id.indexOf('ab_a_') === 0 ||
-      id.indexOf('ab_c_') === 0;
-    if (!hasBodyPartPrefix) return false;
     const type = this.labelType(r && r.type).replace(/\s+/g, '').toLowerCase();
-    return type === 'bodypart';
+    if (type !== 'bodypart') return false;
+    const id = String((r && r.id) || '').toLowerCase();
+    return !/(^|_)b_.*(head|hair)/i.test(id);
   }
 
   // Compose the catalogue shown in the grid. OAAB objects are always present;
