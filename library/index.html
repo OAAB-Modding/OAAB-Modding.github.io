@@ -106,7 +106,7 @@
       <div style="display:{{ filterWrapDisp }};flex-basis:100%;flex-wrap:wrap;align-items:center;gap:12px;" class="filter-collapse">
       <div style="flex:{{ searchFlex }};" class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="#80735f" stroke-width="2" class="search-icon"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
-        <input type="text" value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search by ID or name — e.g. AB_r_TombDoor, Bonemold…" spellcheck="false" autocomplete="off" class="search-input">
+        <input type="text" value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search by ID, name, or container: AB_o_CorpseFresh04" spellcheck="false" autocomplete="off" class="search-input">
         <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
           <button onClick="{{ clearSearch }}" title="Clear search" class="search-clear">×</button>
         </sc-if>
@@ -259,6 +259,11 @@
             </sc-if>
             <sc-if value="{{ it.lightColor }}" hint-placeholder-val="{{ false }}">
               <button type="button" data-color="{{ it.lightHex }}" onClick="{{ pickColor }}" title="{{ it.lightHex }}" style="background:{{ it.lightColor }};" class="asset-light-swatch"></button>
+            </sc-if>
+            <sc-if value="{{ it.hasContents }}" hint-placeholder-val="{{ false }}">
+              <button type="button" data-container-id="{{ it.id }}" onClick="{{ pickContainerContents }}" title="{{ it.contentsTitle }}" class="asset-container-button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="asset-container-icon"><path d="M12 12h.01"></path><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path><path d="M22 13a18.15 18.15 0 0 1-20 0"></path><rect width="20" height="14" x="2" y="6" rx="2"></rect></svg>
+              </button>
             </sc-if>
             <sc-if value="{{ compact }}" hint-placeholder-val="{{ false }}">
               <code class="asset-id-overlay">{{ it.id }}</code>
@@ -515,13 +520,14 @@ class Component extends DCLogic {
             lightHex: lightHex,
             lightRgb: lightRgb,
             lightMask: markerLight ? LIGHT_MASK : '',
+            inventory: Array.isArray(r.inventory) ? r.inventory : null,
           });
         });
         items.sort((a, b) => this.csCompareIds(a.id, b.id));
         this._oaabItems = items;
         this.setState({ data: this.buildData() });
         this.loadMeshDiffs(items);
-        if (this.state.vanilla) this.loadVanilla();
+        this.loadVanilla();
       })
       .catch(e => console.error('library data load failed', e));
   }
@@ -700,6 +706,14 @@ class Component extends DCLogic {
       van.forEach(x => { if (!seen[x.id]) { seen[x.id] = 1; items.push(x); } });
       items.sort((a, b) => this.csCompareIds(a.id, b.id));
     }
+    const idsByKey = Object.create(null);
+    const searchableItems = oaab.concat(this._vanillaItems || []);
+    searchableItems.forEach(x => { idsByKey[String(x.id || '').toLowerCase()] = x.id; });
+    searchableItems.forEach(x => {
+      const contentIds = this.containerContentIds(x.inventory, idsByKey, x.id);
+      x.contentIds = contentIds;
+      x.hasContents = contentIds.length > 0;
+    });
     const counts = Object.create(null);
     items.forEach(x => { counts[x.type] = (counts[x.type] || 0) + 1; });
     const types = Object.keys(counts)
@@ -749,6 +763,7 @@ class Component extends DCLogic {
             lightHex: lightHex,
             lightRgb: lightRgb,
             lightMask: markerLight ? LIGHT_MASK : '',
+            inventory: Array.isArray(r.inventory) ? r.inventory : null,
             vanilla: true,
           });
         });
@@ -756,7 +771,7 @@ class Component extends DCLogic {
       items.sort((a, b) => this.csCompareIds(a.id, b.id));
       this._vanillaItems = items;
       this._vanillaLoading = false;
-      if (this.state.vanilla) this.setState({ data: this.buildData() });
+      this.setState({ data: this.buildData(this.state.vanilla) });
     });
   }
 
@@ -839,6 +854,39 @@ class Component extends DCLogic {
     if (end === -1) return [];
     const toks = toml.slice(m.index + m[0].length, end).match(/"(?:[^"\\]|\\.)*"/g) || [];
     return toks.map(t => { try { return JSON.parse(t); } catch (e) { return null; } }).filter(Boolean);
+  }
+
+  containerContentIds(inventory, idsByKey, selfId) {
+    if (!Array.isArray(inventory)) return [];
+    const out = [];
+    const seen = Object.create(null);
+    const selfKey = String(selfId || '').trim().toLowerCase();
+    inventory.forEach(entry => {
+      let raw = '';
+      if (Array.isArray(entry)) raw = entry[1];
+      else if (entry && typeof entry === 'object') raw = entry.id || entry.item || entry.object || entry.content;
+      const key = String(raw || '').trim().toLowerCase();
+      const id = idsByKey[key];
+      if (!id || key === selfKey || seen[id]) return;
+      seen[id] = 1;
+      out.push(id);
+    });
+    return out.sort((a, b) => this.csCompareIds(a, b));
+  }
+
+  parseContainerQuery(query) {
+    const m = /^container\s*:\s*(.+)$/i.exec(String(query || '').trim());
+    return m ? m[1].trim() : '';
+  }
+
+  containerSearchItems(containerId, fallbackItems) {
+    const all = (this._oaabItems || []).concat(this._vanillaItems || []);
+    const source = all.length ? all : (fallbackItems || []);
+    const byKey = Object.create(null);
+    source.forEach(x => { byKey[String(x.id || '').toLowerCase()] = x; });
+    const container = byKey[String(containerId || '').trim().toLowerCase()];
+    if (!container) return [];
+    return [container].concat((container.contentIds || []).map(id => byKey[String(id || '').toLowerCase()]).filter(Boolean));
   }
 
   renderVals() {
@@ -1083,22 +1131,38 @@ class Component extends DCLogic {
     ];
 
     // Text search applied on top, matching ID or name (case-insensitive).
+    // `container: <id>` switches the search box into a container-expansion mode:
+    // the requested container is shown with any valid contents; empty containers
+    // still resolve to themselves.
     const rawQuery = (this.state.query || '').trim();
     const q = rawQuery.toLowerCase();
+    const containerQuery = this.parseContainerQuery(rawQuery);
+    const containerKey = containerQuery.toLowerCase();
     const colorQuery = this.parseColorQuery(rawQuery);
     const colorKey = colorQuery ? colorQuery.hex + '~' + colorQuery.tolerance : '';
     let filtered;
     const queryCache = this._queryCache;
-    if (queryCache && queryCache.items === relFiltered && queryCache.query === q && queryCache.colorKey === colorKey) {
+    if (
+      queryCache &&
+      queryCache.items === relFiltered &&
+      queryCache.query === q &&
+      queryCache.colorKey === colorKey &&
+      queryCache.containerKey === containerKey &&
+      queryCache.vanillaItems === this._vanillaItems
+    ) {
       filtered = queryCache.filtered;
     } else {
-      filtered = !q ? relFiltered : relFiltered.filter(x =>
-        (x.id || '').toLowerCase().indexOf(q) !== -1 ||
-        (x.name || '').toLowerCase().indexOf(q) !== -1 ||
-        ((x.lightHex || '').toLowerCase().indexOf(q) !== -1) ||
-        (colorQuery && this.colorDistanceSq(x.lightRgb, colorQuery.rgb) <= colorQuery.toleranceSq)
-      );
-      this._queryCache = { items: relFiltered, query: q, colorKey, filtered };
+      if (containerQuery) {
+        filtered = this.containerSearchItems(containerQuery, all);
+      } else {
+        filtered = !q ? relFiltered : relFiltered.filter(x =>
+          (x.id || '').toLowerCase().indexOf(q) !== -1 ||
+          (x.name || '').toLowerCase().indexOf(q) !== -1 ||
+          ((x.lightHex || '').toLowerCase().indexOf(q) !== -1) ||
+          (colorQuery && this.colorDistanceSq(x.lightRgb, colorQuery.rgb) <= colorQuery.toleranceSq)
+        );
+      }
+      this._queryCache = { items: relFiltered, query: q, colorKey, containerKey, vanillaItems: this._vanillaItems, filtered };
     }
 
     // Materialise only complete rows around the viewport. Fixed-height captions
@@ -1146,6 +1210,10 @@ class Component extends DCLogic {
         lightColor: x.lightColor || '',
         lightHex: x.lightHex || '',
         lightMask: x.lightMask || '',
+        hasContents: !!(x.hasContents && x.contentIds && x.contentIds.length),
+        contentsTitle: x.contentIds && x.contentIds.length
+          ? 'Search this container and ' + x.contentIds.length + ' valid content' + (x.contentIds.length === 1 ? '' : 's')
+          : '',
         nif: x.mesh || (x.img || ''),
         tip: comfortable
           ? (x.mesh || x.id || x.img || '')
@@ -1159,7 +1227,6 @@ class Component extends DCLogic {
       };
     });
     const tagLabel = noTags ? '' : (selTags.length === 1 ? selTags[0] : selTags.length + ' tags');
-
     // Popout mode strips the nav/hero/footer for a minimal, embeddable window.
     const isPopout = this._isPopout != null
       ? this._isPopout
@@ -1298,6 +1365,26 @@ class Component extends DCLogic {
           }
         });
       },
+      pickContainerContents: (e) => {
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+        const id = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.containerId || '') : '';
+        if (!id) return;
+        this.setState({
+          query: 'container: ' + id,
+          tagOpen: false,
+          typeOpen: false,
+          relOpen: false,
+          virtualStartRow: 0,
+          virtualEndRow: 8,
+        });
+        requestAnimationFrame(() => {
+          const input = document.querySelector('.search-input');
+          if (input) {
+            try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
+          }
+        });
+      },
       typeCount: types.length,
       tabs,
       typeOpen: !!this.state.typeOpen,
@@ -1362,7 +1449,7 @@ class Component extends DCLogic {
       anyFilter: active !== 'All' || selTags.length > 0 || !!q || relSels.length > 0,
       clearAll: () => this.setState({
         active: 'All', tags: [], query: '', releases: [], relKinds: ['added', 'modified'],
-        tagOpen: false, relOpen: false,
+        tagOpen: false, typeOpen: false, relOpen: false,
       }),
       shownCount: filtered.length,
       isEmpty: !!d && filtered.length === 0,
