@@ -517,7 +517,7 @@ class Component extends DCLogic {
             lightMask: markerLight ? LIGHT_MASK : '',
           });
         });
-        items.sort((a, b) => a.id.localeCompare(b.id));
+        items.sort((a, b) => this.csCompareIds(a.id, b.id));
         this._oaabItems = items;
         this.setState({ data: this.buildData() });
         this.loadMeshDiffs(items);
@@ -577,6 +577,32 @@ class Component extends DCLogic {
     const fwd = String(p || '').replace(/\\/g, '/').toLowerCase();
     const i = fwd.lastIndexOf('oaab/');
     return i === -1 ? null : fwd.slice(i);
+  }
+
+  // Match the Construction Set's practical ID ordering more closely than
+  // browser locale collation does. In particular, "@" sorts before "_".
+  csCompareStrings(a, b) {
+    const aa = String(a == null ? '' : a);
+    const bb = String(b == null ? '' : b);
+    const al = aa.toLowerCase();
+    const bl = bb.toLowerCase();
+    const n = Math.min(al.length, bl.length);
+    for (let i = 0; i < n; i++) {
+      const d = al.charCodeAt(i) - bl.charCodeAt(i);
+      if (d) return d;
+    }
+    if (al.length !== bl.length) return al.length - bl.length;
+    if (aa === bb) return 0;
+    const m = Math.min(aa.length, bb.length);
+    for (let i = 0; i < m; i++) {
+      const d = aa.charCodeAt(i) - bb.charCodeAt(i);
+      if (d) return d;
+    }
+    return aa.length - bb.length;
+  }
+
+  csCompareIds(a, b) {
+    return this.csCompareStrings(a, b);
   }
 
   // Map a record's raw type tag to a readable label. Some records carry a raw
@@ -672,7 +698,7 @@ class Component extends DCLogic {
       items = [];
       oaab.forEach(x => { seen[x.id] = 1; items.push(x); });
       van.forEach(x => { if (!seen[x.id]) { seen[x.id] = 1; items.push(x); } });
-      items.sort((a, b) => a.id.localeCompare(b.id));
+      items.sort((a, b) => this.csCompareIds(a.id, b.id));
     }
     const counts = Object.create(null);
     items.forEach(x => { counts[x.type] = (counts[x.type] || 0) + 1; });
@@ -727,7 +753,7 @@ class Component extends DCLogic {
           });
         });
       });
-      items.sort((a, b) => a.id.localeCompare(b.id));
+      items.sort((a, b) => this.csCompareIds(a.id, b.id));
       this._vanillaItems = items;
       this._vanillaLoading = false;
       if (this.state.vanilla) this.setState({ data: this.buildData() });
@@ -771,7 +797,11 @@ class Component extends DCLogic {
             });
             // An id added & modified in the same span counts as added.
             modified.forEach(id => { if (added.has(id)) modified.delete(id); });
-            return { version: diff.to || to, added: [...added].sort(), modified: [...modified].sort() };
+            return {
+              version: diff.to || to,
+              added: [...added].sort((a, b) => this.csCompareIds(a, b)),
+              modified: [...modified].sort((a, b) => this.csCompareIds(a, b)),
+            };
           })
           .catch(e => { console.warn('mesh diff load failed: ' + to, e); return null; })
       );
