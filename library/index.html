@@ -106,7 +106,7 @@
       <div style="display:{{ filterWrapDisp }};flex-basis:100%;flex-wrap:wrap;align-items:center;gap:12px;" class="filter-collapse">
       <div style="flex:{{ searchFlex }};" class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="#80735f" stroke-width="2" class="search-icon"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
-        <input type="text" value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search by ID, name, or container: AB_o_CorpseFresh04" spellcheck="false" autocomplete="off" class="search-input">
+        <input type="text" value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search ID, name, mesh, or container: AB_o_CorpseFresh04" spellcheck="false" autocomplete="off" class="search-input">
         <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
           <button onClick="{{ clearSearch }}" title="Clear search" class="search-clear">×</button>
         </sc-if>
@@ -1194,12 +1194,13 @@ class Component extends DCLogic {
       },
     ];
 
-    // Text search applied on top, matching ID or name (case-insensitive).
+    // Text search applied on top, matching ID, name, or mesh (case-insensitive).
     // `container: <id>` switches the search box into a container-expansion mode:
     // the requested container is shown with any valid contents; empty containers
     // still resolve to themselves.
     const rawQuery = (this.state.query || '').trim();
     const q = rawQuery.toLowerCase();
+    const qPath = q.replace(/\\/g, '/');
     const containerQuery = this.parseContainerQuery(rawQuery);
     const containerKey = containerQuery.toLowerCase();
     const colorQuery = this.parseColorQuery(rawQuery);
@@ -1219,12 +1220,17 @@ class Component extends DCLogic {
       if (containerQuery) {
         filtered = this.containerSearchItems(containerQuery, all);
       } else {
-        filtered = !q ? relFiltered : relFiltered.filter(x =>
-          (x.id || '').toLowerCase().indexOf(q) !== -1 ||
-          (x.name || '').toLowerCase().indexOf(q) !== -1 ||
-          ((x.lightHex || '').toLowerCase().indexOf(q) !== -1) ||
-          (colorQuery && this.colorDistanceSq(x.lightRgb, colorQuery.rgb) <= colorQuery.toleranceSq)
-        );
+        filtered = !q ? relFiltered : relFiltered.filter(x => {
+          const mesh = (x.mesh || '').toLowerCase();
+          return (
+            (x.id || '').toLowerCase().indexOf(q) !== -1 ||
+            (x.name || '').toLowerCase().indexOf(q) !== -1 ||
+            mesh.indexOf(q) !== -1 ||
+            mesh.replace(/\\/g, '/').indexOf(qPath) !== -1 ||
+            ((x.lightHex || '').toLowerCase().indexOf(q) !== -1) ||
+            (colorQuery && this.colorDistanceSq(x.lightRgb, colorQuery.rgb) <= colorQuery.toleranceSq)
+          );
+        });
       }
       this._queryCache = { items: relFiltered, query: q, colorKey, containerKey, vanillaItems: this._vanillaItems, filtered };
     }
