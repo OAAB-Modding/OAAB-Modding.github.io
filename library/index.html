@@ -268,7 +268,7 @@
             <sc-if value="{{ it.hasEffects }}" hint-placeholder-val="{{ false }}">
               <div class="asset-effect-row">
                 <sc-for list="{{ it.effects }}" as="eff" hint-placeholder-count="4">
-                  <button type="button" data-effect="{{ eff.label }}" onClick="{{ pickEffect }}" title="{{ eff.query }}" class="asset-effect-button">
+                  <button type="button" data-effect="{{ eff.label }}" onClick="{{ pickEffect }}" title="{{ eff.label }}" class="asset-effect-button">
                     <img src="{{ eff.img }}" alt="{{ eff.label }}" loading="lazy" decoding="async" draggable="{{ no }}" class="asset-effect-icon">
                   </button>
                 </sc-for>
