@@ -31,7 +31,7 @@ const TAG_ALIASES = {
   '1.10.0': '0.10.0',
 };
 
-const RELEASE_MESH_RE = /^\d{2} [^/]+\/meshes\/oaab\/.+\.nif$/i;
+const RELEASE_MESH_RE = /^\d{2} [^/]+\/meshes\/.+\.nif$/i;
 
 function git(args) {
   return execFileSync('git', ['-C', DATA_REPO, '-c', 'core.quotepath=false', ...args], {

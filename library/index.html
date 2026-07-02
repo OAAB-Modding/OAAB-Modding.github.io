@@ -488,8 +488,8 @@ class Component extends DCLogic {
       .then(([records, deprecated]) => {
         const labelType = (t) => this.labelType(t);
         const thumbnailPath = (mesh) => {
-          const rel = String(mesh || '').replace(/\\/g, '/').toLowerCase();
-          if (!/^oaab\//.test(rel) || !/\.nif$/.test(rel)) return null;
+          const rel = String(mesh || '').replace(/\\/g, '/').toLowerCase().replace(/^meshes\//, '');
+          if (!/\.nif$/.test(rel)) return null;
           return rel.replace(/\.nif$/, '.webp');
         };
         const seen = Object.create(null);
@@ -509,20 +509,18 @@ class Component extends DCLogic {
             });
           }
           const mesh = (r.mesh || '');
-          const norm = mesh.replace(/\\/g, '/');
           const npc = this.isNpcRecord(r);
           const markerLight = this.isMeshlessLight(r);
           const lightColor = this.labelType(r.type).toLowerCase() === 'light' ? this.lightColorCss(r) : '';
           const lightHex = lightColor ? this.lightColorHex(r) : '';
           const lightRgb = lightColor ? this.lightColorRgb(r) : null;
-          // Thumbnails only exist for OAAB-namespaced meshes, except meshless
-          // lights which use the editor light marker tinted by their RGB color,
-          // and NPCs whose rendered thumbnails are keyed by record ID because
-          // their mesh field points at animation resources.
-          if (!npc && !markerLight && !/^oaab\//i.test(norm)) return;
+          // Mesh thumbnails are keyed by their path relative to Morrowind's
+          // Meshes folder. Meshless lights and NPCs use special thumbnail keys.
+          const meshThumb = thumbnailPath(mesh);
+          if (!npc && !markerLight && !meshThumb) return;
           if (!id || seen[id]) return;
           if (deprecated[id]) return; // skip deprecated IDs
-          const rel = npc ? null : (markerLight ? 'marker_light.webp' : thumbnailPath(mesh));
+          const rel = npc ? null : (markerLight ? 'marker_light.webp' : meshThumb);
           const img = npc ? this.npcThumbnailUrl(id) : (rel ? THUMB + rel : '');
           if (!img) return;
           seen[id] = 1;
@@ -593,14 +591,18 @@ class Component extends DCLogic {
     };
   }
 
-  // Normalise a mesh path to a lowercase, forward-slash key beginning at
-  // "oaab/". OAAB_Data_filtered.json stores "oaab\\m\\foo.nif"; the diffs store full repo
-  // paths like "00 Core/meshes/oaab/m/foo.nif" (and patch sub-folders) — both
+  // Normalise a mesh path to a lowercase, forward-slash key relative to
+  // Morrowind's Meshes folder. OAAB_Data_filtered.json stores relative mesh
+  // paths like "oaab\\m\\foo.nif" or "x\\foo.nif"; the diffs store full repo
+  // paths like "00 Core/meshes/oaab/m/foo.nif" (and patch sub-folders). Both
   // collapse to the same key so a changed file lines up with its catalogue id.
   meshKey(p) {
     const fwd = String(p || '').replace(/\\/g, '/').toLowerCase();
-    const i = fwd.lastIndexOf('oaab/');
-    return i === -1 ? null : fwd.slice(i);
+    const meshesMarker = '/meshes/';
+    const i = fwd.lastIndexOf(meshesMarker);
+    if (i !== -1) return fwd.slice(i + meshesMarker.length);
+    if (fwd.startsWith('meshes/')) return fwd.slice('meshes/'.length);
+    return /\.nif$/.test(fwd) ? fwd.replace(/^\/+/, '') : null;
   }
 
   // Match the Construction Set's practical ID ordering more closely than

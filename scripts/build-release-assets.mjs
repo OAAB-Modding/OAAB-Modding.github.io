@@ -66,13 +66,16 @@ async function majorTags() {
 }
 
 // --- 2. mesh path -> [object IDs, ...] from the site catalogue -------------
-//   OAAB_Data_filtered.json mesh: "OAAB\\m\\foo.nif"  (relative to Morrowind's Meshes/)
-//   compare filename:  ".../Meshes/OAAB/m/foo.nif"
-//   Normalise both to a lowercase, forward-slash key beginning at "oaab/".
+//   OAAB_Data_filtered.json mesh: "OAAB\\m\\foo.nif" or "x\\foo.nif"
+//   compare filename:  ".../Meshes/OAAB/m/foo.nif" or ".../Meshes/x/foo.nif"
+//   Normalise both to a lowercase, forward-slash key relative to Meshes/.
 function meshKey(p) {
   const fwd = String(p).replace(/\\/g, '/').toLowerCase();
-  const i = fwd.lastIndexOf('oaab/');
-  return i === -1 ? null : fwd.slice(i);
+  const meshesMarker = '/meshes/';
+  const i = fwd.lastIndexOf(meshesMarker);
+  if (i !== -1) return fwd.slice(i + meshesMarker.length);
+  if (fwd.startsWith('meshes/')) return fwd.slice('meshes/'.length);
+  return /\.nif$/.test(fwd) ? fwd.replace(/^\/+/, '') : null;
 }
 async function meshToIds() {
   const records = JSON.parse((await readFile(RECORDS, 'utf8')).replace(/^\uFEFF/, ''));
