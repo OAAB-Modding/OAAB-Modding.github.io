@@ -1,0 +1,78 @@
+# Regenerates Library mesh-diff JSON when OAAB-Modding/Data publishes a major
+# library release tag. Tags named X.Y or X.Y.0 are major releases; X.Y.1 and
+# other patch tags are ignored.
+name: Sync mesh diffs
+
+on:
+  repository_dispatch:
+    types: [sync-mesh-diffs]
+  workflow_dispatch:
+    inputs:
+      data_tag:
+        description: "Optional Data tag to validate, e.g. 2.7.0"
+        required: false
+        type: string
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-mesh-diffs
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DATA_TAG: ${{ github.event.client_payload.tag || inputs.data_tag }}
+
+    steps:
+      - name: Check triggering tag
+        id: tag
+        shell: bash
+        run: |
+          if [ -n "$DATA_TAG" ] && [[ ! "$DATA_TAG" =~ ^v?[0-9]+\.[0-9]+(\.0)?$ ]]; then
+            echo "Skipping non-major Data tag: $DATA_TAG"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.tag.outputs.skip != 'true'
+
+      - uses: actions/checkout@v4
+        if: steps.tag.outputs.skip != 'true'
+        with:
+          repository: OAAB-Modding/Data
+          path: .tmp/OAAB_Data
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ secrets.DATA_REPO_TOKEN || github.token }}
+
+      - uses: actions/setup-node@v4
+        if: steps.tag.outputs.skip != 'true'
+        with:
+          node-version: 20
+
+      - name: Generate mesh diffs
+        if: steps.tag.outputs.skip != 'true'
+        env:
+          OAAB_DATA_REPO: .tmp/OAAB_Data
+        run: node scripts/build-mesh-diffs.mjs
+
+      - name: Commit if changed
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        run: |
+          if [ -n "$(git status --porcelain assets/data/library/mesh_diff_*.json)" ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add assets/data/library/mesh_diff_*.json
+            git commit -m "chore: refresh mesh diffs"
+            git push
+          else
+            echo "No mesh diff changes."
+          fi
