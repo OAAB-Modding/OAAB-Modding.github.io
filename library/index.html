@@ -1432,8 +1432,10 @@ class Component extends DCLogic {
         if (e.stopPropagation) e.stopPropagation();
         const id = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.containerId || '') : '';
         if (!id) return;
+        const cur = this.parseContainerQuery(this.state.query || '');
+        const nextQuery = cur && cur.toLowerCase() === id.toLowerCase() ? '' : 'container: ' + id;
         this.setState({
-          query: 'container: ' + id,
+          query: nextQuery,
           tagOpen: false,
           typeOpen: false,
           relOpen: false,
