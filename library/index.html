@@ -1334,15 +1334,17 @@ class Component extends DCLogic {
   alchemyDetails(record) {
     if (!this.isAlchemyItem(record)) return null;
     const data = record && record.data ? record.data : {};
+    const id = record && record.id ? record.id : '';
+    const name = String((record && record.name) || '').trim();
     const rows = [];
     if (data.value != null) rows.push({ label: 'Value', value: String(data.value) });
     if (data.weight != null) rows.push({ label: 'Weight', value: String(data.weight) });
     if (data.flags) rows.push({ label: 'Flags', value: this.flagsLabel(data.flags) || String(data.flags) });
     const meta = rows.slice(0, 3).map(r => r.value).filter(Boolean).join(' Â· ');
     return {
-      id: record.id || '',
-      label: record.id || '',
-      title: 'Alchemy: ' + (record.id || ''),
+      id,
+      label: id,
+      title: 'Alchemy: ' + (name || id),
       meta: meta || 'Alchemy',
       kind: 'alchemy',
       rows,
@@ -1353,15 +1355,17 @@ class Component extends DCLogic {
   spellDetails(record) {
     if (!this.isSpellRecord(record)) return null;
     const data = record && record.data ? record.data : {};
+    const id = record && record.id ? record.id : '';
+    const name = String((record && record.name) || '').trim();
     const rows = [
       { label: 'Type', value: this.spellTypeLabel(data.spell_type) || 'Spell' },
     ];
     if (data.cost != null) rows.push({ label: 'Cost', value: String(data.cost) });
     const meta = rows.slice(0, 3).map(r => r.value).filter(Boolean).join(' Â· ');
     return {
-      id: record.id || '',
-      label: record.id || '',
-      title: 'Spell: ' + (record.id || ''),
+      id,
+      label: id,
+      title: 'Spell: ' + (name || id),
       meta: meta || 'Spell',
       kind: 'spell',
       rows,
@@ -1491,6 +1495,12 @@ class Component extends DCLogic {
       effects: enchantment.effects || [],
       hasEffects: !!(enchantment.effects && enchantment.effects.length),
     };
+  }
+
+  enchantmentPreviewItemLabel(preview) {
+    if (!preview) return '';
+    if (preview.kind === 'alchemy' || preview.kind === 'spell') return preview.itemId || '';
+    return (preview.itemName || preview.itemId || '') + (preview.itemType ? (' ' + String.fromCharCode(183) + ' ' + preview.itemType) : '');
   }
 
   findCatalogItem(id) {
@@ -2860,7 +2870,9 @@ class Component extends DCLogic {
       enchantmentPreviewIsSpell: !!(this.state.enchantmentPreview && this.state.enchantmentPreview.kind === 'spell'),
       enchantmentPreviewIsAlchemy: !!(this.state.enchantmentPreview && this.state.enchantmentPreview.kind === 'alchemy'),
       enchantmentPreviewIsEnchantment: !(this.state.enchantmentPreview && (this.state.enchantmentPreview.kind === 'spell' || this.state.enchantmentPreview.kind === 'alchemy')),
-      enchantmentPreviewItem: this.state.enchantmentPreview
+      enchantmentPreviewItem: this.state.enchantmentPreview && (this.state.enchantmentPreview.kind === 'alchemy' || this.state.enchantmentPreview.kind === 'spell')
+        ? this.enchantmentPreviewItemLabel(this.state.enchantmentPreview)
+        : this.state.enchantmentPreview
         ? ((this.state.enchantmentPreview.itemName || this.state.enchantmentPreview.itemId || '') + (this.state.enchantmentPreview.itemType ? ' · ' + this.state.enchantmentPreview.itemType : ''))
         : '',
       enchantmentPreviewRows: this.state.enchantmentPreview ? (this.state.enchantmentPreview.rows || []) : [],
