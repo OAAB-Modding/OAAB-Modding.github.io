@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="../style.css?v=library-search-ui-20260703c">
 <script src="../theme.js"></script>
 </helmet>
 
@@ -104,11 +104,36 @@
       <div class="popout-break"></div>
       </sc-if>
       <div style="display:{{ filterWrapDisp }};flex-basis:100%;flex-wrap:wrap;align-items:center;gap:12px;" class="filter-collapse">
-      <div style="flex:{{ searchFlex }};" class="search-box">
+      <div data-searchbox="" style="flex:{{ searchFlex }};" class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="#80735f" stroke-width="2" class="search-icon"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
-        <input type="text" value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search ID, name, mesh, effect: Restore, ingredient: Restore, spell: Fire, enchant: Fire, or inventory: AB_TelvanniGuardF" spellcheck="false" autocomplete="off" class="search-input">
+        <input type="text" value="{{ query }}" onInput="{{ onSearch }}" onFocus="{{ openSearchSuggestions }}" placeholder="{{ searchPlaceholder }}" spellcheck="false" autocomplete="off" class="search-input">
+        <div data-searchmodedd="" class="search-mode">
+          <button type="button" onClick="{{ toggleSearchMode }}" title="Search mode" class="search-mode-button">
+            <span>{{ searchModeLabel }}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:rotate({{ searchModeChevronDeg }}deg);" class="dropdown-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <sc-if value="{{ searchModeOpen }}" hint-placeholder-val="{{ false }}">
+            <div class="search-mode-menu">
+              <sc-for list="{{ searchModeMenu }}" as="mode" hint-placeholder-count="6">
+                <button type="button" data-search-mode="{{ mode.key }}" onClick="{{ pickSearchMode }}" class="search-mode-row">
+                  <span style="color:{{ mode.labelColor }};" class="menu-label"><span style="background:{{ mode.checkBg }};border:1px solid {{ mode.checkBd }};" class="menu-check">{{ mode.mark }}</span>{{ mode.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
         <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
           <button onClick="{{ clearSearch }}" title="Clear search" class="search-clear">×</button>
+        </sc-if>
+        <sc-if value="{{ showSearchSuggestions }}" hint-placeholder-val="{{ false }}">
+          <div class="search-suggest-menu">
+            <sc-for list="{{ searchSuggestions }}" as="sug" hint-placeholder-count="6">
+              <button type="button" data-suggestion="{{ sug.value }}" data-suggestion-mode="{{ sug.mode }}" onMouseDown="{{ pickSearchSuggestion }}" class="search-suggest-row">
+                <span class="search-suggest-value">{{ sug.value }}</span>
+                <span class="search-suggest-kind">{{ sug.kind }}</span>
+              </button>
+            </sc-for>
+          </div>
         </sc-if>
       </div>
       <sc-if value="{{ showTypeMenu }}" hint-placeholder-val="{{ false }}">
@@ -294,7 +319,7 @@
             <sc-if value="{{ it.hasEffects }}" hint-placeholder-val="{{ false }}">
               <div class="asset-effect-row">
                 <sc-for list="{{ it.effects }}" as="eff" hint-placeholder-count="4">
-                  <button type="button" data-effect="{{ eff.label }}" data-effect-query="{{ eff.query }}" onClick="{{ pickEffect }}" title="{{ eff.label }}" class="asset-effect-button">
+                  <button type="button" data-effect="{{ eff.label }}" data-effect-mode="{{ eff.mode }}" onClick="{{ pickEffect }}" title="{{ eff.label }}" class="asset-effect-button">
                     <img src="{{ eff.img }}" alt="{{ eff.label }}" loading="lazy" decoding="async" draggable="{{ no }}" class="asset-effect-icon">
                   </button>
                 </sc-for>
@@ -315,7 +340,7 @@
                       </sc-if>
                       <sc-if value="{{ it.hasEffects }}" hint-placeholder-val="{{ false }}">
                         <sc-for list="{{ it.effects }}" as="eff" hint-placeholder-count="4">
-                          <button type="button" data-effect="{{ eff.label }}" data-effect-query="{{ eff.query }}" onClick="{{ pickEffect }}" class="asset-compact-actions-row">{{ eff.label }}</button>
+                          <button type="button" data-effect="{{ eff.label }}" data-effect-mode="{{ eff.mode }}" onClick="{{ pickEffect }}" class="asset-compact-actions-row">{{ eff.label }}</button>
                         </sc-for>
                       </sc-if>
                     </div>
@@ -371,7 +396,7 @@
       <sc-if value="{{ renderPreviewHasEffects }}" hint-placeholder-val="{{ false }}">
         <div data-render-control="1" class="asset-effect-row library-render-effect-row">
           <sc-for list="{{ renderPreviewEffects }}" as="eff" hint-placeholder-count="4">
-            <button type="button" data-effect="{{ eff.label }}" data-effect-query="{{ eff.query }}" onClick="{{ pickEffect }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="{{ eff.label }}" class="asset-effect-button library-render-effect-button">
+            <button type="button" data-effect="{{ eff.label }}" data-effect-mode="{{ eff.mode }}" onClick="{{ pickEffect }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="{{ eff.label }}" class="asset-effect-button library-render-effect-button">
               <img src="{{ eff.img }}" alt="{{ eff.label }}" loading="lazy" decoding="async" draggable="{{ no }}" class="asset-effect-icon library-render-effect-icon">
             </button>
           </sc-for>
@@ -419,7 +444,7 @@
     <sc-if value="{{ enchantmentPreviewHasEffects }}" hint-placeholder-val="{{ true }}">
       <div class="library-enchant-effects">
         <sc-for list="{{ enchantmentPreviewEffects }}" as="eff" hint-placeholder-count="4">
-          <button type="button" data-effect="{{ eff.label }}" data-effect-query="{{ eff.query }}" onClick="{{ pickEnchantmentEffect }}" title="{{ eff.title }}" class="library-enchant-effect-button">
+          <button type="button" data-effect="{{ eff.label }}" data-effect-mode="{{ eff.mode }}" onClick="{{ pickEnchantmentEffect }}" title="{{ eff.title }}" class="library-enchant-effect-button">
             <img src="{{ eff.img }}" alt="{{ eff.label }}" loading="lazy" decoding="async" draggable="{{ no }}" class="library-enchant-effect-icon">
             <span class="library-enchant-effect-text">
               <span class="library-enchant-effect-name">{{ eff.label }}</span>
@@ -451,6 +476,7 @@
 class Component extends DCLogic {
   state = {
     data: null, active: 'All', tags: [], query: '', tagOpen: false, typeOpen: false,
+    searchMode: '', searchModeOpen: false, searchSuggestOpen: false,
     relData: [], releases: [], relKinds: ['added', 'modified'], relOpen: false,
     filtersOpen: false,
     gridWidth: 0, virtualStartRow: 0, virtualEndRow: 8,
@@ -505,6 +531,12 @@ class Component extends DCLogic {
       if (this.state.typeOpen && !(t.closest && t.closest('[data-typedd]'))) {
         this.setState({ typeOpen: false });
       }
+      if (this.state.searchModeOpen && !(t.closest && t.closest('[data-searchmodedd]'))) {
+        this.setState({ searchModeOpen: false });
+      }
+      if (this.state.searchSuggestOpen && !(t.closest && t.closest('[data-searchbox]'))) {
+        this.setState({ searchSuggestOpen: false });
+      }
       if (this.state.relOpen && !(t.closest && t.closest('[data-reldd]'))) {
         this.setState({ relOpen: false });
       }
@@ -542,6 +574,10 @@ class Component extends DCLogic {
       }
       if (this.state.compactActionsId && e.key === 'Escape') {
         this.setState({ compactActionsId: null });
+        return;
+      }
+      if ((this.state.searchModeOpen || this.state.searchSuggestOpen) && e.key === 'Escape') {
+        this.setState({ searchModeOpen: false, searchSuggestOpen: false });
         return;
       }
       if (!this.state.tagOpen) return;
@@ -1216,7 +1252,7 @@ class Component extends DCLogic {
         label,
         key,
         img: base + icon,
-        query: 'ingredient: ' + label,
+        mode: 'ingredient',
       });
     });
     return out;
@@ -1288,7 +1324,7 @@ class Component extends DCLogic {
       meta: meta || 'Spell',
       kind: 'spell',
       rows,
-      effects: this.magicEffectEntries(record.effects, 8, { queryPrefix: 'spell' }),
+      effects: this.magicEffectEntries(record.effects, 8, { mode: 'spell' }),
     };
   }
 
@@ -1305,7 +1341,7 @@ class Component extends DCLogic {
   }
 
   spellThumbnailEffects(record) {
-    const entries = this.magicEffectEntries(record && record.effects, 8, { queryPrefix: 'spell' });
+    const entries = this.magicEffectEntries(record && record.effects, 8, { mode: 'spell' });
     const out = [];
     const byIcon = Object.create(null);
     entries.forEach(entry => {
@@ -1358,7 +1394,7 @@ class Component extends DCLogic {
     const icons = this.ingredientEffectIconMap();
     const base = this._EFFECT || '';
     const constantEffect = !!(options && options.constantEffect);
-    const queryPrefix = (options && options.queryPrefix) || 'enchant';
+    const mode = (options && options.mode) || 'enchant';
     return effects.slice(0, limit || 8).map(raw => {
       const effect = String((raw && raw.magic_effect) || raw || '').trim();
       if (!effect || effect === 'None') return null;
@@ -1373,7 +1409,7 @@ class Component extends DCLogic {
         img: base + icon,
         summary,
         title: summary ? label + ' · ' + summary : label,
-        query: queryPrefix + ': ' + label,
+        mode,
       };
     }).filter(Boolean);
   }
@@ -1670,44 +1706,120 @@ class Component extends DCLogic {
     return label.toLowerCase() === 'npc' ? 'NPC' : label.toLowerCase();
   }
 
-  parseInventoryQuery(query) {
-    const m = /^(?:inventory|container)\s*:\s*(.+)$/i.exec(String(query || '').trim());
-    return m ? m[1].trim() : '';
+  searchModeDefs() {
+    return [
+      { key: '', label: 'All', kind: 'ID' },
+      { key: 'effect', label: 'Effect', kind: 'Effect' },
+      { key: 'ingredient', label: 'IngredEffect', kind: 'Effect' },
+      { key: 'spell', label: 'SpellEffect', kind: 'Effect' },
+      { key: 'enchant', label: 'EnchantEffect', kind: 'Effect' },
+      { key: 'inventory', label: 'Inventory', kind: 'ID' },
+    ];
   }
 
-  parseEffectQuery(query) {
-    const m = /^effect\s*:\s*(.+)$/i.exec(String(query || '').trim());
-    return m ? m[1].trim() : '';
+  searchModeLabel(mode) {
+    const defs = this.searchModeDefs();
+    const found = defs.find(d => d.key === mode);
+    return found ? found.label : defs[0].label;
   }
 
-  parseIngredientEffectQuery(query) {
-    const m = /^ingred(?:ient)?\s*:\s*(.+)$/i.exec(String(query || '').trim());
-    return m ? m[1].trim() : '';
+  allowedSearchModesForItems(items) {
+    const scope = Array.isArray(items) ? items : [];
+    const allowed = { '': true };
+    const hasIngredient = scope.some(x => x && Array.isArray(x.effects) && x.effects.length);
+    const hasSpell = scope.some(x => x && x.detailKind === 'spell' && x.enchantment && Array.isArray(x.enchantment.effects) && x.enchantment.effects.length);
+    const hasEnchant = scope.some(x => x && x.detailKind !== 'spell' && x.enchantment && Array.isArray(x.enchantment.effects) && x.enchantment.effects.length);
+    const hasInventory = scope.some(x => x && x.hasContents && x.contentIds && x.contentIds.length);
+    if (hasIngredient || hasSpell || hasEnchant) allowed.effect = true;
+    if (hasIngredient) allowed.ingredient = true;
+    if (hasSpell) allowed.spell = true;
+    if (hasEnchant) allowed.enchant = true;
+    if (hasInventory) allowed.inventory = true;
+    return allowed;
   }
 
-  parseEnchantEffectQuery(query) {
-    const m = /^enchant(?:ment)?\s*:\s*(.+)$/i.exec(String(query || '').trim());
-    return m ? m[1].trim() : '';
+  allowedSearchModesForType(type) {
+    const d = this.state.data;
+    const all = (d && d.items) || [];
+    const scope = type === 'All' ? all : all.filter(x => x.type === type);
+    return this.allowedSearchModesForItems(scope);
   }
 
-  parseSpellEffectQuery(query) {
-    const m = /^spell\s*:\s*(.+)$/i.exec(String(query || '').trim());
-    return m ? m[1].trim() : '';
+  activeSearchMode(rawQuery, selectedMode, allowedModes) {
+    const allowed = allowedModes || {};
+    const mode = allowed[selectedMode] ? selectedMode : '';
+    return { mode, term: mode ? String(rawQuery || '').trim() : '', explicit: false };
+  }
+
+  effectSuggestionLabels(items, mode) {
+    const seen = Object.create(null);
+    const out = [];
+    const add = (effects) => {
+      (effects || []).forEach(e => {
+        const label = String((e && e.label) || '').trim();
+        const key = this.effectSearchKey(label);
+        if (!label || !key || seen[key]) return;
+        seen[key] = 1;
+        out.push(label);
+      });
+    };
+    (items || []).forEach(x => {
+      if (!x) return;
+      if (mode === 'ingredient' || mode === 'effect') add(x.effects);
+      if ((mode === 'spell' || mode === 'effect') && x.detailKind === 'spell' && x.enchantment) add(x.enchantment.effects);
+      if ((mode === 'enchant' || mode === 'effect') && x.detailKind !== 'spell' && x.enchantment) add(x.enchantment.effects);
+    });
+    return out.sort((a, b) => a.localeCompare(b));
+  }
+
+  searchSuggestions(items, activeSearch) {
+    const mode = activeSearch && activeSearch.mode ? activeSearch.mode : '';
+    const term = String((activeSearch && activeSearch.term) || this.state.query || '').trim();
+    if (!term) return [];
+    const needle = term.toLowerCase();
+    const source = Array.isArray(items) ? items : [];
+    let values;
+    if (mode === 'effect' || mode === 'ingredient' || mode === 'spell' || mode === 'enchant') {
+      values = this.effectSuggestionLabels(source, mode);
+    } else {
+      values = source
+        .filter(x => mode !== 'inventory' || (x && x.hasContents && x.contentIds && x.contentIds.length))
+        .map(x => String((x && x.id) || '').trim())
+        .filter(Boolean)
+        .sort((a, b) => this.csCompareIds(a, b));
+    }
+    const starts = [];
+    const contains = [];
+    const seen = Object.create(null);
+    values.forEach(value => {
+      const key = value.toLowerCase();
+      if (seen[key] || key.indexOf(needle) === -1) return;
+      seen[key] = 1;
+      (key.indexOf(needle) === 0 ? starts : contains).push(value);
+    });
+    return starts.concat(contains).slice(0, 8).map(value => ({
+      value,
+      mode,
+      kind: mode ? this.searchModeLabel(mode) : 'ID',
+    }));
   }
 
   inventorySearchItems(ownerId, fallbackItems) {
     const all = (this._oaabItems || []).concat(this._vanillaItems || []);
-    const source = all.length ? all : (fallbackItems || []);
+    const source = Array.isArray(fallbackItems) ? fallbackItems : all;
+    const displaySource = all.length ? all : source;
     const byKey = Object.create(null);
-    source.forEach(x => { byKey[String(x.id || '').toLowerCase()] = x; });
+    displaySource.forEach(x => { byKey[String(x.id || '').toLowerCase()] = x; });
+    const ownerSource = Object.create(null);
+    source.forEach(x => { ownerSource[String(x.id || '').toLowerCase()] = x; });
     const owner = byKey[String(ownerId || '').trim().toLowerCase()];
-    if (!owner) return [];
+    if (!owner || !ownerSource[String(ownerId || '').trim().toLowerCase()]) return [];
     return [owner].concat((owner.contentIds || []).map(id => byKey[String(id || '').toLowerCase()]).filter(Boolean));
   }
 
   effectSearchItems(effectKey, fallbackItems) {
     const all = (this._oaabItems || []).concat(this._vanillaItems || []);
-    const source = all.length ? all : (fallbackItems || []);
+    const source = Array.isArray(fallbackItems) ? fallbackItems : all;
     return source.filter(x =>
       (Array.isArray(x.effects) && x.effects.some(e => e.key.indexOf(effectKey) !== -1)) ||
       (x && x.enchantment && Array.isArray(x.enchantment.effects) && x.enchantment.effects.some(e => e.key.indexOf(effectKey) !== -1))
@@ -1716,7 +1828,7 @@ class Component extends DCLogic {
 
   ingredientEffectSearchItems(effectKey, fallbackItems) {
     const all = (this._oaabItems || []).concat(this._vanillaItems || []);
-    const source = all.length ? all : (fallbackItems || []);
+    const source = Array.isArray(fallbackItems) ? fallbackItems : all;
     return source.filter(x =>
       Array.isArray(x.effects) && x.effects.some(e => e.key.indexOf(effectKey) !== -1)
     );
@@ -1724,7 +1836,7 @@ class Component extends DCLogic {
 
   enchantmentEffectSearchItems(effectKey, fallbackItems) {
     const all = (this._oaabItems || []).concat(this._vanillaItems || []);
-    const source = all.length ? all : (fallbackItems || []);
+    const source = Array.isArray(fallbackItems) ? fallbackItems : all;
     return source.filter(x => {
       if (x && x.detailKind === 'spell') return false;
       const e = x && x.enchantment && x.enchantment.effects;
@@ -1734,7 +1846,7 @@ class Component extends DCLogic {
 
   spellEffectSearchItems(effectKey, fallbackItems) {
     const all = (this._oaabItems || []).concat(this._vanillaItems || []);
-    const source = all.length ? all : (fallbackItems || []);
+    const source = Array.isArray(fallbackItems) ? fallbackItems : all;
     return source.filter(x => {
       if (!x || x.detailKind !== 'spell') return false;
       const e = x.enchantment && x.enchantment.effects;
@@ -1983,24 +2095,26 @@ class Component extends DCLogic {
       },
     ];
 
-    // Text search applied on top, matching ID, name, or mesh (case-insensitive).
-    // `inventory: <id>` switches the search box into an inventory-expansion mode:
-    // the requested container, creature, or NPC is shown with any valid contents.
-    // `container:` is still accepted as a compatibility alias.
+    // Text search applies on top of the filters. Special helpers are selected
+    // with the embedded mode dropdown so the input itself stays plain text.
     const rawQuery = (this.state.query || '').trim();
-    const q = rawQuery.toLowerCase();
+    const allowedSearchModes = this.allowedSearchModesForItems(typeFiltered);
+    const selectedSearchMode = allowedSearchModes[this.state.searchMode] ? this.state.searchMode : '';
+    const activeSearch = this.activeSearchMode(rawQuery, selectedSearchMode, allowedSearchModes);
+    const normalQuery = activeSearch.mode ? '' : rawQuery;
+    const q = normalQuery.toLowerCase();
     const qPath = q.replace(/\\/g, '/');
-    const inventoryQuery = this.parseInventoryQuery(rawQuery);
+    const inventoryQuery = activeSearch.mode === 'inventory' ? activeSearch.term : '';
     const inventoryKey = inventoryQuery.toLowerCase();
-    const effectQuery = this.parseEffectQuery(rawQuery);
+    const effectQuery = activeSearch.mode === 'effect' ? activeSearch.term : '';
     const effectKey = this.effectSearchKey(effectQuery);
-    const ingredientEffectQuery = this.parseIngredientEffectQuery(rawQuery);
+    const ingredientEffectQuery = activeSearch.mode === 'ingredient' ? activeSearch.term : '';
     const ingredientEffectKey = this.effectSearchKey(ingredientEffectQuery);
-    const enchantEffectQuery = this.parseEnchantEffectQuery(rawQuery);
+    const enchantEffectQuery = activeSearch.mode === 'enchant' ? activeSearch.term : '';
     const enchantEffectKey = this.effectSearchKey(enchantEffectQuery);
-    const spellEffectQuery = this.parseSpellEffectQuery(rawQuery);
+    const spellEffectQuery = activeSearch.mode === 'spell' ? activeSearch.term : '';
     const spellEffectKey = this.effectSearchKey(spellEffectQuery);
-    const colorQuery = this.parseColorQuery(rawQuery);
+    const colorQuery = activeSearch.mode ? null : this.parseColorQuery(rawQuery);
     const colorKey = colorQuery ? colorQuery.hex + '~' + colorQuery.tolerance : '';
     let filtered;
     const queryCache = this._queryCache;
@@ -2138,7 +2252,7 @@ class Component extends DCLogic {
     const hasFilterWithoutSearch = active !== 'All' || selTags.length > 0 || relSels.length > 0;
     let emptyTitle = 'No thumbnails in this category yet.';
     let emptyCopy = "These records exist in the library data but aren't part of the current thumbnail render set.";
-    if (q) {
+    if (rawQuery) {
       emptyTitle = 'No matching records.';
       emptyCopy = ingredientEffectQuery
         ? 'No ingredient effect matches "' + ingredientEffectQuery + '".'
@@ -2156,9 +2270,31 @@ class Component extends DCLogic {
 
     // Active-filter count powers the mobile "Filters" toggle badge.
     const filterCount =
-      (active !== 'All' ? 1 : 0) + selTags.length + (q ? 1 : 0) + relSels.length +
+      (active !== 'All' ? 1 : 0) + selTags.length + (rawQuery || selectedSearchMode ? 1 : 0) + relSels.length +
       (vanillaOn ? 1 : 0);
     const filtersOpen = !!this.state.filtersOpen;
+    const searchModeMenu = this.searchModeDefs()
+      .filter(mode => mode.key === '' || allowedSearchModes[mode.key])
+      .map(mode => {
+        const on = mode.key === selectedSearchMode;
+        return {
+          key: mode.key,
+          label: mode.label,
+          mark: on ? '\u2713' : '',
+          checkBg: on ? '#d2823f' : 'transparent',
+          checkBd: on ? '#d2823f' : P.border,
+          labelColor: on ? P.strong : P.soft,
+        };
+      });
+    const searchSuggestions = this.searchSuggestions(relFiltered, activeSearch);
+    const searchPlaceholderMap = {
+      effect: 'Search magic effect names',
+      ingredient: 'Search ingredient effect names',
+      spell: 'Search spell effect names',
+      enchant: 'Search enchantment effect names',
+      inventory: 'Search inventory owner IDs',
+    };
+    const searchPlaceholder = searchPlaceholderMap[selectedSearchMode] || 'Search ID, name, mesh, or light color';
 
     return {
       yes: true,
@@ -2335,15 +2471,67 @@ class Component extends DCLogic {
       },
       total,
       query: this.state.query || '',
-      hasQuery: !!q,
-      onSearch: (e) => this.setState({ query: e.target.value }),
-      clearSearch: () => this.setState({ query: '' }),
+      hasQuery: !!(rawQuery || selectedSearchMode),
+      searchPlaceholder,
+      searchModeLabel: this.searchModeLabel(selectedSearchMode),
+      searchModeOpen: !!this.state.searchModeOpen,
+      searchModeChevronDeg: this.state.searchModeOpen ? '180' : '0',
+      searchModeMenu,
+      showSearchSuggestions: !!(this.state.searchSuggestOpen && rawQuery && searchSuggestions.length),
+      searchSuggestions,
+      onSearch: (e) => this.setState({ query: e.target.value, searchSuggestOpen: true, virtualStartRow: 0, virtualEndRow: 8 }),
+      openSearchSuggestions: () => this.setState({ searchSuggestOpen: true }),
+      clearSearch: () => this.setState({ query: '', searchMode: '', searchModeOpen: false, searchSuggestOpen: false, virtualStartRow: 0, virtualEndRow: 8 }),
+      toggleSearchMode: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        this.setState(s => ({ searchModeOpen: !s.searchModeOpen, searchSuggestOpen: false, tagOpen: false, typeOpen: false, relOpen: false }));
+      },
+      pickSearchMode: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        const mode = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.searchMode || '') : '';
+        this.setState({
+          searchMode: allowedSearchModes[mode] ? mode : '',
+          searchModeOpen: false,
+          searchSuggestOpen: true,
+          virtualStartRow: 0,
+          virtualEndRow: 8,
+        });
+        requestAnimationFrame(() => {
+          const input = document.querySelector('.search-input');
+          if (input) {
+            try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
+          }
+        });
+      },
+      pickSearchSuggestion: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        const data = e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset : {};
+        const value = data.suggestion || '';
+        const mode = data.suggestionMode || '';
+        if (!value) return;
+        this.setState({
+          query: value,
+          searchMode: allowedSearchModes[mode] ? mode : '',
+          searchSuggestOpen: false,
+          virtualStartRow: 0,
+          virtualEndRow: 8,
+        });
+        requestAnimationFrame(() => {
+          const input = document.querySelector('.search-input');
+          if (input) {
+            try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
+          }
+        });
+      },
       pickColor: (e) => {
         if (e.preventDefault) e.preventDefault();
         if (e.stopPropagation) e.stopPropagation();
         const color = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.color || '') : '';
         if (!color) return;
-        this.setState({ query: color });
+        this.setState({ query: color, searchMode: '', searchSuggestOpen: false });
         requestAnimationFrame(() => {
           const input = document.querySelector('.search-input');
           if (input) {
@@ -2356,10 +2544,13 @@ class Component extends DCLogic {
         if (e.stopPropagation) e.stopPropagation();
         const id = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.inventoryId || '') : '';
         if (!id) return;
-        const cur = this.parseInventoryQuery(this.state.query || '');
-        const nextQuery = cur && cur.toLowerCase() === id.toLowerCase() ? '' : 'inventory: ' + id;
+        const curSearch = this.activeSearchMode(this.state.query || '', this.state.searchMode || '', this.allowedSearchModesForType(this.state.active || 'All'));
+        const isCurrent = curSearch.mode === 'inventory' && curSearch.term.toLowerCase() === id.toLowerCase();
         this.setState({
-          query: nextQuery,
+          query: isCurrent ? '' : id,
+          searchMode: isCurrent ? '' : 'inventory',
+          searchModeOpen: false,
+          searchSuggestOpen: false,
           tagOpen: false,
           typeOpen: false,
           relOpen: false,
@@ -2370,7 +2561,7 @@ class Component extends DCLogic {
           virtualEndRow: 8,
         });
         requestAnimationFrame(() => {
-          if (nextQuery) {
+          if (!isCurrent) {
             const target = document.querySelector('.library-results-header') || document.querySelector('[data-grid]');
             const toolbar = document.querySelector('[data-tabbar]');
             if (target) {
@@ -2390,10 +2581,15 @@ class Component extends DCLogic {
         if (e.stopPropagation) e.stopPropagation();
         const effect = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.effect || '') : '';
         if (!effect) return;
-        const effectQuery = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.effectQuery || '') : '';
-        const nextQuery = effectQuery || 'ingredient: ' + effect;
+        const mode = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.effectMode || 'ingredient') : 'ingredient';
+        const parsed = { mode: mode || 'ingredient', term: effect };
+        const curSearch = this.activeSearchMode(this.state.query || '', this.state.searchMode || '', this.allowedSearchModesForType(this.state.active || 'All'));
+        const isCurrent = curSearch.mode === parsed.mode && this.effectSearchKey(curSearch.term) === this.effectSearchKey(parsed.term);
         this.setState({
-          query: nextQuery,
+          query: isCurrent ? '' : parsed.term,
+          searchMode: isCurrent ? '' : parsed.mode,
+          searchModeOpen: false,
+          searchSuggestOpen: false,
           tagOpen: false,
           typeOpen: false,
           relOpen: false,
@@ -2404,7 +2600,7 @@ class Component extends DCLogic {
           virtualEndRow: 8,
         });
         requestAnimationFrame(() => {
-          if (nextQuery) {
+          if (!isCurrent) {
             const target = document.querySelector('.library-results-header') || document.querySelector('[data-grid]');
             const toolbar = document.querySelector('[data-tabbar]');
             if (target) {
@@ -2424,15 +2620,15 @@ class Component extends DCLogic {
         if (e.stopPropagation) e.stopPropagation();
         const effect = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.effect || '') : '';
         if (!effect) return;
-        const effectQuery = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.effectQuery || '') : '';
-        const isSpellQuery = /^spell\s*:/i.test(effectQuery);
-        const isEnchantQuery = /^enchant(?:ment)?\s*:/i.test(effectQuery);
-        const cur = isSpellQuery
-          ? this.parseSpellEffectQuery(this.state.query || '')
-          : (isEnchantQuery ? this.parseEnchantEffectQuery(this.state.query || '') : '');
-        const nextQuery = cur && this.effectSearchKey(cur) === this.effectSearchKey(effect) ? '' : (effectQuery || 'enchant: ' + effect);
+        const mode = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.effectMode || 'enchant') : 'enchant';
+        const parsed = { mode: mode || 'enchant', term: effect };
+        const curSearch = this.activeSearchMode(this.state.query || '', this.state.searchMode || '', this.allowedSearchModesForType(this.state.active || 'All'));
+        const isCurrent = curSearch.mode === parsed.mode && this.effectSearchKey(curSearch.term) === this.effectSearchKey(parsed.term);
         this.setState({
-          query: nextQuery,
+          query: isCurrent ? '' : parsed.term,
+          searchMode: isCurrent ? '' : parsed.mode,
+          searchModeOpen: false,
+          searchSuggestOpen: false,
           tagOpen: false,
           typeOpen: false,
           relOpen: false,
@@ -2443,7 +2639,7 @@ class Component extends DCLogic {
           virtualEndRow: 8,
         });
         requestAnimationFrame(() => {
-          if (nextQuery) {
+          if (!isCurrent) {
             const target = document.querySelector('.library-results-header') || document.querySelector('[data-grid]');
             const toolbar = document.querySelector('[data-tabbar]');
             if (target) {
@@ -2468,7 +2664,19 @@ class Component extends DCLogic {
       typeBtnFg: active === 'All' ? P.soft : P.strong,
       typeBtnBg: active === 'All' ? P.surface : 'rgba(210,130,63,0.12)',
       typeBtnBd: active === 'All' ? P.border : '#4a3526',
-      pickType: (e) => this.setState({ active: e.currentTarget.dataset.type, typeOpen: false }),
+      pickType: (e) => {
+        const nextType = e.currentTarget.dataset.type;
+        const allowed = this.allowedSearchModesForType(nextType);
+        this.setState(s => ({
+          active: nextType,
+          typeOpen: false,
+          searchModeOpen: false,
+          searchSuggestOpen: false,
+          searchMode: allowed[s.searchMode] ? s.searchMode : '',
+          virtualStartRow: 0,
+          virtualEndRow: 8,
+        }));
+      },
       searchFlex: narrow ? '1 1 100%' : '1 1 auto',
       rowWrap: (isPopout || narrow) ? 'wrap' : 'nowrap',
       ctrlBtnOrder: isPopout ? 1 : 0,
@@ -2519,10 +2727,10 @@ class Component extends DCLogic {
         if (next.length === 0) return; // keep at least one kind selected
         this.setState({ relKinds: next });
       },
-      anyFilter: active !== 'All' || selTags.length > 0 || !!q || relSels.length > 0,
+      anyFilter: active !== 'All' || selTags.length > 0 || !!rawQuery || !!selectedSearchMode || relSels.length > 0,
       clearAll: () => this.setState({
         active: 'All', tags: [], query: '', releases: [], relKinds: ['added', 'modified'],
-        tagOpen: false, typeOpen: false, relOpen: false,
+        tagOpen: false, typeOpen: false, relOpen: false, searchMode: '', searchModeOpen: false, searchSuggestOpen: false,
       }),
       shownCount: filtered.length,
       isEmpty: !!d && filtered.length === 0,
@@ -2530,7 +2738,15 @@ class Component extends DCLogic {
       emptyCopy,
       pickTab: (e) => {
         const label = e.currentTarget.dataset.ttab;
-        this.setState({ active: label });
+        const allowed = this.allowedSearchModesForType(label);
+        this.setState(s => ({
+          active: label,
+          searchMode: allowed[s.searchMode] ? s.searchMode : '',
+          searchModeOpen: false,
+          searchSuggestOpen: false,
+          virtualStartRow: 0,
+          virtualEndRow: 8,
+        }));
         window.scrollTo({ top: Math.min(window.scrollY, 620), behavior: 'auto' });
       },
       pickTag: (e) => {
