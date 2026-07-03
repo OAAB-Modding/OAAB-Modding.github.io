@@ -298,7 +298,14 @@
     <button type="button" class="library-render-close" onClick="{{ closeRenderPreview }}" aria-label="Close full size render" title="Close">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
     </button>
-    <img src="{{ renderPreviewSrc }}" alt="{{ renderPreviewTitle }}" decoding="async" class="library-render-image">
+    <div class="library-render-media">
+      <sc-if value="{{ showRenderSpinner }}" hint-placeholder-val="{{ true }}">
+        <div data-spin="" class="asset-spinner-wrap library-render-spinner-wrap">
+          <div class="asset-spinner library-render-spinner"></div>
+        </div>
+      </sc-if>
+      <img src="{{ renderPreviewSrc }}" alt="{{ renderPreviewTitle }}" decoding="async" onLoad="{{ renderLoad }}" onError="{{ renderErr }}" style="opacity:{{ renderPreviewOpacity }};" class="library-render-image">
+    </div>
     <div class="library-render-caption">
       <code class="library-render-title">{{ renderPreviewTitle }}</code>
       <sc-if value="{{ hasRenderPreviewMeta }}" hint-placeholder-val="{{ true }}">
@@ -339,6 +346,7 @@ class Component extends DCLogic {
     theme: (typeof window !== 'undefined' && window.OAAB_THEME) ? window.OAAB_THEME.read() : 'dark',
     narrow: (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(max-width: 820px)').matches : false,
     renderPreview: null,
+    renderPreviewLoaded: false,
   };
 
   componentDidMount() {
@@ -479,8 +487,8 @@ class Component extends DCLogic {
     const REPO = 'https://cdn.jsdelivr.net/gh/OAAB-Modding/OAAB-Modding.github.io@main';
     const THUMB = REPO + '/assets/images/library/thumbnails/meshes/';
     const NPC_THUMB = REPO + '/assets/images/library/thumbnails/npc/';
-    const RENDER = REPO + '/assets/images/library/renders/meshes/';
-    const NPC_RENDER = REPO + '/assets/images/library/renders/npc/';
+    const RENDER = '/assets/images/library/renders/meshes/';
+    const NPC_RENDER = '/assets/images/library/renders/npc/';
     const EFFECT = REPO + '/assets/images/library/effects/';
     const LIGHT_MASK = REPO + '/assets/images/library/masks/marker_light_mask.webp';
     this._THUMB = THUMB;
@@ -1019,6 +1027,7 @@ class Component extends DCLogic {
     if (this._vanillaItems || this._vanillaLoading) return;
     this._vanillaLoading = true;
     const THUMB = this._THUMB;
+    const RENDER = this._RENDER;
     const LIGHT_MASK = this._LIGHT_MASK;
     const files = ['Morrowind_filtered.json', 'Bloodmoon_filtered.json', 'Tribunal_filtered.json'];
     Promise.all(files.map(f =>
@@ -1057,6 +1066,7 @@ class Component extends DCLogic {
             name: r.name || '',
             type: this.labelType(r.type),
             img: npc ? this.npcThumbnailUrl(id) : THUMB + rel,
+            render: npc ? this.npcRenderUrl(id) : RENDER + rel,
             mesh: mesh,
             lightTint: markerLight ? lightColor : '',
             lightColor: lightColor,
@@ -1703,15 +1713,18 @@ class Component extends DCLogic {
             title: (el.dataset.renderTitle || '').trim(),
             meta: (el.dataset.renderMeta || '').trim(),
           },
+          renderPreviewLoaded: false,
         });
       },
       closeRenderPreview: (e) => {
         if (e && e.preventDefault) e.preventDefault();
-        this.setState({ renderPreview: null });
+        this.setState({ renderPreview: null, renderPreviewLoaded: false });
       },
       stopRenderPreviewClick: (e) => {
         if (e && e.stopPropagation) e.stopPropagation();
       },
+      renderLoad: () => this.setState({ renderPreviewLoaded: true }),
+      renderErr: () => this.setState({ renderPreviewLoaded: true }),
       onDrag: (e) => {
         const id = e.currentTarget.dataset.eid;
         if (!id) return;
@@ -1891,6 +1904,8 @@ class Component extends DCLogic {
       renderPreviewTitle: this.state.renderPreview ? this.state.renderPreview.title : '',
       renderPreviewMeta: this.state.renderPreview ? this.state.renderPreview.meta : '',
       hasRenderPreviewMeta: !!(this.state.renderPreview && this.state.renderPreview.meta),
+      showRenderSpinner: !!(this.state.renderPreview && !this.state.renderPreviewLoaded),
+      renderPreviewOpacity: this.state.renderPreviewLoaded ? '1' : '0',
       toggleTheme: () => {
         const n = light ? 'dark' : 'light';
         if (window.OAAB_THEME) window.OAAB_THEME.set(n);
