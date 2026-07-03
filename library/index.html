@@ -257,19 +257,26 @@
             <sc-if value="{{ it.relShow }}" hint-placeholder-val="{{ false }}">
               <span title="Touched in OAAB_Data {{ it.relVer }}" style="background:{{ it.relBg }};color:{{ it.relFg }};border:1px solid {{ it.relBd }};" class="asset-release-badge"><span class="asset-release-glyph">{{ it.relGlyph }}</span>{{ it.relVer }}</span>
             </sc-if>
+            <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
             <sc-if value="{{ it.lightColor }}" hint-placeholder-val="{{ false }}">
               <button type="button" data-color="{{ it.lightHex }}" onClick="{{ pickColor }}" title="{{ it.lightHex }}" style="background:{{ it.lightColor }};" class="asset-light-swatch"></button>
             </sc-if>
+            </sc-if>
+            <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
             <sc-if value="{{ it.hasContents }}" hint-placeholder-val="{{ false }}">
               <button type="button" data-inventory-id="{{ it.id }}" onClick="{{ pickInventoryContents }}" title="{{ it.contentsTitle }}" class="asset-container-button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="asset-container-icon"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>
               </button>
             </sc-if>
+            </sc-if>
+            <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
             <sc-if value="{{ it.hasEnchantment }}" hint-placeholder-val="{{ false }}">
               <button type="button" data-enchantment-item-id="{{ it.id }}" onClick="{{ openEnchantmentDetails }}" title="{{ it.enchantmentTitle }}" class="asset-enchantment-button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="asset-enchantment-icon"><path d="M14 11a2 2 0 1 1-4 0 4 4 0 0 1 8 0 6 6 0 0 1-12 0 8 8 0 0 1 16 0 10 10 0 0 1-20 0 11.93 11.93 0 0 1 2.42-7.23 2 2 0 1 1 3.16 2.46"></path></svg>
               </button>
             </sc-if>
+            </sc-if>
+            <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
             <sc-if value="{{ it.hasEffects }}" hint-placeholder-val="{{ false }}">
               <div class="asset-effect-row">
                 <sc-for list="{{ it.effects }}" as="eff" hint-placeholder-count="4">
@@ -279,7 +286,28 @@
                 </sc-for>
               </div>
             </sc-if>
+            </sc-if>
             <sc-if value="{{ compact }}" hint-placeholder-val="{{ false }}">
+              <sc-if value="{{ it.hasCompactActions }}" hint-placeholder-val="{{ false }}">
+                <div data-compact-actions="" class="asset-compact-actions">
+                  <button type="button" data-compact-action-id="{{ it.id }}" onClick="{{ toggleCompactActions }}" aria-label="Show item actions" title="Actions" class="asset-compact-actions-button">...</button>
+                  <sc-if value="{{ it.compactActionsOpen }}" hint-placeholder-val="{{ false }}">
+                    <div class="asset-compact-actions-menu" onClick="{{ stopCompactActionsClick }}">
+                      <sc-if value="{{ it.hasContents }}" hint-placeholder-val="{{ false }}">
+                        <button type="button" data-inventory-id="{{ it.id }}" onClick="{{ pickInventoryContents }}" class="asset-compact-actions-row">{{ it.compactContentsLabel }}</button>
+                      </sc-if>
+                      <sc-if value="{{ it.hasEnchantment }}" hint-placeholder-val="{{ false }}">
+                        <button type="button" data-enchantment-item-id="{{ it.id }}" onClick="{{ openEnchantmentDetails }}" class="asset-compact-actions-row">Inspect enchantment</button>
+                      </sc-if>
+                      <sc-if value="{{ it.hasEffects }}" hint-placeholder-val="{{ false }}">
+                        <sc-for list="{{ it.effects }}" as="eff" hint-placeholder-count="4">
+                          <button type="button" data-effect="{{ eff.label }}" onClick="{{ pickEffect }}" class="asset-compact-actions-row">{{ eff.label }}</button>
+                        </sc-for>
+                      </sc-if>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
               <code class="asset-id-overlay">{{ it.id }}</code>
             </sc-if>
           </div>
@@ -407,6 +435,7 @@ class Component extends DCLogic {
     relData: [], releases: [], relKinds: ['added', 'modified'], relOpen: false,
     filtersOpen: false,
     gridWidth: 0, virtualStartRow: 0, virtualEndRow: 8,
+    compactActionsId: null,
     compact: (typeof localStorage !== 'undefined' && localStorage.getItem('oaab_compact_v2') === '1'),
     vanilla: (typeof localStorage !== 'undefined' && localStorage.getItem('oaab_vanilla') === '1'),
     scale: (function () {
@@ -460,6 +489,9 @@ class Component extends DCLogic {
       if (this.state.relOpen && !(t.closest && t.closest('[data-reldd]'))) {
         this.setState({ relOpen: false });
       }
+      if (this.state.compactActionsId && !(t.closest && t.closest('[data-compact-actions]'))) {
+        this.setState({ compactActionsId: null });
+      }
     };
     document.addEventListener('mousedown', this._onDocDown, true);
 
@@ -487,6 +519,10 @@ class Component extends DCLogic {
           this.showAdjacentRenderPreview(e.key === 'ArrowRight' ? 1 : -1);
           return;
         }
+        return;
+      }
+      if (this.state.compactActionsId && e.key === 'Escape') {
+        this.setState({ compactActionsId: null });
         return;
       }
       if (!this.state.tagOpen) return;
@@ -1909,10 +1945,13 @@ class Component extends DCLogic {
         contentsTitle: x.contentIds && x.contentIds.length
           ? 'Search this ' + this.inventoryOwnerLabel(x.type) + ' inventory and ' + x.contentIds.length + ' valid content' + (x.contentIds.length === 1 ? '' : 's')
           : '',
+        compactContentsLabel: String(x.type || '').toLowerCase() === 'npc' ? 'Open inventory' : 'Open container',
         hasEffects: !!(x.effects && x.effects.length),
         effects: x.effects || [],
         hasEnchantment: !!x.enchantment,
         enchantmentTitle: x.enchantment ? x.enchantment.title : '',
+        hasCompactActions: !!((x.hasContents && x.contentIds && x.contentIds.length) || (x.effects && x.effects.length) || x.enchantment),
+        compactActionsOpen: this.state.compactActionsId === x.id,
         nif: x.mesh || (x.img || ''),
         tip: comfortable
           ? (x.mesh || x.id || x.img || '')
@@ -1979,8 +2018,18 @@ class Component extends DCLogic {
       toggleCompact: () => this.setState(s => {
         const next = !s.compact;
         try { localStorage.setItem('oaab_compact_v2', next ? '1' : '0'); } catch (e) {}
-        return { compact: next };
+        return { compact: next, compactActionsId: null };
       }),
+      toggleCompactActions: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        const id = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.compactActionId || '') : '';
+        if (!id) return;
+        this.setState(s => ({ compactActionsId: s.compactActionsId === id ? null : id }));
+      },
+      stopCompactActionsClick: (e) => {
+        if (e && e.stopPropagation) e.stopPropagation();
+      },
       vanillaOn,
       vanillaBg: vanillaOn ? 'rgba(210,130,63,0.14)' : P.surface,
       vanillaBd: vanillaOn ? '#7a4f2c' : P.border,
@@ -2086,7 +2135,7 @@ class Component extends DCLogic {
         const item = this.findCatalogItem(id);
         const payload = this.enchantmentPreviewPayload(item);
         if (!payload) return;
-        this.setState({ enchantmentPreview: payload });
+        this.setState({ enchantmentPreview: payload, compactActionsId: null });
       },
       closeEnchantmentDetails: (e) => {
         if (e && e.preventDefault) e.preventDefault();
@@ -2150,6 +2199,7 @@ class Component extends DCLogic {
           tagOpen: false,
           typeOpen: false,
           relOpen: false,
+          compactActionsId: null,
           renderPreview: null,
           renderPreviewLoaded: false,
           virtualStartRow: 0,
@@ -2183,6 +2233,7 @@ class Component extends DCLogic {
           tagOpen: false,
           typeOpen: false,
           relOpen: false,
+          compactActionsId: null,
           virtualStartRow: 0,
           virtualEndRow: 8,
         });
