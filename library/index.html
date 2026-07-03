@@ -295,7 +295,7 @@
 <sc-if value="{{ showRenderPreview }}" hint-placeholder-val="{{ false }}">
 <div class="library-render-backdrop" onClick="{{ closeRenderPreview }}">
   <div class="library-render-dialog" role="dialog" aria-modal="true" aria-label="{{ renderPreviewTitle }}" onClick="{{ stopRenderPreviewClick }}" onPointerDown="{{ renderSwipeStart }}" onPointerMove="{{ renderSwipeMove }}" onPointerUp="{{ renderSwipeEnd }}" onPointerCancel="{{ renderSwipeCancel }}">
-    <button type="button" class="library-render-close" onClick="{{ closeRenderPreview }}" aria-label="Close full size render" title="Close">
+    <button type="button" data-render-control="1" class="library-render-close" onClick="{{ closeRenderPreview }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" aria-label="Close full size render" title="Close">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
     </button>
     <div class="library-render-media">
@@ -753,6 +753,8 @@ class Component extends DCLogic {
 
   beginRenderSwipe(e) {
     if (!this.state.renderPreview) return;
+    const target = e && e.target;
+    if (target && target.closest && target.closest('[data-render-control]')) return;
     this._renderSwipeStart = this.renderSwipePoint(e);
     this._renderSwipeLast = this._renderSwipeStart;
     try {
@@ -762,6 +764,8 @@ class Component extends DCLogic {
 
   updateRenderSwipe(e) {
     if (!this._renderSwipeStart) return;
+    const target = e && e.target;
+    if (target && target.closest && target.closest('[data-render-control]')) return;
     this._renderSwipeLast = this.renderSwipePoint(e);
     const dx = this._renderSwipeLast.x - this._renderSwipeStart.x;
     const dy = this._renderSwipeLast.y - this._renderSwipeStart.y;
@@ -771,6 +775,11 @@ class Component extends DCLogic {
   }
 
   finishRenderSwipe(e) {
+    const target = e && e.target;
+    if (target && target.closest && target.closest('[data-render-control]')) {
+      this.cancelRenderSwipe();
+      return;
+    }
     const start = this._renderSwipeStart;
     const end = this.renderSwipePoint(e) || this._renderSwipeLast;
     this._renderSwipeStart = null;
@@ -1809,6 +1818,7 @@ class Component extends DCLogic {
       },
       closeRenderPreview: (e) => {
         if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
         this.setState({ renderPreview: null, renderPreviewLoaded: false });
       },
       stopRenderPreviewClick: (e) => {
