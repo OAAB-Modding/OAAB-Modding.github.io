@@ -1370,6 +1370,17 @@ button {
   inset:0;
   background:radial-gradient(150% 120% at 50% 0%,rgba(210,130,63,0.1),transparent 60%);
 }
+.showcase-thumb-layer {
+  position:absolute;
+  inset:0;
+}
+.showcase-spinner-wrap {
+  pointer-events:none;
+}
+.showcase-image {
+  opacity:0;
+  transition:opacity .3s ease;
+}
 .showcase-shade {
   position:absolute;
   inset:0;

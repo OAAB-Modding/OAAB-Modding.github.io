@@ -126,7 +126,12 @@
               <div class="showcase-initial">{{ mod.initial }}</div>
               <div class="showcase-radial"></div>
               <sc-if value="{{ mod.hasImage }}" hint-placeholder-val="{{ false }}">
-                <img src="{{ mod.image }}" alt="{{ mod.name }}" loading="lazy" onerror="this.style.display='none'" class="cover-fill">
+                <div key="{{ mod.imageKey }}" data-showcase-thumb="" class="showcase-thumb-layer">
+                  <div data-spin="" class="asset-spinner-wrap showcase-spinner-wrap">
+                    <div class="asset-spinner"></div>
+                  </div>
+                  <img src="{{ mod.image }}" alt="{{ mod.name }}" loading="lazy" decoding="async" ref="{{ showcaseImgRef }}" onLoad="{{ showcaseImgLoad }}" onError="{{ showcaseImgErr }}" class="cover-fill showcase-image">
+                </div>
               </sc-if>
               <div class="showcase-shade"></div>
               <sc-if value="{{ mod.hasCat }}" hint-placeholder-val="{{ true }}"><span class="media-label">{{ mod.cat }}</span></sc-if>
@@ -452,6 +457,7 @@ class Component extends DCLogic {
       by: m.by,
       url: 'https://www.nexusmods.com/morrowind/mods/' + m.id,
       image: image,
+      imageKey: m.id + '|' + (image || ''),
       hasImage: !!image,
       hasCat: !!m.cat,
       summary: summary,
@@ -500,7 +506,30 @@ class Component extends DCLogic {
         if (window.OAAB_THEME) window.OAAB_THEME.set(n);
         this.setState({ theme: n });
       },
-      imgFail: (e) => { e.currentTarget.style.display = 'none'; },
+      showcaseImgLoad: (e) => {
+        const img = e && e.target;
+        if (!img) return;
+        img.style.opacity = '1';
+        const wrap = img.parentNode;
+        const spin = wrap && wrap.querySelector('[data-spin]');
+        if (spin) spin.style.display = 'none';
+      },
+      showcaseImgErr: (e) => {
+        const img = e && e.target;
+        if (!img) return;
+        img.style.opacity = '0';
+        const wrap = img.parentNode;
+        const spin = wrap && wrap.querySelector('[data-spin]');
+        if (spin) spin.style.display = 'none';
+      },
+      showcaseImgRef: (img) => {
+        if (!img || !img.complete) return;
+        const ok = !!(img.naturalWidth || img.naturalHeight);
+        img.style.opacity = ok ? '1' : '0';
+        const wrap = img.parentNode;
+        const spin = wrap && wrap.querySelector('[data-spin]');
+        if (spin) spin.style.display = 'none';
+      },
       reshuffle: () => { this.setState({ order: this.shuffleOrder(this._pool.length), page: 0 }); this.resetTimer(); },
       prevPage: () => { this.step(-1); this.resetTimer(); },
       pickMember: (e) => { this.setState({ member: e.currentTarget.dataset.member, memberPage: 0 }); },
