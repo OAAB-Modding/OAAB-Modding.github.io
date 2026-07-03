@@ -306,7 +306,7 @@
       </sc-if>
       <img src="{{ renderPreviewSrc }}" alt="{{ renderPreviewTitle }}" decoding="async" onLoad="{{ renderLoad }}" onError="{{ renderErr }}" style="opacity:{{ renderPreviewOpacity }};" class="library-render-image">
       <sc-if value="{{ renderPreviewLightTint }}" hint-placeholder-val="{{ false }}">
-        <span aria-hidden="true" style="background:{{ renderPreviewLightTint }};--asset-light-mask:url('{{ renderPreviewLightMask }}');--asset-light-inset:0px;" class="asset-light-tint library-render-light-tint"></span>
+        <span aria-hidden="true" style="background:{{ renderPreviewLightTint }};--asset-light-mask:url('{{ renderPreviewLightMask }}');" class="asset-light-tint library-render-light-tint"></span>
       </sc-if>
       <sc-if value="{{ renderPreviewLightColor }}" hint-placeholder-val="{{ false }}">
         <button type="button" data-render-control="1" data-color="{{ renderPreviewLightHex }}" onClick="{{ pickColor }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="{{ renderPreviewLightHex }}" style="background:{{ renderPreviewLightColor }};" class="asset-light-swatch library-render-light-swatch"></button>
@@ -1909,6 +1909,8 @@ class Component extends DCLogic {
           tagOpen: false,
           typeOpen: false,
           relOpen: false,
+          renderPreview: null,
+          renderPreviewLoaded: false,
           virtualStartRow: 0,
           virtualEndRow: 8,
         });

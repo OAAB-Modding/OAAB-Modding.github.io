@@ -2739,6 +2739,7 @@ button {
 .library-render-media {
   position:relative;
   min-height:0;
+  --library-render-pad:44px;
   background:radial-gradient(120% 120% at 50% 18%,#221913 0%,#100b07 72%);
   overflow:hidden;
 }
@@ -2753,10 +2754,13 @@ button {
   display:block;
   width:100%;
   height:100%;
+  box-sizing:border-box;
+  padding:var(--library-render-pad);
   object-fit:contain;
   transition:opacity .24s ease;
 }
 .library-render-light-tint {
+  --asset-light-inset:var(--library-render-pad);
   z-index:2;
 }
 .library-render-light-swatch,
@@ -3946,6 +3950,9 @@ button {
     width:calc(100vw - 24px);
     height:calc(100vh - 24px);
     max-height:calc(100vh - 24px);
+  }
+  .library-render-media {
+    --library-render-pad:24px;
   }
   .library-render-caption {
     min-height:56px;
