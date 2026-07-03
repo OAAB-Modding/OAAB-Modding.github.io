@@ -2693,9 +2693,7 @@ class Component extends DCLogic {
             }
           }
           const input = document.querySelector('.search-input');
-          if (input) {
-            try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
-          }
+          if (input) input.blur();
         });
       },
       pickEnchantmentEffect: (e) => {
@@ -2732,9 +2730,7 @@ class Component extends DCLogic {
             }
           }
           const input = document.querySelector('.search-input');
-          if (input) {
-            try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
-          }
+          if (input) input.blur();
         });
       },
       typeCount: types.length,
