@@ -1,5 +1,1094 @@
 [
   {
+    "type": "Spell",
+    "flags": "",
+    "id": "BM_bearregen_unique",
+    "name": "Regeneration",
+    "effects": [
+      {
+        "magic_effect": "RestoreHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "BM_paralyze_hirc",
+    "name": "Hunter's Venom",
+    "effects": [
+      {
+        "magic_effect": "Paralyze",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 1,
+        "duration": 10,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "Burden",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 1,
+        "duration": 10,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 46,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "BM_resistpara_UNIQUE",
+    "name": "Resist Paralysis",
+    "effects": [
+      {
+        "magic_effect": "ResistParalysis",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "BM_summonbear",
+    "name": "Call Bear",
+    "effects": [
+      {
+        "magic_effect": "SummonBear",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 45,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 68,
+      "flags": "AUTO_CALCULATE | ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "BM_summonwolf",
+    "name": "Call Wolf",
+    "effects": [
+      {
+        "magic_effect": "SummonWolf",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 45,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 68,
+      "flags": "AUTO_CALCULATE | ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "Ulfgar_Ghost_sp",
+    "name": "Ulfgar Ghost",
+    "effects": [
+      {
+        "magic_effect": "Chameleon",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 9999,
+        "min_magnitude": 70,
+        "max_magnitude": 70
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "bm_draugr_curse",
+    "name": "Eddard's Wrath",
+    "effects": [
+      {
+        "magic_effect": "DisintegrateArmor",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 15,
+        "min_magnitude": 4,
+        "max_magnitude": 9
+      },
+      {
+        "magic_effect": "DisintegrateWeapon",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 15,
+        "min_magnitude": 4,
+        "max_magnitude": 9
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 200,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "bm_fireregen",
+    "name": "Icy Blood",
+    "effects": [
+      {
+        "magic_effect": "RestoreHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "bm_frstgnt",
+    "name": "Karstaag Resists1",
+    "effects": [
+      {
+        "magic_effect": "ResistFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "ResistMagicka",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "ResistParalysis",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "ResistNormalWeapons",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "Reflect",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "RestoreHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 4,
+        "max_magnitude": 4
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "bm_hunterwind",
+    "name": "Hunter's Wind",
+    "effects": [
+      {
+        "magic_effect": "RestoreHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1000,
+        "max_magnitude": 1000
+      }
+    ],
+    "data": {
+      "spell_type": "Power",
+      "cost": 1,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "bm_huntresist",
+    "name": "Hircine Resists1",
+    "effects": [
+      {
+        "magic_effect": "ResistFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "ResistMagicka",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "ResistParalysis",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "ResistNormalWeapons",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "Reflect",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "ResistFire",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 75,
+        "max_magnitude": 75
+      },
+      {
+        "magic_effect": "RestoreHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 4,
+        "max_magnitude": 4
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "bm_spdresist",
+    "name": "Hircine Resists1",
+    "effects": [
+      {
+        "magic_effect": "ResistFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "ResistMagicka",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "ResistParalysis",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "ResistNormalWeapons",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "Reflect",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "RestoreHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      },
+      {
+        "magic_effect": "RestoreFatigue",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "bm_strresist",
+    "name": "Hircine Resists1",
+    "effects": [
+      {
+        "magic_effect": "ResistFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "ResistMagicka",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "ResistParalysis",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "ResistNormalWeapons",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "Reflect",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "FortifyAttackBonus",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 25,
+        "max_magnitude": 25
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "bm_summonbonewolf",
+    "name": "Summon Bonewolf",
+    "effects": [
+      {
+        "magic_effect": "SummonBoneWolf",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 45,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "brittlewind",
+    "name": "Brittlewind",
+    "effects": [
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 10,
+        "duration": 10,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "DisintegrateArmor",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 10,
+        "duration": 10,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "DisintegrateWeapon",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 10,
+        "duration": 10,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 224,
+      "flags": "AUTO_CALCULATE | ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "colony_rug",
+    "name": "Trespasser's Bane",
+    "effects": [
+      {
+        "magic_effect": "DrainAttribute",
+        "skill": "None",
+        "attribute": "Agility",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 600,
+        "min_magnitude": 50,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "DrainAttribute",
+        "skill": "None",
+        "attribute": "Speed",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 600,
+        "min_magnitude": 20,
+        "max_magnitude": 80
+      },
+      {
+        "magic_effect": "Burden",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 300,
+        "min_magnitude": 100,
+        "max_magnitude": 200
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "glenmoril_ring",
+    "name": "Glenmoril Witch Teleport",
+    "effects": [
+      {
+        "magic_effect": "Chameleon",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 30,
+        "duration": 0,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "Poison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 30,
+        "duration": 0,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "hroldar_death",
+    "name": "Hroldar's Death Blast",
+    "effects": [
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 30,
+        "duration": 0,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "hrothmund blessing",
+    "name": "Hrothmund's Blessing",
+    "effects": [
+      {
+        "magic_effect": "FrostShield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 180,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      },
+      {
+        "magic_effect": "Sanctuary",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 180,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 1,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "immune to paralysis",
+    "name": "Immune to Paralysis",
+    "effects": [
+      {
+        "magic_effect": "ResistParalysis",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "snowshield",
+    "name": "Snow Shield",
+    "effects": [
+      {
+        "magic_effect": "ResistFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "stone_erlendr",
+    "name": "Erlendr's Speed",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Speed",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 180,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 1,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "stone_hunroor",
+    "name": "Hunroor's Agility",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Agility",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 180,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 1,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "stone_nikulas",
+    "name": "Nikulas's Personality",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Personality",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 180,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 1,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "stone_ulfgar",
+    "name": "Ulfgar's Strength",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Strength",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 180,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 1,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "touchdrain agility",
+    "name": "TouchDrain Agility",
+    "effects": [
+      {
+        "magic_effect": "DrainAttribute",
+        "skill": "None",
+        "attribute": "Agility",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 5,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 19,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "ulfgar_ghost_ring",
+    "name": "Ulfgar's Death Blast",
+    "effects": [
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 30,
+        "duration": 0,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "werewolf blood",
+    "name": "Sanies Lupinus",
+    "effects": [
+      {
+        "magic_effect": "DrainFatigue",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "spell_type": "Disease",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "werewolf hunger",
+    "name": "Weak From Bloodlust",
+    "effects": [
+      {
+        "magic_effect": "DamageHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "DamageFatigue",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 2,
+        "max_magnitude": 2
+      }
+    ],
+    "data": {
+      "spell_type": "Disease",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "werewolf regeneration",
+    "name": "Spirit of the Wolf",
+    "effects": [
+      {
+        "magic_effect": "RestoreHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "werewolf resists",
+    "name": "Werewolf Resistances",
+    "effects": [
+      {
+        "magic_effect": "ResistCommonDisease",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "ResistBlightDisease",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "werewolf vision",
+    "name": "Eye of the Wolf",
+    "effects": [
+      {
+        "magic_effect": "NightEye",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 25,
+        "max_magnitude": 25
+      },
+      {
+        "magic_effect": "DetectAnimal",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 4000,
+        "max_magnitude": 4000
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "werewolf_ritual_ring",
+    "name": "Werewolf Transformation",
+    "effects": [
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 30,
+        "duration": 0,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
     "type": "Static",
     "flags": "",
     "id": "AAA_refernce_flag",
@@ -19669,6 +20758,1502 @@
         158,
         0
       ],
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "BM_Heartfang",
+    "effects": [
+      {
+        "magic_effect": "WeaknessToFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 30,
+        "max_magnitude": 50
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 100,
+      "max_charge": 1100,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "BM_icefire",
+    "effects": [
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 5,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "WeaknessToFire",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 34,
+      "max_charge": 340,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "bearkind",
+    "effects": [
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "HandToHand",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 10,
+        "max_magnitude": 30
+      },
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Agility",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 10,
+        "max_magnitude": 30
+      },
+      {
+        "magic_effect": "FortifyAttackBonus",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 10,
+        "max_magnitude": 30
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 30,
+      "max_charge": 150,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "bloodletting_en",
+    "effects": [
+      {
+        "magic_effect": "DamageHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 2,
+        "max_magnitude": 2
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 6,
+      "max_charge": 60,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "bm bloodaxe",
+    "effects": [
+      {
+        "magic_effect": "DamageAttribute",
+        "skill": "None",
+        "attribute": "Strength",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 4,
+        "max_magnitude": 4
+      },
+      {
+        "magic_effect": "DamageHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 4,
+        "max_magnitude": 4
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 100,
+      "max_charge": 960,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "bm_aesliip",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Willpower",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "FortifyMagicka",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 75,
+        "max_magnitude": 75
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "bm_amulspd",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Speed",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Acrobatics",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 15,
+        "max_magnitude": 15
+      },
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Athletics",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 15,
+        "max_magnitude": 15
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "bm_amulstr",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Strength",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "FortifyAttackBonus",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 15,
+        "max_magnitude": 15
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "bm_arrowslay_en",
+    "effects": [
+      {
+        "magic_effect": "DamageHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 5000,
+        "max_magnitude": 5000
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 3000,
+      "max_charge": 30000,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "bm_hunter_axe",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttackBonus",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Axe",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "ResistCommonDisease",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 75,
+        "max_magnitude": 75
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "bm_hunterspear",
+    "effects": [
+      {
+        "magic_effect": "Paralyze",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "Burden",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "Poison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 4,
+        "max_magnitude": 4
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 54,
+      "max_charge": 540,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "bm_mace",
+    "effects": [
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 8,
+        "max_magnitude": 8
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 2,
+      "max_charge": 20,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "bm_wolfspirit",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Agility",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      },
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Sneak",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "chieftainblade_en",
+    "effects": [
+      {
+        "magic_effect": "RallyHumanoid",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 20,
+        "duration": 120,
+        "min_magnitude": 10,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "Sanctuary",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 120,
+        "min_magnitude": 1,
+        "max_magnitude": 5
+      },
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Personality",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 120,
+        "min_magnitude": 1,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 63,
+      "max_charge": 315,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "deadlyslay_en",
+    "effects": [
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Marksman",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "NightEye",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "deceit_en",
+    "effects": [
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Sneak",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "deepfreeze_en",
+    "effects": [
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 4
+      },
+      {
+        "magic_effect": "Paralyze",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 31,
+      "max_charge": 310,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "detect animal eddard",
+    "effects": [
+      {
+        "magic_effect": "DetectAnimal",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 150,
+        "max_magnitude": 150
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "frost bolt_eddard",
+    "effects": [
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 10,
+        "max_magnitude": 30
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 8,
+      "max_charge": 80,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "frostgore_en",
+    "effects": [
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 3,
+        "min_magnitude": 10,
+        "max_magnitude": 30
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 15,
+      "max_charge": 75,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "honorguard_en",
+    "effects": [
+      {
+        "magic_effect": "RallyHumanoid",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 10,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Personality",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 10,
+      "max_charge": 50,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "infectious charm_en",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Personality",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 30,
+        "max_magnitude": 30
+      },
+      {
+        "magic_effect": "WeaknessToCommonDisease",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 30,
+        "max_magnitude": 30
+      },
+      {
+        "magic_effect": "DrainFatigue",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 30,
+        "max_magnitude": 30
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 225,
+      "max_charge": 1125,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "lightning strike_en",
+    "effects": [
+      {
+        "magic_effect": "ShockDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 25
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 7,
+      "max_charge": 70,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "lucky_break_en",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Luck",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 50
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 38,
+      "max_charge": 190,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "mantle_woe_en",
+    "effects": [
+      {
+        "magic_effect": "DrainAttribute",
+        "skill": "None",
+        "attribute": "Personality",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "WeaknessToNormalWeapons",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "FortifyMagickaMultiplier",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "SunDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Conjuration",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "paralysis weapon",
+    "effects": [
+      {
+        "magic_effect": "Paralyze",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 5,
+      "max_charge": 20,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "poison arrow_en",
+    "effects": [
+      {
+        "magic_effect": "Poison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 10,
+        "duration": 10,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "Blind",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 10,
+        "duration": 10,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 53,
+      "max_charge": 530,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "restoration_en",
+    "effects": [
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Agility",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Endurance",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Intelligence",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Luck",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Personality",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Speed",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Strength",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Willpower",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 8,
+      "max_charge": 8,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "roguenecro_en",
+    "effects": [
+      {
+        "magic_effect": "SummonLeastBonewalker",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "DamageHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 56,
+      "max_charge": 280,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "sc_Chappy_sniper_test_en",
+    "effects": [
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Marksman",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      },
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Sneak",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 60,
+        "max_magnitude": 60
+      },
+      {
+        "magic_effect": "Chameleon",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 50,
+        "max_magnitude": 80
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 675,
+      "max_charge": 675,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "sc_bodily_restoration_en",
+    "effects": [
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Agility",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Endurance",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Intelligence",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Luck",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Personality",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Speed",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Strength",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "RestoreAttribute",
+        "skill": "None",
+        "attribute": "Willpower",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 8,
+      "max_charge": 8,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "sc_savagetyranny_en",
+    "effects": [
+      {
+        "magic_effect": "CommandCreature",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 10,
+        "duration": 300,
+        "min_magnitude": 100,
+        "max_magnitude": 100
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 33756,
+      "max_charge": 33756,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "seasplitter_en",
+    "effects": [
+      {
+        "magic_effect": "DemoralizeCreature",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 12,
+      "max_charge": 120,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "severedleg_en",
+    "effects": [
+      {
+        "magic_effect": "WeaknessToCommonDisease",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 5
+      },
+      {
+        "magic_effect": "DamageAttribute",
+        "skill": "None",
+        "attribute": "Personality",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "FrenzyHumanoid",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 1,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 82,
+      "max_charge": 820,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "shadowstrike_en",
+    "effects": [
+      {
+        "magic_effect": "Poison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 20,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      },
+      {
+        "magic_effect": "Chameleon",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 20,
+        "min_magnitude": 200,
+        "max_magnitude": 100
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 293,
+      "max_charge": 2930,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "snow shield",
+    "effects": [
+      {
+        "magic_effect": "ResistFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "snowprince_en",
+    "effects": [
+      {
+        "magic_effect": "WeaknessToFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 5
+      },
+      {
+        "magic_effect": "DisintegrateArmor",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 10,
+        "max_magnitude": 30
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 25,
+      "max_charge": 250,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "tracker longsword",
+    "effects": [
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 15,
+        "max_magnitude": 15
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "treachery_en",
+    "effects": [
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Security",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "whitewalker_en",
+    "effects": [
+      {
+        "magic_effect": "Chameleon",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 5,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "WeaknessToFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 5,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "DrainHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 5,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "winterwound_en",
+    "effects": [
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "DisintegrateArmor",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 85,
+      "max_charge": 850,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "wolfwalking_en",
+    "effects": [
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Athletics",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Speed",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
       "flags": ""
     }
   },

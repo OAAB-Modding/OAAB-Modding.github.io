@@ -1,5 +1,479 @@
 [
   {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_ab_EnchantBonus",
+    "name": "Enchanting Table",
+    "effects": [
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Enchant",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_ab_EnchantBonusOgrim",
+    "name": "Grim Lamp",
+    "effects": [
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Enchant",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 7,
+        "max_magnitude": 7
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_ab_EnchantBonusScamp",
+    "name": "Scamptallow Candles",
+    "effects": [
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Enchant",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_ab_Spell Absorb20",
+    "name": "Spell Absorption",
+    "effects": [
+      {
+        "magic_effect": "SpellAbsorption",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_ab_WeaknessFrost50",
+    "name": "Weakness to Frost",
+    "effects": [
+      {
+        "magic_effect": "WeaknessToFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      }
+    ],
+    "data": {
+      "spell_type": "Ability",
+      "cost": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_dis_Fleas",
+    "name": "Fleas",
+    "effects": [
+      {
+        "magic_effect": "DrainAttribute",
+        "skill": "None",
+        "attribute": "Personality",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "DrainFatigue",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "spell_type": "Disease",
+      "cost": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_sp_AzuraBlessing",
+    "name": "Azura's Blessing",
+    "effects": [
+      {
+        "magic_effect": "ResistMagicka",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 2880,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 5,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_sp_BoethiahBlessing",
+    "name": "Boethiah's Blessing",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttackBonus",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 2880,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 5,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_sp_MephalaBlessing",
+    "name": "Mephala's Blessing",
+    "effects": [
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Mercantile",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 2880,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 5,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_sp_Poisonbite_Fau",
+    "name": "Spiderbite",
+    "effects": [
+      {
+        "magic_effect": "Poison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 5,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 5,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_sp_Thunderquake_Dae",
+    "name": "Thunderquake",
+    "effects": [
+      {
+        "magic_effect": "ShockDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 15,
+        "duration": 5,
+        "min_magnitude": 5,
+        "max_magnitude": 35
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 38,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_sp_WebParalyze",
+    "name": "Spider's Web",
+    "effects": [
+      {
+        "magic_effect": "Paralyze",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "Paralyze",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "Paralyze",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "Paralyze",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 40,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_trap_DwrvProxMine",
+    "name": "Dwemer Proximity Mine",
+    "effects": [
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 15,
+        "duration": 5,
+        "min_magnitude": 15,
+        "max_magnitude": 25
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 26,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_trap_KwamaAcid",
+    "name": "Kwama Poison Splash",
+    "effects": [
+      {
+        "magic_effect": "Poison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 10,
+        "duration": 40,
+        "min_magnitude": 1,
+        "max_magnitude": 3
+      },
+      {
+        "magic_effect": "DisintegrateArmor",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 10,
+        "duration": 40,
+        "min_magnitude": 1,
+        "max_magnitude": 3
+      },
+      {
+        "magic_effect": "DisintegrateWeapon",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 10,
+        "duration": 40,
+        "min_magnitude": 1,
+        "max_magnitude": 3
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 80,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_trap_LightningStrike",
+    "name": "Lightning",
+    "effects": [
+      {
+        "magic_effect": "ShockDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 15,
+        "duration": 1,
+        "min_magnitude": 25,
+        "max_magnitude": 100
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 5,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_trap_Runestone_01",
+    "name": "Daedric Fire",
+    "effects": [
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 5,
+        "duration": 3,
+        "min_magnitude": 15,
+        "max_magnitude": 15
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_trap_Runestone_02",
+    "name": "Daedric Frost",
+    "effects": [
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 5,
+        "duration": 3,
+        "min_magnitude": 15,
+        "max_magnitude": 15
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
+    "type": "Spell",
+    "flags": "",
+    "id": "AB_trap_Runestone_03",
+    "name": "Daedric Lightning",
+    "effects": [
+      {
+        "magic_effect": "ShockDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 5,
+        "duration": 3,
+        "min_magnitude": 15,
+        "max_magnitude": 15
+      }
+    ],
+    "data": {
+      "spell_type": "Spell",
+      "cost": 0,
+      "flags": "ALWAYS_SUCCEEDS"
+    }
+  },
+  {
     "type": "Static",
     "flags": "",
     "id": "AB_Ex_AshlAwning_03",
@@ -47055,6 +47529,2668 @@
         0
       ],
       "flags": "NEGATIVE | FLICKER"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_a_EggminerMask_en",
+    "effects": [
+      {
+        "magic_effect": "ResistPoison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "enchant_type": "ConstantEffect",
+      "cost": 0,
+      "max_charge": 0,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_c_OgrimStrengthBelt_en",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Strength",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 45,
+        "min_magnitude": 15,
+        "max_magnitude": 25
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 45,
+      "max_charge": 225,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Almsivi_d_en",
+    "effects": [
+      {
+        "magic_effect": "AlmsiviIntervention",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "DivineIntervention",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 15,
+      "max_charge": 15,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_AncestralGuidance_en",
+    "effects": [
+      {
+        "magic_effect": "Sanctuary",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 120,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "Blind",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 120,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 360,
+      "max_charge": 360,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_BalthamsInsight_en",
+    "effects": [
+      {
+        "magic_effect": "DetectAnimal",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 75,
+        "max_magnitude": 75
+      },
+      {
+        "magic_effect": "DetectEnchantment",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 75,
+        "max_magnitude": 75
+      },
+      {
+        "magic_effect": "DetectKey",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 75,
+        "max_magnitude": 75
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 309,
+      "max_charge": 309,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_BalthamsUnveiling_en",
+    "effects": [
+      {
+        "magic_effect": "DetectKey",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 60,
+      "max_charge": 60,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Celerity_d_en",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Speed",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 10,
+        "max_magnitude": 30
+      },
+      {
+        "magic_effect": "DrainAttribute",
+        "skill": "None",
+        "attribute": "Agility",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 10,
+        "max_magnitude": 30
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 120,
+      "max_charge": 120,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Chameleon_d_en",
+    "effects": [
+      {
+        "magic_effect": "Chameleon",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 25,
+        "max_magnitude": 75
+      },
+      {
+        "magic_effect": "Paralyze",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 15,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 180,
+      "max_charge": 180,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Charm_d_en",
+    "effects": [
+      {
+        "magic_effect": "Charm",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 0,
+        "max_magnitude": 24
+      },
+      {
+        "magic_effect": "DrainAttribute",
+        "skill": "None",
+        "attribute": "Luck",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 0,
+        "max_magnitude": 12
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 99,
+      "max_charge": 99,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_DetectKey_d_en",
+    "effects": [
+      {
+        "magic_effect": "DetectKey",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 40,
+        "max_magnitude": 80
+      },
+      {
+        "magic_effect": "Blind",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 40,
+        "max_magnitude": 80
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 180,
+      "max_charge": 180,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Dispel_d_en",
+    "effects": [
+      {
+        "magic_effect": "Dispel",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 60,
+        "max_magnitude": 140
+      },
+      {
+        "magic_effect": "DisintegrateArmor",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 15,
+        "max_magnitude": 30
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 32,
+      "max_charge": 32,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Divine_d_en",
+    "effects": [
+      {
+        "magic_effect": "DivineIntervention",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "AlmsiviIntervention",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 15,
+      "max_charge": 15,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_EighthBarrier_en",
+    "effects": [
+      {
+        "magic_effect": "Shield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 80,
+        "max_magnitude": 80
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 240,
+      "max_charge": 240,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Feather_d_en",
+    "effects": [
+      {
+        "magic_effect": "Feather",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 240,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "DrainAttribute",
+        "skill": "None",
+        "attribute": "Strength",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 240,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 660,
+      "max_charge": 660,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_FeatheredGrace_en",
+    "effects": [
+      {
+        "magic_effect": "Feather",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 90,
+        "min_magnitude": 15,
+        "max_magnitude": 35
+      },
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Agility",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 90,
+        "min_magnitude": 5,
+        "max_magnitude": 15
+      },
+      {
+        "magic_effect": "SlowFall",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 90,
+        "min_magnitude": 1,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 198,
+      "max_charge": 198,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_FeebleBlade_en",
+    "effects": [
+      {
+        "magic_effect": "DisintegrateWeapon",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 0,
+        "max_magnitude": 500
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 113,
+      "max_charge": 113,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_FenricksWelcome_en",
+    "effects": [
+      {
+        "magic_effect": "Open",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 50,
+        "duration": 1,
+        "min_magnitude": 30,
+        "max_magnitude": 50
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 20,
+      "max_charge": 20,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Firebite_d_en",
+    "effects": [
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 5,
+        "duration": 1,
+        "min_magnitude": 35,
+        "max_magnitude": 60
+      },
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 3,
+        "max_magnitude": 6
+      },
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 3,
+        "max_magnitude": 6
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 15,
+      "max_charge": 15,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Flameward_d_en",
+    "effects": [
+      {
+        "magic_effect": "FireShield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 10,
+        "max_magnitude": 15
+      },
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 15,
+        "min_magnitude": 0,
+        "max_magnitude": 2
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 116,
+      "max_charge": 116,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Frostbite_d_en",
+    "effects": [
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 5,
+        "duration": 1,
+        "min_magnitude": 35,
+        "max_magnitude": 60
+      },
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 3,
+        "max_magnitude": 6
+      },
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 3,
+        "max_magnitude": 6
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 15,
+      "max_charge": 15,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Frostward_d_en",
+    "effects": [
+      {
+        "magic_effect": "FrostShield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 10,
+        "max_magnitude": 15
+      },
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 15,
+        "min_magnitude": 0,
+        "max_magnitude": 2
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 116,
+      "max_charge": 116,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Healing_d_en",
+    "effects": [
+      {
+        "magic_effect": "RestoreHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "DamageHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 15,
+      "max_charge": 15,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_IlthersChastisement_en",
+    "effects": [
+      {
+        "magic_effect": "BoundMace",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 90,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "BoundGloves",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 90,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 90,
+        "min_magnitude": 1,
+        "max_magnitude": 3
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 86,
+      "max_charge": 86,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Insight_d_en",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Intelligence",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 10,
+        "max_magnitude": 30
+      },
+      {
+        "magic_effect": "DrainAttribute",
+        "skill": "None",
+        "attribute": "Agility",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 10,
+        "max_magnitude": 30
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 120,
+      "max_charge": 120,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Invisibility_d_en",
+    "effects": [
+      {
+        "magic_effect": "Invisibility",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "SunDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 1,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 69,
+      "max_charge": 69,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Jump_d_en",
+    "effects": [
+      {
+        "magic_effect": "Jump",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 40,
+        "max_magnitude": 40
+      },
+      {
+        "magic_effect": "Burden",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 60,
+        "max_magnitude": 60
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 270,
+      "max_charge": 270,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Leaguestep_d_en",
+    "effects": [
+      {
+        "magic_effect": "Mark",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "Recall",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 35,
+      "max_charge": 35,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Levitation_d_en",
+    "effects": [
+      {
+        "magic_effect": "Levitate",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "DrainAttribute",
+        "skill": "None",
+        "attribute": "Speed",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 0,
+        "max_magnitude": 50
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 263,
+      "max_charge": 263,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Light_d_en",
+    "effects": [
+      {
+        "magic_effect": "Light",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 180,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "Blind",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 180,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 216,
+      "max_charge": 216,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Mark_d_en",
+    "effects": [
+      {
+        "magic_effect": "Recall",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "Mark",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 35,
+      "max_charge": 35,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_MorinaFireWarden_en",
+    "effects": [
+      {
+        "magic_effect": "FireShield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 10,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "ResistFire",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 10,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 113,
+      "max_charge": 113,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_MorinaFrostWarden_en",
+    "effects": [
+      {
+        "magic_effect": "FrostShield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 10,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "ResistFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 10,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 113,
+      "max_charge": 113,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_MorinaShockWarden_en",
+    "effects": [
+      {
+        "magic_effect": "LightningShield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 10,
+        "max_magnitude": 20
+      },
+      {
+        "magic_effect": "ResistShock",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 10,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 113,
+      "max_charge": 113,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_NightEye_d_en",
+    "effects": [
+      {
+        "magic_effect": "NightEye",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 120,
+        "min_magnitude": 10,
+        "max_magnitude": 40
+      },
+      {
+        "magic_effect": "DrainFatigue",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 120,
+        "min_magnitude": 10,
+        "max_magnitude": 40
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 330,
+      "max_charge": 330,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_NobleFlesh_en",
+    "effects": [
+      {
+        "magic_effect": "ResistPoison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 50,
+        "max_magnitude": 80
+      },
+      {
+        "magic_effect": "ResistCommonDisease",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 50,
+        "max_magnitude": 80
+      },
+      {
+        "magic_effect": "ResistBlightDisease",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 50,
+        "max_magnitude": 80
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 1755,
+      "max_charge": 1755,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Open_d_en",
+    "effects": [
+      {
+        "magic_effect": "Open",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 40,
+        "max_magnitude": 60
+      },
+      {
+        "magic_effect": "Lock",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 4,
+        "max_magnitude": 6
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 16,
+      "max_charge": 16,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_OrumsAquaticEscape_en",
+    "effects": [
+      {
+        "magic_effect": "Invisibility",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "NightEye",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "WaterBreathing",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 50,
+      "max_charge": 50,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Paralysis_d_en",
+    "effects": [
+      {
+        "magic_effect": "Paralyze",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 15,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "DrainMagicka",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 15,
+        "min_magnitude": 15,
+        "max_magnitude": 15
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 90,
+      "max_charge": 90,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Reflection_d_en",
+    "effects": [
+      {
+        "magic_effect": "Reflect",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 20,
+        "max_magnitude": 60
+      },
+      {
+        "magic_effect": "WeaknessToNormalWeapons",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 20,
+        "max_magnitude": 60
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 150,
+      "max_charge": 800,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_RimmonsFingernail_en",
+    "effects": [
+      {
+        "magic_effect": "AbsorbHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 60,
+        "max_magnitude": 80
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 28,
+      "max_charge": 28,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_SeventhBarrier_en",
+    "effects": [
+      {
+        "magic_effect": "Shield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 70,
+        "max_magnitude": 70
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 210,
+      "max_charge": 210,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_ShieldBiter_en",
+    "effects": [
+      {
+        "magic_effect": "DrainSkill",
+        "skill": "Block",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 3,
+        "duration": 45,
+        "min_magnitude": 30,
+        "max_magnitude": 80
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 186,
+      "max_charge": 186,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Shielding_d_en",
+    "effects": [
+      {
+        "magic_effect": "Shield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "WeaknessToMagicka",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 60,
+      "max_charge": 60,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Silence_d_en",
+    "effects": [
+      {
+        "magic_effect": "Silence",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "Sound",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 15,
+        "max_magnitude": 15
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 158,
+      "max_charge": 158,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_SpiritVault_en",
+    "effects": [
+      {
+        "magic_effect": "SoulTrap",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 50,
+        "duration": 90,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 12,
+      "max_charge": 12,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_StarryRoad_en",
+    "effects": [
+      {
+        "magic_effect": "Recall",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "RestoreMagicka",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 20,
+        "min_magnitude": 3,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 38,
+      "max_charge": 38,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Stormward_d_en",
+    "effects": [
+      {
+        "magic_effect": "LightningShield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 10,
+        "max_magnitude": 15
+      },
+      {
+        "magic_effect": "ShockDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 15,
+        "min_magnitude": 0,
+        "max_magnitude": 2
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 118,
+      "max_charge": 118,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_SummonClannfear_en",
+    "effects": [
+      {
+        "magic_effect": "SummonClannfear",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 66,
+      "max_charge": 66,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_SummonDaedroth_en",
+    "effects": [
+      {
+        "magic_effect": "SummonDaedroth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 96,
+      "max_charge": 96,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_SummonDremora_en",
+    "effects": [
+      {
+        "magic_effect": "SummonDremora",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 84,
+      "max_charge": 84,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_SummonHunger_en",
+    "effects": [
+      {
+        "magic_effect": "SummonHunger",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 87,
+      "max_charge": 87,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_SummonStormAtronach_en",
+    "effects": [
+      {
+        "magic_effect": "SummonStormAtronach",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 114,
+      "max_charge": 114,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_SummonWingedTwilight_en",
+    "effects": [
+      {
+        "magic_effect": "SummonTwilight",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 156,
+      "max_charge": 156,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_SundarkDrape_en",
+    "effects": [
+      {
+        "magic_effect": "Invisibility",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 90,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Sneak",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 90,
+        "min_magnitude": 20,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 180,
+      "max_charge": 180,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_TaksimsThinkingCap_en",
+    "effects": [
+      {
+        "magic_effect": "BoundHelm",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 240,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Intelligence",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 240,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 144,
+      "max_charge": 144,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Telekinesis_d_en",
+    "effects": [
+      {
+        "magic_effect": "Telekinesis",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 20,
+        "min_magnitude": 15,
+        "max_magnitude": 45
+      },
+      {
+        "magic_effect": "Poison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 30,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 41,
+      "max_charge": 41,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Thunderclap_en",
+    "effects": [
+      {
+        "magic_effect": "Paralyze",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 35,
+        "duration": 5,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "ShockDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 35,
+        "duration": 1,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 53,
+      "max_charge": 53,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_UkinesGreaterReach_en",
+    "effects": [
+      {
+        "magic_effect": "Telekinesis",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 30,
+        "max_magnitude": 80
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 83,
+      "max_charge": 83,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_Vigor_d_en",
+    "effects": [
+      {
+        "magic_effect": "RestoreFatigue",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 120,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      },
+      {
+        "magic_effect": "DrainAttribute",
+        "skill": "None",
+        "attribute": "Endurance",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 120,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 60,
+      "max_charge": 60,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_WaterBreathing_d_en",
+    "effects": [
+      {
+        "magic_effect": "WaterBreathing",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 240,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "DamageFatigue",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 240,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 84,
+      "max_charge": 84,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_sc_WaterWalking_d_en",
+    "effects": [
+      {
+        "magic_effect": "WaterWalking",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 240,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "Burden",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 240,
+        "min_magnitude": 5,
+        "max_magnitude": 30
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnce",
+      "cost": 246,
+      "max_charge": 246,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_AshlStaffAzura_en",
+    "effects": [
+      {
+        "magic_effect": "DetectAnimal",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "DetectEnchantment",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 50,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "Blind",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 25,
+        "max_magnitude": 25
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 100,
+      "max_charge": 800,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_AshlStaffBoethiah_en",
+    "effects": [
+      {
+        "magic_effect": "FortifyAttribute",
+        "skill": "None",
+        "attribute": "Willpower",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 25,
+        "max_magnitude": 25
+      },
+      {
+        "magic_effect": "Burden",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 25,
+        "max_magnitude": 25
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 100,
+      "max_charge": 800,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_AshlStaffMephala_en",
+    "effects": [
+      {
+        "magic_effect": "Invisibility",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "Silence",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 100,
+      "max_charge": 800,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_BoneScepterDevil_en",
+    "effects": [
+      {
+        "magic_effect": "BoundShield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "FrostShield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 3,
+        "max_magnitude": 3
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 11,
+      "max_charge": 55,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_BoneScepterFiend_en",
+    "effects": [
+      {
+        "magic_effect": "BoundShield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      },
+      {
+        "magic_effect": "FireShield",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 3,
+        "max_magnitude": 3
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 11,
+      "max_charge": 55,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_DaedricScepterSheo_en",
+    "effects": [
+      {
+        "magic_effect": "CalmHumanoid",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 15,
+        "min_magnitude": 20,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "Blind",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 25,
+        "min_magnitude": 0,
+        "max_magnitude": 50
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 58,
+      "max_charge": 580,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_DwrvScepterSound_en",
+    "effects": [
+      {
+        "magic_effect": "Sound",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 10,
+        "min_magnitude": 1,
+        "max_magnitude": 30
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 23,
+      "max_charge": 230,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_EbonyBolt_Bdeath_en",
+    "effects": [
+      {
+        "magic_effect": "DamageHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 12,
+        "max_magnitude": 15
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 10,
+      "max_charge": 10,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_EbonyBolt_Rdeath_en",
+    "effects": [
+      {
+        "magic_effect": "AbsorbHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 0,
+        "min_magnitude": 8,
+        "max_magnitude": 12
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 10,
+      "max_charge": 10,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_EbonyBolt_Viper_en",
+    "effects": [
+      {
+        "magic_effect": "Poison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 15,
+        "min_magnitude": 5,
+        "max_magnitude": 5
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 10,
+      "max_charge": 10,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_EbonyScepterBonelord_en",
+    "effects": [
+      {
+        "magic_effect": "SummonBonelord",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 75,
+      "max_charge": 375,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_EbonyScepterMagician_en",
+    "effects": [
+      {
+        "magic_effect": "FortifySkill",
+        "skill": "Unarmored",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "Levitate",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnSelf",
+        "area": 0,
+        "duration": 60,
+        "min_magnitude": 1,
+        "max_magnitude": 1
+      }
+    ],
+    "data": {
+      "enchant_type": "CastWhenUsed",
+      "cost": 39,
+      "max_charge": 195,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_GlassScepterFlame_en",
+    "effects": [
+      {
+        "magic_effect": "WeaknessToFire",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 8,
+      "max_charge": 80,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_GlassScepterFrost_en",
+    "effects": [
+      {
+        "magic_effect": "WeaknessToFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 8,
+      "max_charge": 80,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_GlassScepterPoison_en",
+    "effects": [
+      {
+        "magic_effect": "WeaknessToPoison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "Poison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 10,
+      "max_charge": 100,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_GlassScepterShock_en",
+    "effects": [
+      {
+        "magic_effect": "WeaknessToShock",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "ShockDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 1,
+        "max_magnitude": 20
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 9,
+      "max_charge": 90,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_ResinStaffDevouring_en",
+    "effects": [
+      {
+        "magic_effect": "AbsorbHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 5,
+        "duration": 15,
+        "min_magnitude": 2,
+        "max_magnitude": 8
+      },
+      {
+        "magic_effect": "AbsorbFatigue",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 5,
+        "duration": 15,
+        "min_magnitude": 5,
+        "max_magnitude": 15
+      },
+      {
+        "magic_effect": "AbsorbMagicka",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 5,
+        "duration": 15,
+        "min_magnitude": 5,
+        "max_magnitude": 15
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 50,
+      "max_charge": 5000,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_ResinStaffFire_en",
+    "effects": [
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 5,
+        "duration": 30,
+        "min_magnitude": 1,
+        "max_magnitude": 3
+      },
+      {
+        "magic_effect": "WeaknessToFire",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 5,
+        "duration": 30,
+        "min_magnitude": 5,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "DrainHealth",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 5,
+        "duration": 30,
+        "min_magnitude": 11,
+        "max_magnitude": 100
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 50,
+      "max_charge": 5000,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_ResinStaffTerror_en",
+    "effects": [
+      {
+        "magic_effect": "TurnUndead",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 5,
+        "duration": 15,
+        "min_magnitude": 0,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "DemoralizeCreature",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 5,
+        "duration": 15,
+        "min_magnitude": 0,
+        "max_magnitude": 50
+      },
+      {
+        "magic_effect": "DemoralizeHumanoid",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTarget",
+        "area": 5,
+        "duration": 15,
+        "min_magnitude": 0,
+        "max_magnitude": 50
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 50,
+      "max_charge": 5000,
+      "flags": ""
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_SilverScepterFlame_en",
+    "effects": [
+      {
+        "magic_effect": "WeaknessToFire",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "FireDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 3,
+        "max_magnitude": 7
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 6,
+      "max_charge": 60,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_SilverScepterFrost_en",
+    "effects": [
+      {
+        "magic_effect": "WeaknessToFrost",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "FrostDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 3,
+        "max_magnitude": 7
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 6,
+      "max_charge": 60,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_SilverScepterPoison_en",
+    "effects": [
+      {
+        "magic_effect": "WeaknessToPoison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "Poison",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 3,
+        "max_magnitude": 7
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 7,
+      "max_charge": 70,
+      "flags": "AUTO_CALCULATE"
+    }
+  },
+  {
+    "type": "Enchanting",
+    "flags": "",
+    "id": "AB_w_SilverScepterShock_en",
+    "effects": [
+      {
+        "magic_effect": "WeaknessToShock",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 5,
+        "min_magnitude": 10,
+        "max_magnitude": 10
+      },
+      {
+        "magic_effect": "ShockDamage",
+        "skill": "None",
+        "attribute": "None",
+        "range": "OnTouch",
+        "area": 0,
+        "duration": 1,
+        "min_magnitude": 3,
+        "max_magnitude": 7
+      }
+    ],
+    "data": {
+      "enchant_type": "CastOnStrike",
+      "cost": 7,
+      "max_charge": 70,
+      "flags": "AUTO_CALCULATE"
     }
   },
   {

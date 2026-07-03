@@ -241,7 +241,7 @@
     <div data-grid="" style="grid-template-columns:{{ gridCols }};gap:{{ gridGap }}px;padding-top:{{ gridPadTop }}px;padding-bottom:{{ gridPadBottom }}px;" class="asset-grid">
       <sc-for list="{{ items }}" as="it" hint-placeholder-count="18">
         <figure title="{{ it.tip }}" draggable="{{ yes }}" data-eid="{{ it.id }}" onDragStart="{{ onDrag }}" class="asset-card">
-          <div class="asset-thumb-frame" data-render="{{ it.render }}" data-render-title="{{ it.renderTitle }}" data-render-meta="{{ it.renderMeta }}" onClick="{{ openRenderPreview }}">
+          <div class="asset-thumb-frame" data-render-id="{{ it.renderId }}" data-render="{{ it.render }}" data-render-title="{{ it.renderTitle }}" data-render-meta="{{ it.renderMeta }}" onClick="{{ openRenderPreview }}">
             <div key="{{ it.thumbKey }}" data-thumb="" class="asset-thumb-layer">
               <div data-spin="" class="asset-spinner-wrap">
                 <div class="asset-spinner"></div>
@@ -399,8 +399,17 @@ class Component extends DCLogic {
     this._typeTs = 0;
     this._typeIdx = 0;
     this._onKey = (e) => {
-      if (this.state.renderPreview && e.key === 'Escape') {
-        this.setState({ renderPreview: null });
+      if (this.state.renderPreview) {
+        if (e.key === 'Escape') {
+          this.setState({ renderPreview: null, renderPreviewLoaded: false });
+          return;
+        }
+        if (!e.metaKey && !e.ctrlKey && !e.altKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+          if (e.preventDefault) e.preventDefault();
+          if (e.stopPropagation) e.stopPropagation();
+          this.showAdjacentRenderPreview(e.key === 'ArrowRight' ? 1 : -1);
+          return;
+        }
         return;
       }
       if (!this.state.tagOpen) return;
@@ -715,6 +724,27 @@ class Component extends DCLogic {
   npcRenderUrl(id) {
     const key = String(id || '').trim().toLowerCase();
     return key ? this._NPC_RENDER + key + '.webp' : '';
+  }
+
+  renderPreviewPayload(x) {
+    return {
+      id: x && x.id ? String(x.id) : '',
+      src: (x && (x.render || x.img)) || '',
+      title: (x && x.id) || '',
+      meta: (x && (x.mesh || x.name || x.type)) || '',
+    };
+  }
+
+  showAdjacentRenderPreview(step) {
+    const list = this._renderPreviewItems || [];
+    const cur = this.state.renderPreview;
+    if (!cur || !list.length) return;
+    let idx = list.findIndex(x => x.id && cur.id && x.id === cur.id);
+    if (idx < 0) idx = list.findIndex(x => x.src === cur.src && x.title === cur.title);
+    if (idx < 0) return;
+    const next = list[(idx + step + list.length) % list.length];
+    if (!next || !next.src) return;
+    this.setState({ renderPreview: next, renderPreviewLoaded: false });
   }
 
   lightColorCss(r) {
@@ -1538,6 +1568,7 @@ class Component extends DCLogic {
     );
     const startIndex = startRow * metrics.columns;
     const endIndex = Math.min(filtered.length, endRow * metrics.columns);
+    this._renderPreviewItems = filtered.map(x => this.renderPreviewPayload(x));
     const REL_ADDED = { bg: 'rgba(210,130,63,0.94)', fg: '#1a120a', bd: 'rgba(210,130,63,0.94)', glyph: '+' };
     const REL_UPD = light
       ? { bg: 'rgba(154,146,214,0.18)', fg: '#352d5e', bd: 'rgba(120,110,185,0.85)', glyph: '\u21bb' }
@@ -1565,6 +1596,7 @@ class Component extends DCLogic {
         type: x.type,
         img: x.img,
         render: x.render || x.img,
+        renderId: x.id || '',
         renderTitle: x.id || '',
         renderMeta: x.mesh || x.name || x.type || '',
         thumbKey: x.id + '|' + (x.img || '') + '|' + (x.lightTint || '') + '|' + (x.lightColor || '') + '|' + (x.lightHex || '') + '|' + (x.lightMask || ''),
@@ -1707,12 +1739,16 @@ class Component extends DCLogic {
         const el = e.currentTarget;
         const src = el && el.dataset ? (el.dataset.render || '') : '';
         if (!src) return;
+        const id = (el.dataset.renderId || '').trim();
+        const list = this._renderPreviewItems || [];
+        const item = (id && list.find(x => x.id === id)) || list.find(x => x.src === src) || {
+          id,
+          src,
+          title: (el.dataset.renderTitle || '').trim(),
+          meta: (el.dataset.renderMeta || '').trim(),
+        };
         this.setState({
-          renderPreview: {
-            src,
-            title: (el.dataset.renderTitle || '').trim(),
-            meta: (el.dataset.renderMeta || '').trim(),
-          },
+          renderPreview: item,
           renderPreviewLoaded: false,
         });
       },
