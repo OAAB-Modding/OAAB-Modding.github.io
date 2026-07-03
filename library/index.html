@@ -1634,33 +1634,35 @@ class Component extends DCLogic {
 
   containerContentIds(inventory, spells, contentByKey, displayByKey, selfId) {
     if (!Array.isArray(inventory) && !Array.isArray(spells)) return [];
-    const out = [];
+    const itemIds = [];
+    const spellIds = [];
     const seen = Object.create(null);
     const visiting = Object.create(null);
     const selfKey = String(selfId || '').trim().toLowerCase();
-    const addDisplay = (raw) => {
+    const addDisplay = (raw, bucket) => {
       const key = String(raw || '').trim().toLowerCase();
       const display = displayByKey[key];
       if (!display || key === selfKey || seen[display.id]) return;
       seen[display.id] = 1;
-      out.push(display.id);
+      bucket.push(display.id);
     };
-    const expand = (raw) => {
+    const expand = (raw, bucket) => {
       const key = String(raw || '').trim().toLowerCase();
       if (!key || key === selfKey) return;
       const record = contentByKey[key];
       if (record && this.isLeveledItemType(record.type) && Array.isArray(record.leveledItems)) {
         if (visiting[key]) return;
         visiting[key] = 1;
-        record.leveledItems.forEach(entry => expand(this.contentEntryId(entry, 0)));
+        record.leveledItems.forEach(entry => expand(this.contentEntryId(entry, 0), bucket));
         delete visiting[key];
         return;
       }
-      addDisplay(raw);
+      addDisplay(raw, bucket);
     };
-    (inventory || []).forEach(entry => expand(this.contentEntryId(entry, 1)));
-    (spells || []).forEach(entry => expand(this.contentEntryId(entry, 0) || entry));
-    return out.sort((a, b) => this.csCompareIds(a, b));
+    (inventory || []).forEach(entry => expand(this.contentEntryId(entry, 1), itemIds));
+    (spells || []).forEach(entry => expand(this.contentEntryId(entry, 0) || entry, spellIds));
+    return itemIds.sort((a, b) => this.csCompareIds(a, b))
+      .concat(spellIds.sort((a, b) => this.csCompareIds(a, b)));
   }
 
   inventoryOwnerLabel(type) {
