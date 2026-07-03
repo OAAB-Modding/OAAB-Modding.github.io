@@ -114,7 +114,7 @@
           </button>
           <sc-if value="{{ searchModeOpen }}" hint-placeholder-val="{{ false }}">
             <div class="search-mode-menu">
-              <sc-for list="{{ searchModeMenu }}" as="mode" hint-placeholder-count="6">
+              <sc-for list="{{ searchModeMenu }}" as="mode" hint-placeholder-count="7">
                 <button type="button" data-search-mode="{{ mode.key }}" onClick="{{ pickSearchMode }}" class="search-mode-row">
                   <span style="color:{{ mode.labelColor }};" class="menu-label"><span style="background:{{ mode.checkBg }};border:1px solid {{ mode.checkBd }};" class="menu-check">{{ mode.mark }}</span>{{ mode.label }}</span>
                 </button>
@@ -316,6 +316,13 @@
             </sc-if>
             </sc-if>
             <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
+            <sc-if value="{{ it.hasAlchemy }}" hint-placeholder-val="{{ false }}">
+              <button type="button" data-alchemy-item-id="{{ it.id }}" onClick="{{ openAlchemyDetails }}" title="{{ it.alchemyTitle }}" class="asset-alchemy-button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="asset-alchemy-icon"><path d="M10 3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a6 6 0 0 0 1.2 3.6l.6.8A6 6 0 0 1 17 13v8a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-8a6 6 0 0 1 1.2-3.6l.6-.8A6 6 0 0 0 10 5z"></path><path d="M17 13h-4a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h4"></path></svg>
+              </button>
+            </sc-if>
+            </sc-if>
+            <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
             <sc-if value="{{ it.hasEffects }}" hint-placeholder-val="{{ false }}">
               <div class="asset-effect-row">
                 <sc-for list="{{ it.effects }}" as="eff" hint-placeholder-count="4">
@@ -337,6 +344,9 @@
                       </sc-if>
                       <sc-if value="{{ it.hasEnchantment }}" hint-placeholder-val="{{ false }}">
                         <button type="button" data-enchantment-item-id="{{ it.id }}" onClick="{{ openEnchantmentDetails }}" class="asset-compact-actions-row">{{ it.detailsLabel }}</button>
+                      </sc-if>
+                      <sc-if value="{{ it.hasAlchemy }}" hint-placeholder-val="{{ false }}">
+                        <button type="button" data-alchemy-item-id="{{ it.id }}" onClick="{{ openAlchemyDetails }}" class="asset-compact-actions-row">Inspect alchemy</button>
                       </sc-if>
                       <sc-if value="{{ it.hasEffects }}" hint-placeholder-val="{{ false }}">
                         <sc-for list="{{ it.effects }}" as="eff" hint-placeholder-count="4">
@@ -393,6 +403,11 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="asset-enchantment-icon"><path d="M14 11a2 2 0 1 1-4 0 4 4 0 0 1 8 0 6 6 0 0 1-12 0 8 8 0 0 1 16 0 10 10 0 0 1-20 0 11.93 11.93 0 0 1 2.42-7.23 2 2 0 1 1 3.16 2.46"></path></svg>
         </button>
       </sc-if>
+      <sc-if value="{{ renderPreviewHasAlchemy }}" hint-placeholder-val="{{ false }}">
+        <button type="button" data-render-control="1" data-alchemy-item-id="{{ renderPreviewId }}" onClick="{{ openAlchemyDetails }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="{{ renderPreviewAlchemyTitle }}" class="asset-alchemy-button library-render-alchemy-button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="asset-alchemy-icon"><path d="M10 3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a6 6 0 0 0 1.2 3.6l.6.8A6 6 0 0 1 17 13v8a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-8a6 6 0 0 1 1.2-3.6l.6-.8A6 6 0 0 0 10 5z"></path><path d="M17 13h-4a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h4"></path></svg>
+        </button>
+      </sc-if>
       <sc-if value="{{ renderPreviewHasEffects }}" hint-placeholder-val="{{ false }}">
         <div data-render-control="1" class="asset-effect-row library-render-effect-row">
           <sc-for list="{{ renderPreviewEffects }}" as="eff" hint-placeholder-count="4">
@@ -426,6 +441,9 @@
         </sc-if>
         <sc-if value="{{ enchantmentPreviewIsEnchantment }}" hint-placeholder-val="{{ true }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 11a2 2 0 1 1-4 0 4 4 0 0 1 8 0 6 6 0 0 1-12 0 8 8 0 0 1 16 0 10 10 0 0 1-20 0 11.93 11.93 0 0 1 2.42-7.23 2 2 0 1 1 3.16 2.46"></path></svg>
+        </sc-if>
+        <sc-if value="{{ enchantmentPreviewIsAlchemy }}" hint-placeholder-val="{{ false }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a6 6 0 0 0 1.2 3.6l.6.8A6 6 0 0 1 17 13v8a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-8a6 6 0 0 1 1.2-3.6l.6-.8A6 6 0 0 0 10 5z"></path><path d="M17 13h-4a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h4"></path></svg>
         </sc-if>
       </span>
       <div class="library-enchant-title-group">
@@ -750,6 +768,7 @@ class Component extends DCLogic {
           const img = spell ? (spellEffects[0] ? spellEffects[0].img : '') : (npc ? this.npcThumbnailUrl(id) : (rel ? THUMB + rel : ''));
           const render = spell ? '' : (npc ? this.npcRenderUrl(id) : (rel ? RENDER + rel : ''));
           if (!img) return;
+          const alchemy = spell ? null : this.alchemyDetails(r);
           seen[id] = 1;
           items.push({
             id: id,
@@ -759,7 +778,7 @@ class Component extends DCLogic {
             render: render,
             mesh: mesh,
             isSpell: spell,
-            detailKind: spell ? 'spell' : '',
+            detailKind: spell ? 'spell' : (alchemy ? 'alchemy' : ''),
             spellEffects: spellEffects,
             lightTint: markerLight ? lightColor : '',
             lightColor: lightColor,
@@ -768,8 +787,9 @@ class Component extends DCLogic {
             lightMask: markerLight ? LIGHT_MASK : '',
             inventory: Array.isArray(r.inventory) ? r.inventory : null,
             spells: Array.isArray(r.spells) ? r.spells : null,
-            effects: spell ? [] : this.ingredientEffects(r),
+            effects: spell || alchemy ? [] : this.ingredientEffects(r),
             enchantment: spell ? this.spellDetails(r) : this.itemEnchantment(r, enchantmentsByKey),
+            alchemy: alchemy,
           });
         });
         items.sort((a, b) => this.csCompareIds(a.id, b.id));
@@ -925,6 +945,8 @@ class Component extends DCLogic {
         : '',
       hasEnchantment: !!(x && x.enchantment),
       enchantmentTitle: x && x.enchantment ? (x.enchantment.title || x.enchantment.id || 'Enchantment details') : '',
+      hasAlchemy: !!(x && x.alchemy),
+      alchemyTitle: x && x.alchemy ? (x.alchemy.title || x.alchemy.id || 'Alchemy details') : '',
       hasEffects: !!(x && x.effects && x.effects.length),
       effects: (x && x.effects) || [],
       isSpell: isSpell,
@@ -1263,6 +1285,10 @@ class Component extends DCLogic {
     return type === 'armor' || type === 'clothing' || type === 'weapon';
   }
 
+  isAlchemyItem(record) {
+    return this.labelType(record && record.type).toLowerCase() === 'alchemy';
+  }
+
   enchantmentMap(records) {
     const out = Object.create(null);
     (records || []).forEach(r => {
@@ -1302,6 +1328,27 @@ class Component extends DCLogic {
       meta: meta || 'Enchantment',
       rows,
       effects: this.magicEffectEntries(src.effects, 8, { constantEffect: isConstantEffect }),
+    };
+  }
+
+  alchemyDetails(record) {
+    if (!this.isAlchemyItem(record)) return null;
+    const data = record && record.data ? record.data : {};
+    const rows = [
+      { label: 'Type', value: 'Alchemy' },
+    ];
+    if (data.value != null) rows.push({ label: 'Value', value: String(data.value) });
+    if (data.weight != null) rows.push({ label: 'Weight', value: String(data.weight) });
+    if (data.flags) rows.push({ label: 'Flags', value: this.flagsLabel(data.flags) || String(data.flags) });
+    const meta = rows.slice(0, 3).map(r => r.value).filter(Boolean).join(' Â· ');
+    return {
+      id: record.id || '',
+      label: record.id || '',
+      title: 'Alchemy: ' + (record.id || ''),
+      meta: meta || 'Alchemy',
+      kind: 'alchemy',
+      rows,
+      effects: this.magicEffectEntries(record && record.effects, 8, { mode: 'alchemy' }),
     };
   }
 
@@ -1429,15 +1476,17 @@ class Component extends DCLogic {
     return bits.join(' · ');
   }
 
-  enchantmentPreviewPayload(x) {
-    const enchantment = x && x.enchantment;
+  enchantmentPreviewPayload(x, detailKind) {
+    const enchantment = detailKind === 'alchemy'
+      ? (x && x.alchemy)
+      : (detailKind === 'enchantment' ? (x && x.enchantment) : (x && (x.alchemy || x.enchantment)));
     if (!enchantment) return null;
     return {
       itemId: x.id || '',
       itemName: x.name || '',
       itemType: x.type || '',
       id: enchantment.id || '',
-      title: enchantment.title || 'Enchantment',
+      title: enchantment.title || (enchantment.kind === 'alchemy' ? 'Alchemy' : 'Enchantment'),
       meta: enchantment.meta || '',
       kind: enchantment.kind || x.detailKind || 'enchantment',
       rows: enchantment.rows || [],
@@ -1546,6 +1595,7 @@ class Component extends DCLogic {
           const spellEffects = spell ? this.spellThumbnailEffects(r) : [];
           const img = spell ? (spellEffects[0] ? spellEffects[0].img : '') : (npc ? this.npcThumbnailUrl(id) : THUMB + rel);
           if (!img) return;
+          const alchemy = spell ? null : this.alchemyDetails(r);
           items.push({
             id: id,
             name: r.name || '',
@@ -1554,7 +1604,7 @@ class Component extends DCLogic {
             render: spell ? '' : (npc ? this.npcRenderUrl(id) : RENDER + rel),
             mesh: mesh,
             isSpell: spell,
-            detailKind: spell ? 'spell' : '',
+            detailKind: spell ? 'spell' : (alchemy ? 'alchemy' : ''),
             spellEffects: spellEffects,
             lightTint: markerLight ? lightColor : '',
             lightColor: lightColor,
@@ -1563,8 +1613,9 @@ class Component extends DCLogic {
             lightMask: markerLight ? LIGHT_MASK : '',
             inventory: Array.isArray(r.inventory) ? r.inventory : null,
             spells: Array.isArray(r.spells) ? r.spells : null,
-            effects: spell ? [] : this.ingredientEffects(r),
+            effects: spell || alchemy ? [] : this.ingredientEffects(r),
             enchantment: spell ? this.spellDetails(r) : this.itemEnchantment(r, enchantmentsByKey),
+            alchemy: alchemy,
             vanilla: true,
           });
         });
@@ -1707,6 +1758,7 @@ class Component extends DCLogic {
       { key: '', label: 'All', kind: 'ID' },
       { key: 'effect', label: 'Effect', kind: 'Effect' },
       { key: 'ingredient', label: 'IngredEffect', kind: 'Effect' },
+      { key: 'alchemy', label: 'AlchemyEffect', kind: 'Effect' },
       { key: 'spell', label: 'SpellEffect', kind: 'Effect' },
       { key: 'enchant', label: 'EnchantEffect', kind: 'Effect' },
       { key: 'inventory', label: 'Inventory', kind: 'ID' },
@@ -1723,11 +1775,13 @@ class Component extends DCLogic {
     const scope = Array.isArray(items) ? items : [];
     const allowed = { '': true };
     const hasIngredient = scope.some(x => x && Array.isArray(x.effects) && x.effects.length);
+    const hasAlchemy = scope.some(x => x && x.alchemy && Array.isArray(x.alchemy.effects) && x.alchemy.effects.length);
     const hasSpell = scope.some(x => x && x.detailKind === 'spell' && x.enchantment && Array.isArray(x.enchantment.effects) && x.enchantment.effects.length);
     const hasEnchant = scope.some(x => x && x.detailKind !== 'spell' && x.enchantment && Array.isArray(x.enchantment.effects) && x.enchantment.effects.length);
     const hasInventory = scope.some(x => x && x.hasContents && x.contentIds && x.contentIds.length);
-    if (hasIngredient || hasSpell || hasEnchant) allowed.effect = true;
+    if (hasIngredient || hasAlchemy || hasSpell || hasEnchant) allowed.effect = true;
     if (hasIngredient) allowed.ingredient = true;
+    if (hasAlchemy) allowed.alchemy = true;
     if (hasSpell) allowed.spell = true;
     if (hasEnchant) allowed.enchant = true;
     if (hasInventory) allowed.inventory = true;
@@ -1762,6 +1816,7 @@ class Component extends DCLogic {
     (items || []).forEach(x => {
       if (!x) return;
       if (mode === 'ingredient' || mode === 'effect') add(x.effects);
+      if ((mode === 'alchemy' || mode === 'effect') && x.alchemy) add(x.alchemy.effects);
       if ((mode === 'spell' || mode === 'effect') && x.detailKind === 'spell' && x.enchantment) add(x.enchantment.effects);
       if ((mode === 'enchant' || mode === 'effect') && x.detailKind !== 'spell' && x.enchantment) add(x.enchantment.effects);
     });
@@ -1775,7 +1830,7 @@ class Component extends DCLogic {
     const needle = term.toLowerCase();
     const source = Array.isArray(items) ? items : [];
     let values;
-    if (mode === 'effect' || mode === 'ingredient' || mode === 'spell' || mode === 'enchant') {
+    if (mode === 'effect' || mode === 'ingredient' || mode === 'alchemy' || mode === 'spell' || mode === 'enchant') {
       values = this.effectSuggestionLabels(source, mode);
     } else {
       values = source
@@ -1818,6 +1873,7 @@ class Component extends DCLogic {
     const source = Array.isArray(fallbackItems) ? fallbackItems : all;
     return source.filter(x =>
       (Array.isArray(x.effects) && x.effects.some(e => e.key.indexOf(effectKey) !== -1)) ||
+      (x && x.alchemy && Array.isArray(x.alchemy.effects) && x.alchemy.effects.some(e => e.key.indexOf(effectKey) !== -1)) ||
       (x && x.enchantment && Array.isArray(x.enchantment.effects) && x.enchantment.effects.some(e => e.key.indexOf(effectKey) !== -1))
     );
   }
@@ -1836,6 +1892,15 @@ class Component extends DCLogic {
     return source.filter(x => {
       if (x && x.detailKind === 'spell') return false;
       const e = x && x.enchantment && x.enchantment.effects;
+      return Array.isArray(e) && e.some(effect => effect.key.indexOf(effectKey) !== -1);
+    });
+  }
+
+  alchemyEffectSearchItems(effectKey, fallbackItems) {
+    const all = (this._oaabItems || []).concat(this._vanillaItems || []);
+    const source = Array.isArray(fallbackItems) ? fallbackItems : all;
+    return source.filter(x => {
+      const e = x && x.alchemy && x.alchemy.effects;
       return Array.isArray(e) && e.some(effect => effect.key.indexOf(effectKey) !== -1);
     });
   }
@@ -2106,6 +2171,8 @@ class Component extends DCLogic {
     const effectKey = this.effectSearchKey(effectQuery);
     const ingredientEffectQuery = activeSearch.mode === 'ingredient' ? activeSearch.term : '';
     const ingredientEffectKey = this.effectSearchKey(ingredientEffectQuery);
+    const alchemyEffectQuery = activeSearch.mode === 'alchemy' ? activeSearch.term : '';
+    const alchemyEffectKey = this.effectSearchKey(alchemyEffectQuery);
     const enchantEffectQuery = activeSearch.mode === 'enchant' ? activeSearch.term : '';
     const enchantEffectKey = this.effectSearchKey(enchantEffectQuery);
     const spellEffectQuery = activeSearch.mode === 'spell' ? activeSearch.term : '';
@@ -2122,6 +2189,7 @@ class Component extends DCLogic {
       queryCache.inventoryKey === inventoryKey &&
       queryCache.effectKey === effectKey &&
       queryCache.ingredientEffectKey === ingredientEffectKey &&
+      queryCache.alchemyEffectKey === alchemyEffectKey &&
       queryCache.enchantEffectKey === enchantEffectKey &&
       queryCache.spellEffectKey === spellEffectKey &&
       queryCache.vanillaItems === this._vanillaItems
@@ -2132,6 +2200,8 @@ class Component extends DCLogic {
         filtered = this.inventorySearchItems(inventoryQuery, all);
       } else if (ingredientEffectQuery) {
         filtered = this.ingredientEffectSearchItems(ingredientEffectKey, all);
+      } else if (alchemyEffectQuery) {
+        filtered = this.alchemyEffectSearchItems(alchemyEffectKey, all);
       } else if (spellEffectQuery) {
         filtered = this.spellEffectSearchItems(spellEffectKey, all);
       } else if (enchantEffectQuery) {
@@ -2151,7 +2221,7 @@ class Component extends DCLogic {
           );
         });
       }
-      this._queryCache = { items: relFiltered, query: q, colorKey, inventoryKey, effectKey, ingredientEffectKey, enchantEffectKey, spellEffectKey, vanillaItems: this._vanillaItems, filtered };
+      this._queryCache = { items: relFiltered, query: q, colorKey, inventoryKey, effectKey, ingredientEffectKey, alchemyEffectKey, enchantEffectKey, spellEffectKey, vanillaItems: this._vanillaItems, filtered };
     }
 
     // Materialise only complete rows around the viewport. Fixed-height captions
@@ -2213,6 +2283,8 @@ class Component extends DCLogic {
         effects: x.effects || [],
         hasEnchantment: !!x.enchantment,
         enchantmentTitle: x.enchantment ? x.enchantment.title : '',
+        hasAlchemy: !!x.alchemy,
+        alchemyTitle: x.alchemy ? x.alchemy.title : '',
         detailsLabel: x.detailKind === 'spell' ? 'Inspect spell' : 'Inspect enchantment',
         isSpell: !!x.isSpell,
         isNotSpell: !x.isSpell,
@@ -2220,7 +2292,7 @@ class Component extends DCLogic {
         spellEffects: x.spellEffects || [],
         spellLayoutClass: this.spellLayoutClass(x.spellEffects ? x.spellEffects.length : 0),
         previewClass: x.isSpell ? 'asset-thumb-frame-no-preview' : '',
-        hasCompactActions: !!((x.hasContents && x.contentIds && x.contentIds.length) || (x.effects && x.effects.length) || x.enchantment),
+        hasCompactActions: !!((x.hasContents && x.contentIds && x.contentIds.length) || (x.effects && x.effects.length) || x.enchantment || x.alchemy),
         compactActionsOpen: this.state.compactActionsId === x.id,
         nif: x.mesh || (x.img || ''),
         tip: comfortable
@@ -2252,13 +2324,15 @@ class Component extends DCLogic {
       emptyTitle = 'No matching records.';
       emptyCopy = ingredientEffectQuery
         ? 'No ingredient effect matches "' + ingredientEffectQuery + '".'
-        : (spellEffectQuery
-          ? 'No spell effect matches "' + spellEffectQuery + '".'
-          : (enchantEffectQuery
-            ? 'No enchantment effect matches "' + enchantEffectQuery + '".'
-            : (effectQuery
-              ? 'No ingredient, spell, or enchantment effect matches "' + effectQuery + '".'
-              : 'No object ID, name, mesh, or light color matches "' + rawQuery + '".')));
+        : (alchemyEffectQuery
+          ? 'No alchemy effect matches "' + alchemyEffectQuery + '".'
+          : (spellEffectQuery
+            ? 'No spell effect matches "' + spellEffectQuery + '".'
+            : (enchantEffectQuery
+              ? 'No enchantment effect matches "' + enchantEffectQuery + '".'
+              : (effectQuery
+                ? 'No ingredient, alchemy, spell, or enchantment effect matches "' + effectQuery + '".'
+                : 'No object ID, name, mesh, or light color matches "' + rawQuery + '".'))));
     } else if (hasFilterWithoutSearch) {
       emptyTitle = 'No matching thumbnails.';
       emptyCopy = 'Try clearing a type, tag, or release filter.';
@@ -2286,6 +2360,7 @@ class Component extends DCLogic {
     const searchPlaceholderMap = {
       effect: 'Search magic effect names',
       ingredient: 'Search ingredient effect names',
+      alchemy: 'Search alchemy effect names',
       spell: 'Search spell effect names',
       enchant: 'Search enchantment effect names',
       inventory: 'Search inventory owner IDs',
@@ -2416,6 +2491,8 @@ class Component extends DCLogic {
           contentsTitle: '',
           hasEnchantment: false,
           enchantmentTitle: '',
+          hasAlchemy: false,
+          alchemyTitle: '',
           hasEffects: false,
           effects: [],
         };
@@ -2429,7 +2506,17 @@ class Component extends DCLogic {
         if (e && e.stopPropagation) e.stopPropagation();
         const id = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.enchantmentItemId || '') : '';
         const item = this.findCatalogItem(id);
-        const payload = this.enchantmentPreviewPayload(item);
+        const payload = this.enchantmentPreviewPayload(item, 'enchantment');
+        if (!payload) return;
+        this.setState({ enchantmentPreview: payload, compactActionsId: null });
+      },
+      openAlchemyDetails: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        const id = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.alchemyItemId || '') : '';
+        const item = this.findCatalogItem(id);
+        if (!item || !item.alchemy) return;
+        const payload = this.enchantmentPreviewPayload(item, 'alchemy');
         if (!payload) return;
         this.setState({ enchantmentPreview: payload, compactActionsId: null });
       },
@@ -2770,12 +2857,15 @@ class Component extends DCLogic {
       renderPreviewContentsTitle: this.state.renderPreview ? (this.state.renderPreview.contentsTitle || '') : '',
       renderPreviewHasEnchantment: !!(this.state.renderPreview && this.state.renderPreview.hasEnchantment),
       renderPreviewEnchantmentTitle: this.state.renderPreview ? (this.state.renderPreview.enchantmentTitle || '') : '',
+      renderPreviewHasAlchemy: !!(this.state.renderPreview && this.state.renderPreview.hasAlchemy),
+      renderPreviewAlchemyTitle: this.state.renderPreview ? (this.state.renderPreview.alchemyTitle || '') : '',
       renderPreviewHasEffects: !!(this.state.renderPreview && this.state.renderPreview.hasEffects),
       renderPreviewEffects: this.state.renderPreview ? (this.state.renderPreview.effects || []) : [],
       showEnchantmentPreview: !!this.state.enchantmentPreview,
       enchantmentPreviewTitle: this.state.enchantmentPreview ? this.state.enchantmentPreview.title : '',
       enchantmentPreviewIsSpell: !!(this.state.enchantmentPreview && this.state.enchantmentPreview.kind === 'spell'),
-      enchantmentPreviewIsEnchantment: !(this.state.enchantmentPreview && this.state.enchantmentPreview.kind === 'spell'),
+      enchantmentPreviewIsAlchemy: !!(this.state.enchantmentPreview && this.state.enchantmentPreview.kind === 'alchemy'),
+      enchantmentPreviewIsEnchantment: !(this.state.enchantmentPreview && (this.state.enchantmentPreview.kind === 'spell' || this.state.enchantmentPreview.kind === 'alchemy')),
       enchantmentPreviewItem: this.state.enchantmentPreview
         ? ((this.state.enchantmentPreview.itemName || this.state.enchantmentPreview.itemId || '') + (this.state.enchantmentPreview.itemType ? ' · ' + this.state.enchantmentPreview.itemType : ''))
         : '',
