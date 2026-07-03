@@ -294,7 +294,7 @@
 
 <sc-if value="{{ showRenderPreview }}" hint-placeholder-val="{{ false }}">
 <div class="library-render-backdrop" onClick="{{ closeRenderPreview }}">
-  <div class="library-render-dialog" role="dialog" aria-modal="true" aria-label="{{ renderPreviewTitle }}" onClick="{{ stopRenderPreviewClick }}">
+  <div class="library-render-dialog" role="dialog" aria-modal="true" aria-label="{{ renderPreviewTitle }}" onClick="{{ stopRenderPreviewClick }}" onPointerDown="{{ renderSwipeStart }}" onPointerMove="{{ renderSwipeMove }}" onPointerUp="{{ renderSwipeEnd }}" onPointerCancel="{{ renderSwipeCancel }}">
     <button type="button" class="library-render-close" onClick="{{ closeRenderPreview }}" aria-label="Close full size render" title="Close">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
     </button>
@@ -745,6 +745,49 @@ class Component extends DCLogic {
     const next = list[(idx + step + list.length) % list.length];
     if (!next || !next.src) return;
     this.setState({ renderPreview: next, renderPreviewLoaded: false });
+  }
+
+  renderSwipePoint(e) {
+    return e ? { x: e.clientX || 0, y: e.clientY || 0, t: Date.now() } : null;
+  }
+
+  beginRenderSwipe(e) {
+    if (!this.state.renderPreview) return;
+    this._renderSwipeStart = this.renderSwipePoint(e);
+    this._renderSwipeLast = this._renderSwipeStart;
+    try {
+      if (e && e.currentTarget && e.pointerId != null) e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
+  }
+
+  updateRenderSwipe(e) {
+    if (!this._renderSwipeStart) return;
+    this._renderSwipeLast = this.renderSwipePoint(e);
+    const dx = this._renderSwipeLast.x - this._renderSwipeStart.x;
+    const dy = this._renderSwipeLast.y - this._renderSwipeStart.y;
+    if (Math.abs(dx) > 14 && Math.abs(dx) > Math.abs(dy) * 1.15 && e && e.preventDefault) {
+      e.preventDefault();
+    }
+  }
+
+  finishRenderSwipe(e) {
+    const start = this._renderSwipeStart;
+    const end = this.renderSwipePoint(e) || this._renderSwipeLast;
+    this._renderSwipeStart = null;
+    this._renderSwipeLast = null;
+    if (!start || !end) return;
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const ax = Math.abs(dx);
+    if (ax < 55 || ax < Math.abs(dy) * 1.2 || (end.t - start.t) > 1100) return;
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+    this.showAdjacentRenderPreview(dx < 0 ? 1 : -1);
+  }
+
+  cancelRenderSwipe() {
+    this._renderSwipeStart = null;
+    this._renderSwipeLast = null;
   }
 
   lightColorCss(r) {
@@ -1771,6 +1814,10 @@ class Component extends DCLogic {
       stopRenderPreviewClick: (e) => {
         if (e && e.stopPropagation) e.stopPropagation();
       },
+      renderSwipeStart: (e) => this.beginRenderSwipe(e),
+      renderSwipeMove: (e) => this.updateRenderSwipe(e),
+      renderSwipeEnd: (e) => this.finishRenderSwipe(e),
+      renderSwipeCancel: () => this.cancelRenderSwipe(),
       renderLoad: () => this.setState({ renderPreviewLoaded: true }),
       renderErr: () => this.setState({ renderPreviewLoaded: true }),
       onDrag: (e) => {

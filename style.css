@@ -2734,6 +2734,7 @@ button {
   background:#120d08;
   box-shadow:0 26px 80px rgba(0,0,0,0.62);
   overflow:hidden;
+  touch-action:pan-y;
 }
 .library-render-media {
   position:relative;
