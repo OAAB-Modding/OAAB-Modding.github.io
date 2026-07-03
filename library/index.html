@@ -106,7 +106,7 @@
       <div style="display:{{ filterWrapDisp }};flex-basis:100%;flex-wrap:wrap;align-items:center;gap:12px;" class="filter-collapse">
       <div style="flex:{{ searchFlex }};" class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="#80735f" stroke-width="2" class="search-icon"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
-        <input type="text" value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search ID, name, mesh, effect: Restore, enchant: Fire, or inventory: AB_TelvanniGuardF" spellcheck="false" autocomplete="off" class="search-input">
+        <input type="text" value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search ID, name, mesh, effect: Restore, ingredient: Restore, spell: Fire, enchant: Fire, or inventory: AB_TelvanniGuardF" spellcheck="false" autocomplete="off" class="search-input">
         <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
           <button onClick="{{ clearSearch }}" title="Clear search" class="search-clear">×</button>
         </sc-if>
@@ -241,12 +241,21 @@
     <div data-grid="" style="grid-template-columns:{{ gridCols }};gap:{{ gridGap }}px;padding-top:{{ gridPadTop }}px;padding-bottom:{{ gridPadBottom }}px;" class="asset-grid">
       <sc-for list="{{ items }}" as="it" hint-placeholder-count="18">
         <figure title="{{ it.tip }}" draggable="{{ yes }}" data-eid="{{ it.id }}" onDragStart="{{ onDrag }}" class="asset-card">
-          <div class="asset-thumb-frame" data-render-id="{{ it.renderId }}" data-render="{{ it.render }}" data-render-title="{{ it.renderTitle }}" data-render-meta="{{ it.renderMeta }}" onClick="{{ openRenderPreview }}">
+          <div class="asset-thumb-frame {{ it.previewClass }}" data-render-id="{{ it.renderId }}" data-render="{{ it.render }}" data-render-title="{{ it.renderTitle }}" data-render-meta="{{ it.renderMeta }}" onClick="{{ openRenderPreview }}">
             <div key="{{ it.thumbKey }}" data-thumb="" class="asset-thumb-layer">
               <div data-spin="" class="asset-spinner-wrap">
                 <div class="asset-spinner"></div>
               </div>
               <img src="{{ it.img }}" alt="{{ it.id }}" loading="eager" decoding="async" draggable="{{ no }}" ref="{{ imgRef }}" onLoad="{{ imgLoad }}" onError="{{ imgErr }}" style="padding:{{ imgPad }}px;" class="asset-image">
+              <sc-if value="{{ it.hasSpellThumb }}" hint-placeholder-val="{{ false }}">
+                <div class="asset-spell-effects {{ it.spellLayoutClass }}" aria-hidden="true">
+                  <sc-for list="{{ it.spellEffects }}" as="eff" hint-placeholder-count="4">
+                    <span title="{{ eff.title }}" style="--spell-effect-scale:{{ eff.scale }};" class="asset-spell-effect">
+                      <img src="{{ eff.img }}" alt="" loading="lazy" decoding="async" draggable="{{ no }}" class="asset-spell-effect-icon">
+                    </span>
+                  </sc-for>
+                </div>
+              </sc-if>
               <sc-if value="{{ it.lightTint }}" hint-placeholder-val="{{ false }}">
                 <span aria-hidden="true" style="background:{{ it.lightTint }};--asset-light-mask:url('{{ it.lightMask }}');--asset-light-inset:{{ imgPad }}px;" class="asset-light-tint"></span>
               </sc-if>
@@ -272,7 +281,12 @@
             <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
             <sc-if value="{{ it.hasEnchantment }}" hint-placeholder-val="{{ false }}">
               <button type="button" data-enchantment-item-id="{{ it.id }}" onClick="{{ openEnchantmentDetails }}" title="{{ it.enchantmentTitle }}" class="asset-enchantment-button">
+                <sc-if value="{{ it.isSpell }}" hint-placeholder-val="{{ false }}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="asset-enchantment-icon"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
+                </sc-if>
+                <sc-if value="{{ it.isNotSpell }}" hint-placeholder-val="{{ true }}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="asset-enchantment-icon"><path d="M14 11a2 2 0 1 1-4 0 4 4 0 0 1 8 0 6 6 0 0 1-12 0 8 8 0 0 1 16 0 10 10 0 0 1-20 0 11.93 11.93 0 0 1 2.42-7.23 2 2 0 1 1 3.16 2.46"></path></svg>
+                </sc-if>
               </button>
             </sc-if>
             </sc-if>
@@ -280,7 +294,7 @@
             <sc-if value="{{ it.hasEffects }}" hint-placeholder-val="{{ false }}">
               <div class="asset-effect-row">
                 <sc-for list="{{ it.effects }}" as="eff" hint-placeholder-count="4">
-                  <button type="button" data-effect="{{ eff.label }}" onClick="{{ pickEffect }}" title="{{ eff.label }}" class="asset-effect-button">
+                  <button type="button" data-effect="{{ eff.label }}" data-effect-query="{{ eff.query }}" onClick="{{ pickEffect }}" title="{{ eff.label }}" class="asset-effect-button">
                     <img src="{{ eff.img }}" alt="{{ eff.label }}" loading="lazy" decoding="async" draggable="{{ no }}" class="asset-effect-icon">
                   </button>
                 </sc-for>
@@ -297,11 +311,11 @@
                         <button type="button" data-inventory-id="{{ it.id }}" onClick="{{ pickInventoryContents }}" class="asset-compact-actions-row">{{ it.compactContentsLabel }}</button>
                       </sc-if>
                       <sc-if value="{{ it.hasEnchantment }}" hint-placeholder-val="{{ false }}">
-                        <button type="button" data-enchantment-item-id="{{ it.id }}" onClick="{{ openEnchantmentDetails }}" class="asset-compact-actions-row">Inspect enchantment</button>
+                        <button type="button" data-enchantment-item-id="{{ it.id }}" onClick="{{ openEnchantmentDetails }}" class="asset-compact-actions-row">{{ it.detailsLabel }}</button>
                       </sc-if>
                       <sc-if value="{{ it.hasEffects }}" hint-placeholder-val="{{ false }}">
                         <sc-for list="{{ it.effects }}" as="eff" hint-placeholder-count="4">
-                          <button type="button" data-effect="{{ eff.label }}" onClick="{{ pickEffect }}" class="asset-compact-actions-row">{{ eff.label }}</button>
+                          <button type="button" data-effect="{{ eff.label }}" data-effect-query="{{ eff.query }}" onClick="{{ pickEffect }}" class="asset-compact-actions-row">{{ eff.label }}</button>
                         </sc-for>
                       </sc-if>
                     </div>
@@ -357,7 +371,7 @@
       <sc-if value="{{ renderPreviewHasEffects }}" hint-placeholder-val="{{ false }}">
         <div data-render-control="1" class="asset-effect-row library-render-effect-row">
           <sc-for list="{{ renderPreviewEffects }}" as="eff" hint-placeholder-count="4">
-            <button type="button" data-effect="{{ eff.label }}" onClick="{{ pickEffect }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="{{ eff.label }}" class="asset-effect-button library-render-effect-button">
+            <button type="button" data-effect="{{ eff.label }}" data-effect-query="{{ eff.query }}" onClick="{{ pickEffect }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="{{ eff.label }}" class="asset-effect-button library-render-effect-button">
               <img src="{{ eff.img }}" alt="{{ eff.label }}" loading="lazy" decoding="async" draggable="{{ no }}" class="asset-effect-icon library-render-effect-icon">
             </button>
           </sc-for>
@@ -382,7 +396,12 @@
     </button>
     <div class="library-enchant-head">
       <span class="library-enchant-shell">
+        <sc-if value="{{ enchantmentPreviewIsSpell }}" hint-placeholder-val="{{ false }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
+        </sc-if>
+        <sc-if value="{{ enchantmentPreviewIsEnchantment }}" hint-placeholder-val="{{ true }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 11a2 2 0 1 1-4 0 4 4 0 0 1 8 0 6 6 0 0 1-12 0 8 8 0 0 1 16 0 10 10 0 0 1-20 0 11.93 11.93 0 0 1 2.42-7.23 2 2 0 1 1 3.16 2.46"></path></svg>
+        </sc-if>
       </span>
       <div class="library-enchant-title-group">
         <code class="library-enchant-title">{{ enchantmentPreviewTitle }}</code>
@@ -400,7 +419,7 @@
     <sc-if value="{{ enchantmentPreviewHasEffects }}" hint-placeholder-val="{{ true }}">
       <div class="library-enchant-effects">
         <sc-for list="{{ enchantmentPreviewEffects }}" as="eff" hint-placeholder-count="4">
-          <button type="button" data-effect="{{ eff.label }}" onClick="{{ pickEnchantmentEffect }}" title="{{ eff.title }}" class="library-enchant-effect-button">
+          <button type="button" data-effect="{{ eff.label }}" data-effect-query="{{ eff.query }}" onClick="{{ pickEnchantmentEffect }}" title="{{ eff.title }}" class="library-enchant-effect-button">
             <img src="{{ eff.img }}" alt="{{ eff.label }}" loading="lazy" decoding="async" draggable="{{ no }}" class="library-enchant-effect-icon">
             <span class="library-enchant-effect-text">
               <span class="library-enchant-effect-name">{{ eff.label }}</span>
@@ -611,7 +630,7 @@ class Component extends DCLogic {
     const NPC_THUMB = REPO + '/assets/images/library/thumbnails/npc/';
     const RENDER = '/assets/images/library/renders/meshes/';
     const NPC_RENDER = '/assets/images/library/renders/npc/';
-    const EFFECT = REPO + '/assets/images/library/effects/';
+    const EFFECT = '/assets/images/library/effects/';
     const LIGHT_MASK = REPO + '/assets/images/library/masks/marker_light_mask.webp';
     this._THUMB = THUMB;
     this._NPC_THUMB = NPC_THUMB;
@@ -673,11 +692,13 @@ class Component extends DCLogic {
               id: id,
               type: labelType(r.type),
               inventory: Array.isArray(r.inventory) ? r.inventory : null,
+              spells: Array.isArray(r.spells) ? r.spells : null,
               leveledItems: Array.isArray(r.items) ? r.items : null,
             });
           }
           const mesh = (r.mesh || '');
           const npc = this.isNpcRecord(r);
+          const spell = this.isSpellRecord(r);
           const markerLight = this.isMeshlessLight(r);
           const lightColor = this.labelType(r.type).toLowerCase() === 'light' ? this.lightColorCss(r) : '';
           const lightHex = lightColor ? this.lightColorHex(r) : '';
@@ -685,12 +706,13 @@ class Component extends DCLogic {
           // Mesh thumbnails are keyed by their path relative to Morrowind's
           // Meshes folder. Meshless lights and NPCs use special thumbnail keys.
           const meshThumb = thumbnailPath(mesh);
-          if (!npc && !markerLight && !meshThumb) return;
+          if (!spell && !npc && !markerLight && !meshThumb) return;
           if (!id || seen[id]) return;
           if (deprecated[id]) return; // skip deprecated IDs
           const rel = npc ? null : (markerLight ? 'marker_light.webp' : meshThumb);
-          const img = npc ? this.npcThumbnailUrl(id) : (rel ? THUMB + rel : '');
-          const render = npc ? this.npcRenderUrl(id) : (rel ? RENDER + rel : '');
+          const spellEffects = spell ? this.spellThumbnailEffects(r) : [];
+          const img = spell ? (spellEffects[0] ? spellEffects[0].img : '') : (npc ? this.npcThumbnailUrl(id) : (rel ? THUMB + rel : ''));
+          const render = spell ? '' : (npc ? this.npcRenderUrl(id) : (rel ? RENDER + rel : ''));
           if (!img) return;
           seen[id] = 1;
           items.push({
@@ -700,14 +722,18 @@ class Component extends DCLogic {
             img: img,
             render: render,
             mesh: mesh,
+            isSpell: spell,
+            detailKind: spell ? 'spell' : '',
+            spellEffects: spellEffects,
             lightTint: markerLight ? lightColor : '',
             lightColor: lightColor,
             lightHex: lightHex,
             lightRgb: lightRgb,
             lightMask: markerLight ? LIGHT_MASK : '',
             inventory: Array.isArray(r.inventory) ? r.inventory : null,
-            effects: this.ingredientEffects(r),
-            enchantment: this.itemEnchantment(r, enchantmentsByKey),
+            spells: Array.isArray(r.spells) ? r.spells : null,
+            effects: spell ? [] : this.ingredientEffects(r),
+            enchantment: spell ? this.spellDetails(r) : this.itemEnchantment(r, enchantmentsByKey),
           });
         });
         items.sort((a, b) => this.csCompareIds(a.id, b.id));
@@ -827,6 +853,10 @@ class Component extends DCLogic {
     return this.labelType(r && r.type).toLowerCase() === 'npc';
   }
 
+  isSpellRecord(r) {
+    return this.labelType(r && r.type).toLowerCase() === 'spell';
+  }
+
   isLeveledItemType(type) {
     return this.labelType(type).toLowerCase() === 'leveleditem';
   }
@@ -843,9 +873,10 @@ class Component extends DCLogic {
 
   renderPreviewPayload(x) {
     const contentCount = x && x.contentIds && x.contentIds.length ? x.contentIds.length : 0;
+    const isSpell = !!(x && x.isSpell);
     return {
       id: x && x.id ? String(x.id) : '',
-      src: (x && (x.render || x.img)) || '',
+      src: isSpell ? '' : ((x && (x.render || x.img)) || ''),
       title: (x && x.id) || '',
       meta: (x && (x.mesh || x.name || x.type)) || '',
       lightTint: (x && x.lightTint) || '',
@@ -860,6 +891,11 @@ class Component extends DCLogic {
       enchantmentTitle: x && x.enchantment ? (x.enchantment.title || x.enchantment.id || 'Enchantment details') : '',
       hasEffects: !!(x && x.effects && x.effects.length),
       effects: (x && x.effects) || [],
+      isSpell: isSpell,
+      detailKind: (x && x.detailKind) || '',
+      spellEffects: (x && x.spellEffects) || [],
+      hasSpellThumb: !!(x && x.spellEffects && x.spellEffects.length),
+      spellLayoutClass: x && x.spellEffects ? this.spellLayoutClass(x.spellEffects.length) : '',
     };
   }
 
@@ -1180,7 +1216,7 @@ class Component extends DCLogic {
         label,
         key,
         img: base + icon,
-        query: 'effect: ' + label,
+        query: 'ingredient: ' + label,
       });
     });
     return out;
@@ -1235,6 +1271,69 @@ class Component extends DCLogic {
     };
   }
 
+  spellDetails(record) {
+    if (!this.isSpellRecord(record)) return null;
+    const data = record && record.data ? record.data : {};
+    const rows = [
+      { label: 'ID', value: record.id || '' },
+      { label: 'Type', value: this.spellTypeLabel(data.spell_type) || 'Spell' },
+    ];
+    if (data.cost != null) rows.push({ label: 'Cost', value: String(data.cost) });
+    if (data.flags) rows.push({ label: 'Flags', value: this.flagsLabel(data.flags) });
+    const meta = rows.slice(1, 4).map(r => r.value).filter(Boolean).join(' Â· ');
+    return {
+      id: record.id || '',
+      label: record.id || '',
+      title: 'Spell: ' + (record.id || ''),
+      meta: meta || 'Spell',
+      kind: 'spell',
+      rows,
+      effects: this.magicEffectEntries(record.effects, 8, { queryPrefix: 'spell' }),
+    };
+  }
+
+  spellTypeLabel(value) {
+    const map = {
+      Spell: 'Spell',
+      Ability: 'Ability',
+      BlightDisease: 'Blight Disease',
+      Disease: 'Disease',
+      Curse: 'Curse',
+      Power: 'Power',
+    };
+    return map[value] || this.effectBaseLabel(value);
+  }
+
+  spellThumbnailEffects(record) {
+    const entries = this.magicEffectEntries(record && record.effects, 8, { queryPrefix: 'spell' });
+    const out = [];
+    const byIcon = Object.create(null);
+    entries.forEach(entry => {
+      const key = entry.img || entry.key;
+      if (!key) return;
+      let existing = byIcon[key];
+      if (!existing) {
+        existing = Object.assign({}, entry, { count: 0, labels: [] });
+        byIcon[key] = existing;
+        out.push(existing);
+      }
+      existing.count += 1;
+      if (existing.labels.indexOf(entry.label) === -1) existing.labels.push(entry.label);
+    });
+    return out.map(entry => {
+      const count = entry.count || 1;
+      const labels = entry.labels && entry.labels.length ? entry.labels.join(', ') : entry.label;
+      return Object.assign({}, entry, {
+        scale: String(Math.min(1.58, 1 + (count - 1) * 0.18)),
+        title: labels + (count > 1 ? ' x' + count : ''),
+      });
+    });
+  }
+
+  spellLayoutClass(count) {
+    return 'asset-spell-layout-' + Math.max(1, Math.min(8, parseInt(count, 10) || 1));
+  }
+
   enchantmentTypeLabel(value) {
     const map = {
       CastOnce: 'Cast Once',
@@ -1259,6 +1358,7 @@ class Component extends DCLogic {
     const icons = this.ingredientEffectIconMap();
     const base = this._EFFECT || '';
     const constantEffect = !!(options && options.constantEffect);
+    const queryPrefix = (options && options.queryPrefix) || 'enchant';
     return effects.slice(0, limit || 8).map(raw => {
       const effect = String((raw && raw.magic_effect) || raw || '').trim();
       if (!effect || effect === 'None') return null;
@@ -1273,7 +1373,7 @@ class Component extends DCLogic {
         img: base + icon,
         summary,
         title: summary ? label + ' · ' + summary : label,
-        query: 'enchant: ' + label,
+        query: queryPrefix + ': ' + label,
       };
     }).filter(Boolean);
   }
@@ -1307,6 +1407,7 @@ class Component extends DCLogic {
       id: enchantment.id || '',
       title: enchantment.title || 'Enchantment',
       meta: enchantment.meta || '',
+      kind: enchantment.kind || x.detailKind || 'enchantment',
       rows: enchantment.rows || [],
       effects: enchantment.effects || [],
       hasEffects: !!(enchantment.effects && enchantment.effects.length),
@@ -1350,7 +1451,7 @@ class Component extends DCLogic {
       if (key && !contentByKey[key]) contentByKey[key] = x;
     });
     searchableItems.forEach(x => {
-      const contentIds = this.containerContentIds(x.inventory, contentByKey, displayByKey, x.id);
+      const contentIds = this.containerContentIds(x.inventory, x.spells, contentByKey, displayByKey, x.id);
       x.contentIds = contentIds;
       x.hasContents = contentIds.length > 0;
     });
@@ -1394,35 +1495,44 @@ class Component extends DCLogic {
               id: id,
               type: this.labelType(r.type),
               inventory: Array.isArray(r.inventory) ? r.inventory : null,
+              spells: Array.isArray(r.spells) ? r.spells : null,
               leveledItems: Array.isArray(r.items) ? r.items : null,
             });
           }
           const mesh = r.mesh || '';
           const norm = mesh.replace(/\\/g, '/').toLowerCase();
           const npc = this.isNpcRecord(r);
+          const spell = this.isSpellRecord(r);
           const markerLight = this.isMeshlessLight(r);
           const lightColor = this.labelType(r.type).toLowerCase() === 'light' ? this.lightColorCss(r) : '';
           const lightHex = lightColor ? this.lightColorHex(r) : '';
           const lightRgb = lightColor ? this.lightColorRgb(r) : null;
-          if (!npc && !markerLight && !/\.nif$/.test(norm)) return;
+          if (!spell && !npc && !markerLight && !/\.nif$/.test(norm)) return;
           if (!id || seen[id]) return;
           seen[id] = 1;
           const rel = npc ? null : (markerLight ? 'marker_light.webp' : norm.replace(/\.nif$/, '.webp'));
+          const spellEffects = spell ? this.spellThumbnailEffects(r) : [];
+          const img = spell ? (spellEffects[0] ? spellEffects[0].img : '') : (npc ? this.npcThumbnailUrl(id) : THUMB + rel);
+          if (!img) return;
           items.push({
             id: id,
             name: r.name || '',
             type: this.labelType(r.type),
-            img: npc ? this.npcThumbnailUrl(id) : THUMB + rel,
-            render: npc ? this.npcRenderUrl(id) : RENDER + rel,
+            img: img,
+            render: spell ? '' : (npc ? this.npcRenderUrl(id) : RENDER + rel),
             mesh: mesh,
+            isSpell: spell,
+            detailKind: spell ? 'spell' : '',
+            spellEffects: spellEffects,
             lightTint: markerLight ? lightColor : '',
             lightColor: lightColor,
             lightHex: lightHex,
             lightRgb: lightRgb,
             lightMask: markerLight ? LIGHT_MASK : '',
             inventory: Array.isArray(r.inventory) ? r.inventory : null,
-            effects: this.ingredientEffects(r),
-            enchantment: this.itemEnchantment(r, enchantmentsByKey),
+            spells: Array.isArray(r.spells) ? r.spells : null,
+            effects: spell ? [] : this.ingredientEffects(r),
+            enchantment: spell ? this.spellDetails(r) : this.itemEnchantment(r, enchantmentsByKey),
             vanilla: true,
           });
         });
@@ -1522,8 +1632,8 @@ class Component extends DCLogic {
     return '';
   }
 
-  containerContentIds(inventory, contentByKey, displayByKey, selfId) {
-    if (!Array.isArray(inventory)) return [];
+  containerContentIds(inventory, spells, contentByKey, displayByKey, selfId) {
+    if (!Array.isArray(inventory) && !Array.isArray(spells)) return [];
     const out = [];
     const seen = Object.create(null);
     const visiting = Object.create(null);
@@ -1548,7 +1658,8 @@ class Component extends DCLogic {
       }
       addDisplay(raw);
     };
-    inventory.forEach(entry => expand(this.contentEntryId(entry, 1)));
+    (inventory || []).forEach(entry => expand(this.contentEntryId(entry, 1)));
+    (spells || []).forEach(entry => expand(this.contentEntryId(entry, 0) || entry));
     return out.sort((a, b) => this.csCompareIds(a, b));
   }
 
@@ -1567,8 +1678,18 @@ class Component extends DCLogic {
     return m ? m[1].trim() : '';
   }
 
+  parseIngredientEffectQuery(query) {
+    const m = /^ingred(?:ient)?\s*:\s*(.+)$/i.exec(String(query || '').trim());
+    return m ? m[1].trim() : '';
+  }
+
   parseEnchantEffectQuery(query) {
     const m = /^enchant(?:ment)?\s*:\s*(.+)$/i.exec(String(query || '').trim());
+    return m ? m[1].trim() : '';
+  }
+
+  parseSpellEffectQuery(query) {
+    const m = /^spell\s*:\s*(.+)$/i.exec(String(query || '').trim());
     return m ? m[1].trim() : '';
   }
 
@@ -1586,6 +1707,15 @@ class Component extends DCLogic {
     const all = (this._oaabItems || []).concat(this._vanillaItems || []);
     const source = all.length ? all : (fallbackItems || []);
     return source.filter(x =>
+      (Array.isArray(x.effects) && x.effects.some(e => e.key.indexOf(effectKey) !== -1)) ||
+      (x && x.enchantment && Array.isArray(x.enchantment.effects) && x.enchantment.effects.some(e => e.key.indexOf(effectKey) !== -1))
+    );
+  }
+
+  ingredientEffectSearchItems(effectKey, fallbackItems) {
+    const all = (this._oaabItems || []).concat(this._vanillaItems || []);
+    const source = all.length ? all : (fallbackItems || []);
+    return source.filter(x =>
       Array.isArray(x.effects) && x.effects.some(e => e.key.indexOf(effectKey) !== -1)
     );
   }
@@ -1594,7 +1724,18 @@ class Component extends DCLogic {
     const all = (this._oaabItems || []).concat(this._vanillaItems || []);
     const source = all.length ? all : (fallbackItems || []);
     return source.filter(x => {
+      if (x && x.detailKind === 'spell') return false;
       const e = x && x.enchantment && x.enchantment.effects;
+      return Array.isArray(e) && e.some(effect => effect.key.indexOf(effectKey) !== -1);
+    });
+  }
+
+  spellEffectSearchItems(effectKey, fallbackItems) {
+    const all = (this._oaabItems || []).concat(this._vanillaItems || []);
+    const source = all.length ? all : (fallbackItems || []);
+    return source.filter(x => {
+      if (!x || x.detailKind !== 'spell') return false;
+      const e = x.enchantment && x.enchantment.effects;
       return Array.isArray(e) && e.some(effect => effect.key.indexOf(effectKey) !== -1);
     });
   }
@@ -1851,8 +1992,12 @@ class Component extends DCLogic {
     const inventoryKey = inventoryQuery.toLowerCase();
     const effectQuery = this.parseEffectQuery(rawQuery);
     const effectKey = this.effectSearchKey(effectQuery);
+    const ingredientEffectQuery = this.parseIngredientEffectQuery(rawQuery);
+    const ingredientEffectKey = this.effectSearchKey(ingredientEffectQuery);
     const enchantEffectQuery = this.parseEnchantEffectQuery(rawQuery);
     const enchantEffectKey = this.effectSearchKey(enchantEffectQuery);
+    const spellEffectQuery = this.parseSpellEffectQuery(rawQuery);
+    const spellEffectKey = this.effectSearchKey(spellEffectQuery);
     const colorQuery = this.parseColorQuery(rawQuery);
     const colorKey = colorQuery ? colorQuery.hex + '~' + colorQuery.tolerance : '';
     let filtered;
@@ -1864,13 +2009,19 @@ class Component extends DCLogic {
       queryCache.colorKey === colorKey &&
       queryCache.inventoryKey === inventoryKey &&
       queryCache.effectKey === effectKey &&
+      queryCache.ingredientEffectKey === ingredientEffectKey &&
       queryCache.enchantEffectKey === enchantEffectKey &&
+      queryCache.spellEffectKey === spellEffectKey &&
       queryCache.vanillaItems === this._vanillaItems
     ) {
       filtered = queryCache.filtered;
     } else {
       if (inventoryQuery) {
         filtered = this.inventorySearchItems(inventoryQuery, all);
+      } else if (ingredientEffectQuery) {
+        filtered = this.ingredientEffectSearchItems(ingredientEffectKey, all);
+      } else if (spellEffectQuery) {
+        filtered = this.spellEffectSearchItems(spellEffectKey, all);
       } else if (enchantEffectQuery) {
         filtered = this.enchantmentEffectSearchItems(enchantEffectKey, all);
       } else if (effectQuery) {
@@ -1888,7 +2039,7 @@ class Component extends DCLogic {
           );
         });
       }
-      this._queryCache = { items: relFiltered, query: q, colorKey, inventoryKey, effectKey, enchantEffectKey, vanillaItems: this._vanillaItems, filtered };
+      this._queryCache = { items: relFiltered, query: q, colorKey, inventoryKey, effectKey, ingredientEffectKey, enchantEffectKey, spellEffectKey, vanillaItems: this._vanillaItems, filtered };
     }
 
     // Materialise only complete rows around the viewport. Fixed-height captions
@@ -1905,7 +2056,7 @@ class Component extends DCLogic {
     );
     const startIndex = startRow * metrics.columns;
     const endIndex = Math.min(filtered.length, endRow * metrics.columns);
-    this._renderPreviewItems = filtered.map(x => this.renderPreviewPayload(x));
+    this._renderPreviewItems = filtered.map(x => this.renderPreviewPayload(x)).filter(x => x && x.src);
     const REL_ADDED = { bg: 'rgba(210,130,63,0.94)', fg: '#1a120a', bd: 'rgba(210,130,63,0.94)', glyph: '+' };
     const REL_UPD = light
       ? { bg: 'rgba(154,146,214,0.18)', fg: '#352d5e', bd: 'rgba(120,110,185,0.85)', glyph: '\u21bb' }
@@ -1932,7 +2083,7 @@ class Component extends DCLogic {
         hasName: !!(x.name && x.name.length),
         type: x.type,
         img: x.img,
-        render: x.render || x.img,
+        render: x.isSpell ? '' : (x.render || x.img),
         renderId: x.id || '',
         renderTitle: x.id || '',
         renderMeta: x.mesh || x.name || x.type || '',
@@ -1950,6 +2101,13 @@ class Component extends DCLogic {
         effects: x.effects || [],
         hasEnchantment: !!x.enchantment,
         enchantmentTitle: x.enchantment ? x.enchantment.title : '',
+        detailsLabel: x.detailKind === 'spell' ? 'Inspect spell' : 'Inspect enchantment',
+        isSpell: !!x.isSpell,
+        isNotSpell: !x.isSpell,
+        hasSpellThumb: !!(x.spellEffects && x.spellEffects.length),
+        spellEffects: x.spellEffects || [],
+        spellLayoutClass: this.spellLayoutClass(x.spellEffects ? x.spellEffects.length : 0),
+        previewClass: x.isSpell ? 'asset-thumb-frame-no-preview' : '',
         hasCompactActions: !!((x.hasContents && x.contentIds && x.contentIds.length) || (x.effects && x.effects.length) || x.enchantment),
         compactActionsOpen: this.state.compactActionsId === x.id,
         nif: x.mesh || (x.img || ''),
@@ -1980,11 +2138,15 @@ class Component extends DCLogic {
     let emptyCopy = "These records exist in the library data but aren't part of the current thumbnail render set.";
     if (q) {
       emptyTitle = 'No matching records.';
-      emptyCopy = effectQuery
-        ? 'No ingredient effect matches "' + effectQuery + '".'
-        : (enchantEffectQuery
-          ? 'No enchantment effect matches "' + enchantEffectQuery + '".'
-          : 'No object ID, name, mesh, or light color matches "' + rawQuery + '".');
+      emptyCopy = ingredientEffectQuery
+        ? 'No ingredient effect matches "' + ingredientEffectQuery + '".'
+        : (spellEffectQuery
+          ? 'No spell effect matches "' + spellEffectQuery + '".'
+          : (enchantEffectQuery
+            ? 'No enchantment effect matches "' + enchantEffectQuery + '".'
+            : (effectQuery
+              ? 'No ingredient, spell, or enchantment effect matches "' + effectQuery + '".'
+              : 'No object ID, name, mesh, or light color matches "' + rawQuery + '".')));
     } else if (hasFilterWithoutSearch) {
       emptyTitle = 'No matching thumbnails.';
       emptyCopy = 'Try clearing a type, tag, or release filter.';
@@ -2226,8 +2388,9 @@ class Component extends DCLogic {
         if (e.stopPropagation) e.stopPropagation();
         const effect = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.effect || '') : '';
         if (!effect) return;
-        const cur = this.parseEffectQuery(this.state.query || '');
-        const nextQuery = cur && this.effectSearchKey(cur) === this.effectSearchKey(effect) ? '' : 'effect: ' + effect;
+        const effectQuery = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.effectQuery || '') : '';
+        const cur = this.parseIngredientEffectQuery(this.state.query || '');
+        const nextQuery = cur && this.effectSearchKey(cur) === this.effectSearchKey(effect) ? '' : (effectQuery || 'ingredient: ' + effect);
         this.setState({
           query: nextQuery,
           tagOpen: false,
@@ -2260,8 +2423,13 @@ class Component extends DCLogic {
         if (e.stopPropagation) e.stopPropagation();
         const effect = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.effect || '') : '';
         if (!effect) return;
-        const cur = this.parseEnchantEffectQuery(this.state.query || '');
-        const nextQuery = cur && this.effectSearchKey(cur) === this.effectSearchKey(effect) ? '' : 'enchant: ' + effect;
+        const effectQuery = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.effectQuery || '') : '';
+        const isSpellQuery = /^spell\s*:/i.test(effectQuery);
+        const isEnchantQuery = /^enchant(?:ment)?\s*:/i.test(effectQuery);
+        const cur = isSpellQuery
+          ? this.parseSpellEffectQuery(this.state.query || '')
+          : (isEnchantQuery ? this.parseEnchantEffectQuery(this.state.query || '') : '');
+        const nextQuery = cur && this.effectSearchKey(cur) === this.effectSearchKey(effect) ? '' : (effectQuery || 'enchant: ' + effect);
         this.setState({
           query: nextQuery,
           tagOpen: false,
@@ -2393,6 +2561,8 @@ class Component extends DCLogic {
       renderPreviewEffects: this.state.renderPreview ? (this.state.renderPreview.effects || []) : [],
       showEnchantmentPreview: !!this.state.enchantmentPreview,
       enchantmentPreviewTitle: this.state.enchantmentPreview ? this.state.enchantmentPreview.title : '',
+      enchantmentPreviewIsSpell: !!(this.state.enchantmentPreview && this.state.enchantmentPreview.kind === 'spell'),
+      enchantmentPreviewIsEnchantment: !(this.state.enchantmentPreview && this.state.enchantmentPreview.kind === 'spell'),
       enchantmentPreviewItem: this.state.enchantmentPreview
         ? ((this.state.enchantmentPreview.itemName || this.state.enchantmentPreview.itemId || '') + (this.state.enchantmentPreview.itemType ? ' · ' + this.state.enchantmentPreview.itemType : ''))
         : '',
