@@ -1290,13 +1290,11 @@ class Component extends DCLogic {
     const type = this.enchantmentTypeLabel(data.enchant_type);
     const isConstantEffect = data.enchant_type === 'ConstantEffect';
     const rows = [
-      { label: 'ID', value: src.id || id },
       { label: 'Type', value: type || 'Enchantment' },
     ];
     if (!isConstantEffect && data.cost != null) rows.push({ label: 'Cost', value: String(data.cost) });
     if (!isConstantEffect && data.max_charge != null) rows.push({ label: 'Charge', value: String(data.max_charge) });
-    if (data.flags) rows.push({ label: 'Flags', value: this.flagsLabel(data.flags) });
-    const meta = rows.slice(1, 4).map(r => r.value).filter(Boolean).join(' · ');
+    const meta = rows.slice(0, 3).map(r => r.value).filter(Boolean).join(' · ');
     return {
       id: src.id || id,
       label: src.id || id,
@@ -1311,12 +1309,10 @@ class Component extends DCLogic {
     if (!this.isSpellRecord(record)) return null;
     const data = record && record.data ? record.data : {};
     const rows = [
-      { label: 'ID', value: record.id || '' },
       { label: 'Type', value: this.spellTypeLabel(data.spell_type) || 'Spell' },
     ];
     if (data.cost != null) rows.push({ label: 'Cost', value: String(data.cost) });
-    if (data.flags) rows.push({ label: 'Flags', value: this.flagsLabel(data.flags) });
-    const meta = rows.slice(1, 4).map(r => r.value).filter(Boolean).join(' Â· ');
+    const meta = rows.slice(0, 3).map(r => r.value).filter(Boolean).join(' Â· ');
     return {
       id: record.id || '',
       label: record.id || '',
