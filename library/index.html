@@ -241,7 +241,7 @@
     <div data-grid="" style="grid-template-columns:{{ gridCols }};gap:{{ gridGap }}px;padding-top:{{ gridPadTop }}px;padding-bottom:{{ gridPadBottom }}px;" class="asset-grid">
       <sc-for list="{{ items }}" as="it" hint-placeholder-count="18">
         <figure title="{{ it.tip }}" draggable="{{ yes }}" data-eid="{{ it.id }}" onDragStart="{{ onDrag }}" class="asset-card">
-          <div class="asset-thumb-frame">
+          <div class="asset-thumb-frame" data-render="{{ it.render }}" data-render-title="{{ it.renderTitle }}" data-render-meta="{{ it.renderMeta }}" onClick="{{ openRenderPreview }}">
             <div key="{{ it.thumbKey }}" data-thumb="" class="asset-thumb-layer">
               <div data-spin="" class="asset-spinner-wrap">
                 <div class="asset-spinner"></div>
@@ -292,6 +292,23 @@
   </div>
 </section>
 
+<sc-if value="{{ showRenderPreview }}" hint-placeholder-val="{{ false }}">
+<div class="library-render-backdrop" onClick="{{ closeRenderPreview }}">
+  <div class="library-render-dialog" role="dialog" aria-modal="true" aria-label="{{ renderPreviewTitle }}" onClick="{{ stopRenderPreviewClick }}">
+    <button type="button" class="library-render-close" onClick="{{ closeRenderPreview }}" aria-label="Close full size render" title="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+    </button>
+    <img src="{{ renderPreviewSrc }}" alt="{{ renderPreviewTitle }}" decoding="async" class="library-render-image">
+    <div class="library-render-caption">
+      <code class="library-render-title">{{ renderPreviewTitle }}</code>
+      <sc-if value="{{ hasRenderPreviewMeta }}" hint-placeholder-val="{{ true }}">
+        <span class="library-render-meta">{{ renderPreviewMeta }}</span>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</sc-if>
+
 <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
 <footer class="site-footer-simple">
   <div class="site-footer-inner">
@@ -321,6 +338,7 @@ class Component extends DCLogic {
     })(),
     theme: (typeof window !== 'undefined' && window.OAAB_THEME) ? window.OAAB_THEME.read() : 'dark',
     narrow: (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(max-width: 820px)').matches : false,
+    renderPreview: null,
   };
 
   componentDidMount() {
@@ -373,6 +391,10 @@ class Component extends DCLogic {
     this._typeTs = 0;
     this._typeIdx = 0;
     this._onKey = (e) => {
+      if (this.state.renderPreview && e.key === 'Escape') {
+        this.setState({ renderPreview: null });
+        return;
+      }
       if (!this.state.tagOpen) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === 'Escape') { this.setState({ tagOpen: false }); return; }
@@ -457,10 +479,14 @@ class Component extends DCLogic {
     const REPO = 'https://cdn.jsdelivr.net/gh/OAAB-Modding/OAAB-Modding.github.io@main';
     const THUMB = REPO + '/assets/images/library/thumbnails/meshes/';
     const NPC_THUMB = REPO + '/assets/images/library/thumbnails/npc/';
+    const RENDER = REPO + '/assets/images/library/renders/meshes/';
+    const NPC_RENDER = REPO + '/assets/images/library/renders/npc/';
     const EFFECT = REPO + '/assets/images/library/effects/';
     const LIGHT_MASK = REPO + '/assets/images/library/masks/marker_light_mask.webp';
     this._THUMB = THUMB;
     this._NPC_THUMB = NPC_THUMB;
+    this._RENDER = RENDER;
+    this._NPC_RENDER = NPC_RENDER;
     this._EFFECT = EFFECT;
     this._LIGHT_MASK = LIGHT_MASK;
 
@@ -533,6 +559,7 @@ class Component extends DCLogic {
           if (deprecated[id]) return; // skip deprecated IDs
           const rel = npc ? null : (markerLight ? 'marker_light.webp' : meshThumb);
           const img = npc ? this.npcThumbnailUrl(id) : (rel ? THUMB + rel : '');
+          const render = npc ? this.npcRenderUrl(id) : (rel ? RENDER + rel : '');
           if (!img) return;
           seen[id] = 1;
           items.push({
@@ -540,6 +567,7 @@ class Component extends DCLogic {
             name: r.name || '',
             type: labelType(r.type),
             img: img,
+            render: render,
             mesh: mesh,
             lightTint: markerLight ? lightColor : '',
             lightColor: lightColor,
@@ -674,6 +702,11 @@ class Component extends DCLogic {
   npcThumbnailUrl(id) {
     const key = String(id || '').trim().toLowerCase();
     return key ? this._NPC_THUMB + key + '.webp' : '';
+  }
+
+  npcRenderUrl(id) {
+    const key = String(id || '').trim().toLowerCase();
+    return key ? this._NPC_RENDER + key + '.webp' : '';
   }
 
   lightColorCss(r) {
@@ -1521,6 +1554,9 @@ class Component extends DCLogic {
         hasName: !!(x.name && x.name.length),
         type: x.type,
         img: x.img,
+        render: x.render || x.img,
+        renderTitle: x.id || '',
+        renderMeta: x.mesh || x.name || x.type || '',
         thumbKey: x.id + '|' + (x.img || '') + '|' + (x.lightTint || '') + '|' + (x.lightColor || '') + '|' + (x.lightHex || '') + '|' + (x.lightMask || ''),
         lightTint: x.lightTint || '',
         lightColor: x.lightColor || '',
@@ -1656,6 +1692,25 @@ class Component extends DCLogic {
         const wrap = e.target.parentNode;
         const spin = wrap && wrap.querySelector('[data-spin]');
         if (spin) spin.style.display = 'none';
+      },
+      openRenderPreview: (e) => {
+        const el = e.currentTarget;
+        const src = el && el.dataset ? (el.dataset.render || '') : '';
+        if (!src) return;
+        this.setState({
+          renderPreview: {
+            src,
+            title: (el.dataset.renderTitle || '').trim(),
+            meta: (el.dataset.renderMeta || '').trim(),
+          },
+        });
+      },
+      closeRenderPreview: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        this.setState({ renderPreview: null });
+      },
+      stopRenderPreviewClick: (e) => {
+        if (e && e.stopPropagation) e.stopPropagation();
       },
       onDrag: (e) => {
         const id = e.currentTarget.dataset.eid;
@@ -1831,6 +1886,11 @@ class Component extends DCLogic {
       },
       isLight: light,
       isDark: !light,
+      showRenderPreview: !!this.state.renderPreview,
+      renderPreviewSrc: this.state.renderPreview ? this.state.renderPreview.src : '',
+      renderPreviewTitle: this.state.renderPreview ? this.state.renderPreview.title : '',
+      renderPreviewMeta: this.state.renderPreview ? this.state.renderPreview.meta : '',
+      hasRenderPreviewMeta: !!(this.state.renderPreview && this.state.renderPreview.meta),
       toggleTheme: () => {
         const n = light ? 'dark' : 'light';
         if (window.OAAB_THEME) window.OAAB_THEME.set(n);
