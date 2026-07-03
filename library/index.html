@@ -305,6 +305,26 @@
         </div>
       </sc-if>
       <img src="{{ renderPreviewSrc }}" alt="{{ renderPreviewTitle }}" decoding="async" onLoad="{{ renderLoad }}" onError="{{ renderErr }}" style="opacity:{{ renderPreviewOpacity }};" class="library-render-image">
+      <sc-if value="{{ renderPreviewLightTint }}" hint-placeholder-val="{{ false }}">
+        <span aria-hidden="true" style="background:{{ renderPreviewLightTint }};--asset-light-mask:url('{{ renderPreviewLightMask }}');--asset-light-inset:0px;" class="asset-light-tint library-render-light-tint"></span>
+      </sc-if>
+      <sc-if value="{{ renderPreviewLightColor }}" hint-placeholder-val="{{ false }}">
+        <button type="button" data-render-control="1" data-color="{{ renderPreviewLightHex }}" onClick="{{ pickColor }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="{{ renderPreviewLightHex }}" style="background:{{ renderPreviewLightColor }};" class="asset-light-swatch library-render-light-swatch"></button>
+      </sc-if>
+      <sc-if value="{{ renderPreviewHasContents }}" hint-placeholder-val="{{ false }}">
+        <button type="button" data-render-control="1" data-inventory-id="{{ renderPreviewId }}" onClick="{{ pickInventoryContents }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="{{ renderPreviewContentsTitle }}" class="asset-container-button library-render-container-button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="asset-container-icon"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>
+        </button>
+      </sc-if>
+      <sc-if value="{{ renderPreviewHasEffects }}" hint-placeholder-val="{{ false }}">
+        <div data-render-control="1" class="asset-effect-row library-render-effect-row">
+          <sc-for list="{{ renderPreviewEffects }}" as="eff" hint-placeholder-count="4">
+            <button type="button" data-effect="{{ eff.label }}" onClick="{{ pickEffect }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="{{ eff.label }}" class="asset-effect-button library-render-effect-button">
+              <img src="{{ eff.img }}" alt="{{ eff.label }}" loading="lazy" decoding="async" draggable="{{ no }}" class="asset-effect-icon library-render-effect-icon">
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
     </div>
     <div class="library-render-caption">
       <code class="library-render-title">{{ renderPreviewTitle }}</code>
@@ -727,11 +747,22 @@ class Component extends DCLogic {
   }
 
   renderPreviewPayload(x) {
+    const contentCount = x && x.contentIds && x.contentIds.length ? x.contentIds.length : 0;
     return {
       id: x && x.id ? String(x.id) : '',
       src: (x && (x.render || x.img)) || '',
       title: (x && x.id) || '',
       meta: (x && (x.mesh || x.name || x.type)) || '',
+      lightTint: (x && x.lightTint) || '',
+      lightColor: (x && x.lightColor) || '',
+      lightHex: (x && x.lightHex) || '',
+      lightMask: (x && x.lightMask) || '',
+      hasContents: !!contentCount,
+      contentsTitle: contentCount
+        ? 'Search this ' + this.inventoryOwnerLabel(x.type) + ' inventory and ' + contentCount + ' valid content' + (contentCount === 1 ? '' : 's')
+        : '',
+      hasEffects: !!(x && x.effects && x.effects.length),
+      effects: (x && x.effects) || [],
     };
   }
 
@@ -1810,6 +1841,14 @@ class Component extends DCLogic {
           src,
           title: (el.dataset.renderTitle || '').trim(),
           meta: (el.dataset.renderMeta || '').trim(),
+          lightTint: '',
+          lightColor: '',
+          lightHex: '',
+          lightMask: '',
+          hasContents: false,
+          contentsTitle: '',
+          hasEffects: false,
+          effects: [],
         };
         this.setState({
           renderPreview: item,
@@ -2005,12 +2044,21 @@ class Component extends DCLogic {
       isLight: light,
       isDark: !light,
       showRenderPreview: !!this.state.renderPreview,
+      renderPreviewId: this.state.renderPreview ? this.state.renderPreview.id : '',
       renderPreviewSrc: this.state.renderPreview ? this.state.renderPreview.src : '',
       renderPreviewTitle: this.state.renderPreview ? this.state.renderPreview.title : '',
       renderPreviewMeta: this.state.renderPreview ? this.state.renderPreview.meta : '',
       hasRenderPreviewMeta: !!(this.state.renderPreview && this.state.renderPreview.meta),
       showRenderSpinner: !!(this.state.renderPreview && !this.state.renderPreviewLoaded),
       renderPreviewOpacity: this.state.renderPreviewLoaded ? '1' : '0',
+      renderPreviewLightTint: this.state.renderPreview ? (this.state.renderPreview.lightTint || '') : '',
+      renderPreviewLightMask: this.state.renderPreview ? (this.state.renderPreview.lightMask || '') : '',
+      renderPreviewLightColor: this.state.renderPreview ? (this.state.renderPreview.lightColor || '') : '',
+      renderPreviewLightHex: this.state.renderPreview ? (this.state.renderPreview.lightHex || '') : '',
+      renderPreviewHasContents: !!(this.state.renderPreview && this.state.renderPreview.hasContents),
+      renderPreviewContentsTitle: this.state.renderPreview ? (this.state.renderPreview.contentsTitle || '') : '',
+      renderPreviewHasEffects: !!(this.state.renderPreview && this.state.renderPreview.hasEffects),
+      renderPreviewEffects: this.state.renderPreview ? (this.state.renderPreview.effects || []) : [],
       toggleTheme: () => {
         const n = light ? 'dark' : 'light';
         if (window.OAAB_THEME) window.OAAB_THEME.set(n);

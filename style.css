@@ -2756,11 +2756,44 @@ button {
   object-fit:contain;
   transition:opacity .24s ease;
 }
+.library-render-light-tint {
+  z-index:2;
+}
+.library-render-light-swatch,
+.library-render-container-button {
+  right:16px;
+  bottom:16px;
+  z-index:5;
+  width:30px;
+  height:30px;
+  border-radius:5px;
+}
+.library-render-container-button .asset-container-icon {
+  width:18px;
+  height:18px;
+}
+.library-render-effect-row {
+  left:16px;
+  right:16px;
+  bottom:16px;
+  z-index:5;
+  gap:7px;
+}
+.library-render-effect-button {
+  width:34px;
+  height:34px;
+  padding:4px;
+  border-radius:6px;
+}
+.library-render-effect-icon {
+  width:24px;
+  height:24px;
+}
 .library-render-close {
   position:absolute;
   top:12px;
   right:12px;
-  z-index:2;
+  z-index:6;
   width:34px;
   height:34px;
   padding:0;
