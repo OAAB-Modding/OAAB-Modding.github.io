@@ -1334,9 +1334,7 @@ class Component extends DCLogic {
   alchemyDetails(record) {
     if (!this.isAlchemyItem(record)) return null;
     const data = record && record.data ? record.data : {};
-    const rows = [
-      { label: 'Type', value: 'Alchemy' },
-    ];
+    const rows = [];
     if (data.value != null) rows.push({ label: 'Value', value: String(data.value) });
     if (data.weight != null) rows.push({ label: 'Weight', value: String(data.weight) });
     if (data.flags) rows.push({ label: 'Flags', value: this.flagsLabel(data.flags) || String(data.flags) });
