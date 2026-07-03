@@ -1282,7 +1282,7 @@ class Component extends DCLogic {
 
   isEnchantableItem(record) {
     const type = this.labelType(record && record.type).toLowerCase();
-    return type === 'armor' || type === 'clothing' || type === 'weapon';
+    return type === 'armor' || type === 'book' || type === 'clothing' || type === 'weapon';
   }
 
   isAlchemyItem(record) {
