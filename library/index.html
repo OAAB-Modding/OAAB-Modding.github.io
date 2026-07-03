@@ -240,7 +240,7 @@
     <div class="library-results-header">
       <div class="library-results-title-row">
         <h2 class="callout-title">{{ activeLabel }}</h2>
-        <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
+        <sc-if value="{{ showPopoutButton }}" hint-placeholder-val="{{ true }}">
           <button onClick="{{ openPopout }}" title="Pop out a minimal window" class="popout-button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="popout-icon"><path d="M9 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3"></path><polyline points="14 4 20 4 20 10"></polyline><line x1="20" y1="4" x2="11" y2="13"></line></svg>
           </button>
@@ -2425,6 +2425,7 @@ class Component extends DCLogic {
       },
       isPopout,
       showChrome: !isPopout,
+      showPopoutButton: !isPopout && !narrow,
       showTabBar: !isPopout && !narrow,
       showTypeMenu: isPopout || narrow,
       // Mobile: collapse the secondary filter controls behind a toggle so the
