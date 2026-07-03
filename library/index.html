@@ -246,7 +246,7 @@
               <div data-spin="" class="asset-spinner-wrap">
                 <div class="asset-spinner"></div>
               </div>
-              <img src="{{ it.img }}" alt="{{ it.id }}" loading="lazy" decoding="async" draggable="{{ no }}" onLoad="{{ imgLoad }}" onError="{{ imgErr }}" style="padding:{{ imgPad }}px;" class="asset-image">
+              <img src="{{ it.img }}" alt="{{ it.id }}" loading="eager" decoding="async" draggable="{{ no }}" ref="{{ imgRef }}" onLoad="{{ imgLoad }}" onError="{{ imgErr }}" style="padding:{{ imgPad }}px;" class="asset-image">
               <sc-if value="{{ it.lightTint }}" hint-placeholder-val="{{ false }}">
                 <span aria-hidden="true" style="background:{{ it.lightTint }};--asset-light-mask:url('{{ it.lightMask }}');--asset-light-inset:{{ imgPad }}px;" class="asset-light-tint"></span>
               </sc-if>
@@ -1724,14 +1724,26 @@ class Component extends DCLogic {
         if (win) win.focus();
       },
       imgLoad: (e) => {
-        e.target.style.opacity = '1';
-        const wrap = e.target.parentNode;
+        const img = e && e.target;
+        if (!img) return;
+        img.style.opacity = '1';
+        const wrap = img.parentNode;
         const spin = wrap && wrap.querySelector('[data-spin]');
         if (spin) spin.style.display = 'none';
       },
       imgErr: (e) => {
-        e.target.style.opacity = '0';
-        const wrap = e.target.parentNode;
+        const img = e && e.target;
+        if (!img) return;
+        img.style.opacity = '0';
+        const wrap = img.parentNode;
+        const spin = wrap && wrap.querySelector('[data-spin]');
+        if (spin) spin.style.display = 'none';
+      },
+      imgRef: (img) => {
+        if (!img || !img.complete) return;
+        const ok = !!(img.naturalWidth || img.naturalHeight);
+        img.style.opacity = ok ? '1' : '0';
+        const wrap = img.parentNode;
         const spin = wrap && wrap.querySelector('[data-spin]');
         if (spin) spin.style.display = 'none';
       },
