@@ -1844,8 +1844,8 @@ class Component extends DCLogic {
     return this.containerContentIds(item.inventory, item.spells, displayByKey, item.id);
   }
 
-  leveledListThumbnailUrls(record, contentByKey, displayByKey, max, visiting, seen) {
-    const out = [];
+  leveledListThumbnailUrls(record, contentByKey, displayByKey, max, visiting, seen, collected) {
+    const out = collected || [];
     const limit = max || 4;
     const seenUrls = seen || Object.create(null);
     const stack = visiting || Object.create(null);
@@ -1862,8 +1862,7 @@ class Component extends DCLogic {
       const content = contentByKey[key] || display;
       if (content && this.isLeveledListType(content.type)) {
         stack[key] = 1;
-        this.leveledListThumbnailUrls(content, contentByKey, displayByKey, limit, stack, seenUrls)
-          .forEach(addUrl);
+        this.leveledListThumbnailUrls(content, contentByKey, displayByKey, limit, stack, seenUrls, out);
         delete stack[key];
         return;
       }
