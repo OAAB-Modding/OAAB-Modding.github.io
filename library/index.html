@@ -223,11 +223,16 @@
         <span class="scale-value">{{ scalePct }}</span>
       </div>
       </sc-if>
-      <button onClick="{{ toggleCompact }}" title="{{ compactTitle }}" style="order:{{ ctrlBtnOrder }};background:{{ compactBg }};border:1px solid {{ compactBd }};color:{{ compactFg }};" class="icon-button">
-        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" class="icon-svg"><rect x="3" y="3" width="7" height="7" rx="1.4"></rect><rect x="14" y="3" width="7" height="7" rx="1.4"></rect><rect x="3" y="14" width="7" height="7" rx="1.4"></rect><rect x="14" y="14" width="7" height="7" rx="1.4"></rect></svg>
-      </button>
-      <button onClick="{{ toggleDetailView }}" title="{{ detailTitle }}" aria-pressed="{{ detailView }}" style="order:{{ ctrlBtnOrder }};background:{{ detailBg }};border:1px solid {{ detailBd }};color:{{ detailFg }};opacity:{{ detailOpacity }};cursor:{{ detailCursor }};" class="icon-button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="icon-svg"><line x1="5" y1="7" x2="19" y2="7"></line><line x1="5" y1="12" x2="19" y2="12"></line><line x1="5" y1="17" x2="19" y2="17"></line></svg>
+      <button onClick="{{ cycleViewMode }}" title="{{ viewModeTitle }}" aria-pressed="{{ viewModeActive }}" style="order:{{ ctrlBtnOrder }};background:{{ viewModeBg }};border:1px solid {{ viewModeBd }};color:{{ viewModeFg }};" class="icon-button">
+        <sc-if value="{{ viewModeIconGallery }}" hint-placeholder-val="{{ true }}">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" class="icon-svg"><rect x="3" y="3" width="7" height="7" rx="1.4"></rect><rect x="14" y="3" width="7" height="7" rx="1.4"></rect><rect x="3" y="14" width="7" height="7" rx="1.4"></rect><rect x="14" y="14" width="7" height="7" rx="1.4"></rect></svg>
+        </sc-if>
+        <sc-if value="{{ viewModeIconCompact }}" hint-placeholder-val="{{ false }}">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" class="icon-svg"><rect x="4" y="4" width="5" height="5" rx="1"></rect><rect x="11" y="4" width="5" height="5" rx="1"></rect><rect x="18" y="4" width="2" height="5" rx="1"></rect><rect x="4" y="11" width="5" height="5" rx="1"></rect><rect x="11" y="11" width="5" height="5" rx="1"></rect><rect x="18" y="11" width="2" height="5" rx="1"></rect><rect x="4" y="18" width="5" height="2" rx="1"></rect><rect x="11" y="18" width="5" height="2" rx="1"></rect><rect x="18" y="18" width="2" height="2" rx="1"></rect></svg>
+        </sc-if>
+        <sc-if value="{{ viewModeIconDetail }}" hint-placeholder-val="{{ false }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="icon-svg"><line x1="5" y1="7" x2="19" y2="7"></line><line x1="5" y1="12" x2="19" y2="12"></line><line x1="5" y1="17" x2="19" y2="17"></line></svg>
+        </sc-if>
       </button>
       <sc-if value="{{ anyFilter }}" hint-placeholder-val="{{ false }}">
         <button onClick="{{ clearAll }}" title="Clear all filters" style="order:{{ ctrlBtnOrder }};margin-left:{{ ctrlBtnMargin }};" class="clear-filters-button">
@@ -3017,31 +3022,46 @@ class Component extends DCLogic {
         try { localStorage.setItem('oaab_scale', String(v)); } catch (err) {}
         this.setState({ scale: v });
       },
-      compactBg: compact ? 'rgba(154,146,214,0.12)' : P.surface,
-      compactBd: compact ? '#5a5380' : P.border,
-      compactFg: compact ? (light ? '#4a4173' : '#efe9f6') : P.soft,
-      compactTitle: compact ? 'Compact thumbnails \u2014 click for comfortable view' : 'Comfortable thumbnails \u2014 click for compact view',
-      toggleCompact: () => this.setState(s => {
-        const next = !s.compact;
-        try { localStorage.setItem('oaab_compact_v2', next ? '1' : '0'); } catch (e) {}
-        return { compact: next, compactActionsId: null };
-      }),
       detailView,
-      detailBg: detailView ? 'rgba(210,130,63,0.14)' : P.surface,
-      detailBd: detailView ? '#7a4f2c' : P.border,
-      detailFg: detailView ? (light ? '#7a3f12' : '#f0c89c') : P.soft,
-      detailOpacity: detailAvailable ? '1' : '.45',
-      detailCursor: detailAvailable ? 'pointer' : 'not-allowed',
-      detailTitle: detailAvailable
-        ? (detailView ? 'Detail table - click for gallery view' : 'Detail table')
-        : 'Choose an object type before using detail view',
-      toggleDetailView: (e) => {
+      viewModeActive: detailView || compact,
+      viewModeIconGallery: !detailView && !compact,
+      viewModeIconCompact: !detailView && compact,
+      viewModeIconDetail: detailView,
+      viewModeBg: detailView ? 'rgba(210,130,63,0.14)' : (compact ? 'rgba(154,146,214,0.12)' : P.surface),
+      viewModeBd: detailView ? '#7a4f2c' : (compact ? '#5a5380' : P.border),
+      viewModeFg: detailView ? (light ? '#7a3f12' : '#f0c89c') : (compact ? (light ? '#4a4173' : '#efe9f6') : P.soft),
+      viewModeTitle: detailView
+        ? 'Detail table - click for gallery view'
+        : (compact
+          ? (detailAvailable ? 'Compact thumbnails - click for detail table' : 'Compact thumbnails - click for gallery view')
+          : 'Gallery thumbnails - click for compact view'),
+      cycleViewMode: (e) => {
         if (e && e.preventDefault) e.preventDefault();
-        if (!detailAvailable) return;
         this.setState(s => {
-          const next = !s.detailView;
-          try { localStorage.setItem('oaab_detail_view', next ? '1' : '0'); } catch (err) {}
-          return { detailView: next, compactActionsId: null, virtualStartRow: 0, virtualEndRow: 8 };
+          const effectiveDetail = detailAvailable && !!s.detailView;
+          let nextCompact = false;
+          let nextDetail = false;
+          if (effectiveDetail) {
+            nextCompact = false;
+            nextDetail = false;
+          } else if (s.compact) {
+            nextCompact = false;
+            nextDetail = detailAvailable;
+          } else {
+            nextCompact = true;
+            nextDetail = false;
+          }
+          try {
+            localStorage.setItem('oaab_compact_v2', nextCompact ? '1' : '0');
+            localStorage.setItem('oaab_detail_view', nextDetail ? '1' : '0');
+          } catch (err) {}
+          return {
+            compact: nextCompact,
+            detailView: nextDetail,
+            compactActionsId: null,
+            virtualStartRow: 0,
+            virtualEndRow: 8,
+          };
         });
       },
       sortDetailColumn: (e) => {
