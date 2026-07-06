@@ -3591,6 +3591,8 @@ button {
   background:rgba(8,6,4,0.64);
   backdrop-filter:blur(5px);
   animation:oaabFade .16s ease both;
+  overflow:hidden;
+  overscroll-behavior:contain;
 }
 .library-contents-dialog {
   position:relative;
@@ -3603,6 +3605,7 @@ button {
   background:#120d08;
   box-shadow:0 26px 80px rgba(0,0,0,0.62);
   overflow:hidden;
+  overscroll-behavior:contain;
 }
 .library-contents-close {
   position:absolute;
@@ -3653,6 +3656,7 @@ button {
 .library-contents-list {
   min-height:0;
   overflow:auto;
+  overscroll-behavior:contain;
   padding:8px;
 }
 .library-contents-row {

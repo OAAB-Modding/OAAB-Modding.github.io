@@ -877,6 +877,7 @@ class Component extends DCLogic {
             contentSeen[idKey] = 1;
             contentRecords.push({
               id: id,
+              name: r.name || '',
               type: labelType(r.type),
               inventory: Array.isArray(r.inventory) ? r.inventory : null,
               spells: Array.isArray(r.spells) ? r.spells : null,
@@ -972,17 +973,63 @@ class Component extends DCLogic {
       window.removeEventListener('resize', this._onScroll);
     }
     if (this._raf) cancelAnimationFrame(this._raf);
+    this.syncContentsScrollLock(true);
   }
 
   // Recalculate after data/filter changes because they alter the virtual height.
   componentDidUpdate() {
     this.applyTheme();
+    this.syncContentsScrollLock();
     this.updateDetailStickyTop();
     this.updateDetailScrollWidth();
     if (this._onScroll) this._onScroll();
   }
 
   applyTheme() { if (window.OAAB_THEME) window.OAAB_THEME.apply(this.state.theme); }
+  scrollContentsList(deltaY) {
+    const list = document.querySelector('.library-contents-list');
+    if (!list || !deltaY) return;
+    list.scrollTop += deltaY;
+  }
+  syncContentsScrollLock(forceUnlock) {
+    try {
+      const shouldLock = !forceUnlock && !!this.state.contentsPreview;
+      if (shouldLock === !!this._contentsScrollLocked) return;
+      if (shouldLock) {
+        this._contentsScrollLocked = true;
+        this._onContentsWheel = (e) => {
+          if (e && e.preventDefault) e.preventDefault();
+          const list = document.querySelector('.library-contents-list');
+          const unit = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 && list ? list.clientHeight : 1);
+          this.scrollContentsList((e.deltaY || 0) * unit);
+        };
+        this._onContentsTouchStart = (e) => {
+          const t = e.touches && e.touches[0];
+          this._contentsTouchY = t ? t.clientY : 0;
+        };
+        this._onContentsTouchMove = (e) => {
+          const t = e.touches && e.touches[0];
+          const y = t ? t.clientY : this._contentsTouchY;
+          const deltaY = this._contentsTouchY ? this._contentsTouchY - y : 0;
+          if (e && e.preventDefault) e.preventDefault();
+          this.scrollContentsList(deltaY);
+          this._contentsTouchY = y;
+        };
+        document.addEventListener('wheel', this._onContentsWheel, { passive: false, capture: true });
+        document.addEventListener('touchstart', this._onContentsTouchStart, { passive: false, capture: true });
+        document.addEventListener('touchmove', this._onContentsTouchMove, { passive: false, capture: true });
+        return;
+      }
+      if (this._onContentsWheel) document.removeEventListener('wheel', this._onContentsWheel, true);
+      if (this._onContentsTouchStart) document.removeEventListener('touchstart', this._onContentsTouchStart, true);
+      if (this._onContentsTouchMove) document.removeEventListener('touchmove', this._onContentsTouchMove, true);
+      this._contentsScrollLocked = false;
+      this._onContentsWheel = null;
+      this._onContentsTouchStart = null;
+      this._onContentsTouchMove = null;
+      this._contentsTouchY = 0;
+    } catch (e) {}
+  }
   updateDetailStickyTop() {
     try {
       const toolbar = document.querySelector('[data-tabbar]');
@@ -1523,17 +1570,25 @@ class Component extends DCLogic {
     const all = (this._oaabItems || []).concat(this._vanillaItems || []);
     const byKey = Object.create(null);
     all.forEach(x => { byKey[String(x.id || '').trim().toLowerCase()] = x; });
+    const contentRecords = (this._oaabContentRecords || []).concat(this._vanillaContentRecords || []);
+    const contentByKey = Object.create(null);
+    contentRecords.forEach(x => {
+      const key = String(x.id || '').trim().toLowerCase();
+      if (key && !contentByKey[key]) contentByKey[key] = x;
+    });
     const rows = [];
     const add = (kind, rawId, count) => {
       const id = String(rawId || '').trim();
       if (!id) return;
-      const found = byKey[id.toLowerCase()];
+      const key = id.toLowerCase();
+      const display = byKey[key];
+      const found = display || contentByKey[key];
       rows.push({
         id,
-        kind,
-        name: found ? (found.name || found.type || '') : '',
+        kind: found && found.type ? found.type : kind,
+        name: found && found.name ? found.name : '',
         count: count == null || count === '' ? '' : String(count),
-        draggable: !!found,
+        draggable: !!display,
         title: found ? ((found.type || '') + (found.mesh ? '\n' + found.mesh : '')) : 'No display record found',
       });
     };
@@ -2302,6 +2357,7 @@ class Component extends DCLogic {
             contentSeen[idKey] = 1;
             contentRecords.push({
               id: id,
+              name: r.name || '',
               type: this.displayType(r.type),
               inventory: Array.isArray(r.inventory) ? r.inventory : null,
               spells: Array.isArray(r.spells) ? r.spells : null,
@@ -2466,6 +2522,7 @@ class Component extends DCLogic {
   contentEntryId(entry, arrayIdIndex) {
     if (Array.isArray(entry)) return entry[arrayIdIndex];
     if (entry && typeof entry === 'object') return entry.id || entry.item || entry.object || entry.content;
+    if (typeof entry === 'string') return entry;
     return '';
   }
 
