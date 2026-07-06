@@ -987,7 +987,7 @@ class Component extends DCLogic {
     try {
       const toolbar = document.querySelector('[data-tabbar]');
       const bottom = toolbar ? Math.max(0, Math.ceil(toolbar.getBoundingClientRect().bottom)) : 0;
-      document.documentElement.style.setProperty('--library-detail-sticky-top', (bottom + 8) + 'px');
+      document.documentElement.style.setProperty('--library-detail-sticky-top', bottom + 'px');
     } catch (e) {}
   }
   updateDetailScrollWidth() {
@@ -1001,6 +1001,7 @@ class Component extends DCLogic {
       const viewportGap = Math.max(0, (top.clientWidth || 0) - (body.clientWidth || 0));
       const width = Math.max(body.scrollWidth || 0, table.scrollWidth || 0, tableWidth || 0, body.clientWidth || 0) + viewportGap;
       if (width > 0 && spacer.style.width !== width + 'px') spacer.style.width = width + 'px';
+      body.style.setProperty('--library-detail-scroll-left', (top.scrollLeft || 0) + 'px');
     } catch (e) {}
   }
   initTheme(tries) {
@@ -3281,7 +3282,7 @@ class Component extends DCLogic {
         const body = document.querySelector('[data-detail-wrap]');
         if (!top || !body) return;
         this._syncingDetailScroll = true;
-        body.scrollLeft = top.scrollLeft;
+        body.style.setProperty('--library-detail-scroll-left', (top.scrollLeft || 0) + 'px');
         this._syncingDetailScroll = false;
       },
       syncDetailScrollBody: (e) => {
@@ -3290,7 +3291,7 @@ class Component extends DCLogic {
         const top = document.querySelector('[data-detail-top-scroll]');
         if (!top || !body) return;
         this._syncingDetailScroll = true;
-        top.scrollLeft = body.scrollLeft;
+        body.style.setProperty('--library-detail-scroll-left', (top.scrollLeft || 0) + 'px');
         this._syncingDetailScroll = false;
       },
       toggleCompactActions: (e) => {
