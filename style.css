@@ -2650,6 +2650,8 @@ button {
   height:1px;
 }
 .library-detail-wrap {
+  position:sticky;
+  top:calc(var(--library-detail-sticky-top,145px) + 14px);
   width:100%;
   max-height:calc(100vh - var(--library-detail-sticky-top,145px) - 28px);
   overflow-x:hidden;
@@ -2805,15 +2807,29 @@ button {
   cursor:grab;
 }
 .library-detail-thumb-img {
+  position:absolute;
+  inset:0;
+  z-index:2;
   width:100%;
   height:100%;
   padding:3px;
   box-sizing:border-box;
   object-fit:contain;
   pointer-events:none;
+  opacity:0;
+  transition:opacity .2s ease;
+}
+.library-detail-spinner-wrap {
+  z-index:1;
+}
+.library-detail-spinner {
+  width:16px;
+  height:16px;
+  border-width:2px;
 }
 .library-detail-light-tint {
   --asset-light-inset:3px;
+  z-index:3;
 }
 .library-detail-id {
   color:#e7b07a;
@@ -2824,6 +2840,26 @@ button {
 }
 .library-detail-cell-contents {
   max-width:150px;
+}
+.library-detail-cell-color {
+  max-width:150px;
+}
+.library-detail-color-swatch {
+  width:34px;
+  height:20px;
+  padding:0;
+  appearance:none;
+  -webkit-appearance:none;
+  vertical-align:middle;
+  box-sizing:border-box;
+  border:1px solid rgba(244,236,221,0.72);
+  border-radius:4px;
+  box-shadow:0 1px 5px rgba(0,0,0,0.34), inset 0 0 0 1px rgba(0,0,0,0.18);
+  cursor:copy;
+}
+.library-detail-color-swatch:hover {
+  border-color:rgba(255,255,255,0.92);
+  box-shadow:0 1px 7px rgba(0,0,0,0.5), 0 0 0 2px rgba(210,130,63,0.24), inset 0 0 0 1px rgba(0,0,0,0.18);
 }
 .library-detail-contents-button {
   max-width:100%;
@@ -4841,6 +4877,10 @@ button {
   color:#7a3f12;
   border-color:#d8cdb8;
 }
+.theme-light .library-detail-color-swatch {
+  border-color:rgba(58,49,40,0.32);
+  box-shadow:0 1px 5px rgba(60,45,25,0.22), inset 0 0 0 1px rgba(255,255,255,0.2);
+}
 .theme-light .library-detail-empty {
   color:#b3a89a;
 }
@@ -5169,6 +5209,7 @@ button {
   .library-detail-wrap {
     border-radius:6px;
     max-height:calc(100vh - var(--library-detail-sticky-top,116px) - 24px);
+    top:calc(var(--library-detail-sticky-top,116px) + 14px);
   }
   .library-detail-top-scroll {
     top:var(--library-detail-sticky-top,116px);

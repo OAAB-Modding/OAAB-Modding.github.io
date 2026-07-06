@@ -303,7 +303,10 @@
                   <sc-if value="{{ cell.isThumb }}" hint-placeholder-val="{{ false }}">
                     <button type="button" data-render-id="{{ cell.renderId }}" data-render="{{ cell.render }}" data-render-title="{{ cell.renderTitle }}" data-render-meta="{{ cell.renderMeta }}" onClick="{{ openRenderPreview }}" class="library-detail-thumb {{ cell.previewClass }}">
                       <sc-if value="{{ cell.img }}" hint-placeholder-val="{{ true }}">
-                        <img src="{{ cell.img }}" alt="{{ row.id }}" loading="lazy" decoding="async" draggable="{{ no }}" class="library-detail-thumb-img">
+                        <div data-spin="" class="asset-spinner-wrap library-detail-spinner-wrap">
+                          <div class="asset-spinner library-detail-spinner"></div>
+                        </div>
+                        <img src="{{ cell.img }}" alt="{{ row.id }}" loading="lazy" decoding="async" draggable="{{ no }}" ref="{{ imgRef }}" onLoad="{{ imgLoad }}" onError="{{ imgErr }}" class="library-detail-thumb-img">
                       </sc-if>
                       <sc-if value="{{ cell.lightTint }}" hint-placeholder-val="{{ false }}">
                         <span aria-hidden="true" style="background:{{ cell.lightTint }};--asset-light-mask:url('{{ cell.lightMask }}');" class="asset-light-tint library-detail-light-tint"></span>
@@ -323,6 +326,9 @@
                     <sc-if value="{{ cell.hasNoContents }}" hint-placeholder-val="{{ true }}">
                       <span class="library-detail-empty">-</span>
                     </sc-if>
+                  </sc-if>
+                  <sc-if value="{{ cell.isColor }}" hint-placeholder-val="{{ false }}">
+                    <button type="button" data-color="{{ cell.colorHex }}" onClick="{{ pickColor }}" title="{{ cell.colorTitle }}" style="background:{{ cell.colorCss }};" class="library-detail-color-swatch"></button>
                   </sc-if>
                   <sc-if value="{{ cell.isPlain }}" hint-placeholder-val="{{ true }}">
                     <span>{{ cell.value }}</span>
@@ -1100,7 +1106,32 @@ class Component extends DCLogic {
     return this.isLeveledListType(type) ? 'Leveled List' : this.labelType(type);
   }
 
+  detailTypeKey(type) {
+    return String(this.displayType(type) || '').toLowerCase().replace(/[\s_-]+/g, '');
+  }
+
+  hiddenDetailKey(typeKey, key) {
+    const flagsHidden = {
+      alchemy: 1, armor: 1, book: 1, clothing: 1, container: 1,
+      creature: 1, door: 1, ingredient: 1, static: 1,
+    };
+    if (key === 'enchanting') return true;
+    if (key === 'flags' && flagsHidden[typeKey]) return true;
+    if (typeKey === 'ingredient' && (key === 'effects' || key === 'skills' || key === 'attributes')) return true;
+    if (typeKey === 'creature' && (
+      key === 'gold' || key === 'sound' || key === 'blood_type' ||
+      key === 'ai_data' || key === 'ai_packages'
+    )) return true;
+    if (typeKey === 'door' && (key === 'open_sound' || key === 'close_sound')) return true;
+    if (typeKey === 'npc' && (
+      key === 'gold' || key === 'blood_type' || key === 'skills' ||
+      key === 'ai_data' || key === 'ai_packages'
+    )) return true;
+    return false;
+  }
+
   detailSourceRecord(record) {
+    const typeKey = this.detailTypeKey(record && record.type);
     const out = Object.create(null);
     const formatObject = (value) => Object.keys(value || {})
       .filter(k => value[k] != null && value[k] !== '')
@@ -1108,6 +1139,7 @@ class Component extends DCLogic {
       .filter(Boolean)
       .join(', ');
     const add = (key, value) => {
+      if (this.hiddenDetailKey(typeKey, key)) return;
       if (value == null || value === '') return;
       const formatted = key === 'color' && Array.isArray(value) && value.length >= 3
         ? this.rgbToHex(value.slice(0, 3).map(v => parseInt(v, 10) || 0))
@@ -1120,7 +1152,7 @@ class Component extends DCLogic {
       'ai_packages', 'travel_destinations',
       'encumbrance', 'container_flags', 'leveled_item_flags',
       'leveled_creature_flags', 'chance_none', 'creature_flags', 'blood_type',
-      'scale', 'enchanting',
+      'scale',
     ];
     simpleTopKeys.forEach(k => add(k, record && record[k]));
     const data = record && record.data ? record.data : {};
@@ -1216,23 +1248,57 @@ class Component extends DCLogic {
       .replace(/\b\w/g, ch => ch.toUpperCase());
   }
 
-  detailColumnsFor(type, items) {
-    const preferred = [
-      'thumb', 'id', 'name', 'mesh',
+  detailPreferredKeys(type) {
+    const attributes = [
+      'level', 'speed', 'strength', 'intelligence', 'willpower', 'agility',
+      'endurance', 'personality', 'luck',
+    ];
+    const vitals = ['health', 'magicka', 'fatigue'];
+    const typeKey = this.detailTypeKey(type);
+    if (typeKey === 'leveledlist') {
+      return [
+        'thumb', 'id', 'contents', 'chance_none',
+        'leveled_item_flags', 'leveled_creature_flags', 'flags',
+      ];
+    }
+    if (typeKey === 'creature') {
+      return [
+        'thumb', 'id', 'name', 'creature_type', 'contents',
+      ].concat(attributes, vitals, [
+        'soul', 'combat', 'magic', 'stealth', 'attack1', 'attack2', 'attack3',
+        'creature_flags', 'script', 'scale', 'travel_destinations',
+      ]);
+    }
+    if (typeKey === 'npc') {
+      return [
+        'thumb', 'id', 'name', 'race', 'class', 'faction', 'rank', 'contents',
+      ].concat(attributes, [
+        'disposition', 'reputation',
+      ], vitals, [
+        'combat', 'magic', 'stealth',
+        'script', 'head', 'hair', 'npc_flags', 'travel_destinations',
+      ]);
+    }
+    return [
+      'thumb', 'id', 'name',
       'armor_type', 'weapon_type', 'clothing_type', 'book_type', 'apparatus_type',
       'creature_type', 'spell_type', 'bodypart_type', 'part',
       'weight', 'value', 'cost', 'quality', 'uses', 'health', 'armor_rating',
-      'enchantment', 'enchantment_summary', 'speed', 'reach', 'radius', 'time',
+      'enchantment', 'enchantment_summary', 'effects_summary', 'speed', 'reach', 'radius', 'time',
       'level', 'strength', 'intelligence', 'willpower', 'agility', 'endurance',
       'personality', 'luck', 'magicka', 'fatigue', 'soul', 'combat', 'magic',
-      'stealth', 'attack1', 'attack2', 'attack3', 'gold', 'chance_none',
-      'contents', 'effects_summary', 'flags', 'container_flags',
-      'leveled_item_flags', 'leveled_creature_flags', 'creature_flags',
-      'color', 'script', 'icon', 'sound', 'open_sound', 'close_sound',
-      'encumbrance', 'scale', 'race', 'class', 'faction', 'head', 'hair',
+      'stealth', 'attack1', 'attack2', 'attack3', 'gold', 'contents', 'chance_none',
+      'flags', 'container_flags', 'leveled_item_flags', 'leveled_creature_flags',
+      'creature_flags', 'color', 'script', 'sound', 'open_sound', 'close_sound',
+      'encumbrance', 'scale', 'race', 'class', 'faction', 'rank', 'head', 'hair',
       'npc_flags', 'blood_type', 'ai_data', 'ai_packages',
       'travel_destinations', 'skills',
     ];
+  }
+
+  detailColumnsFor(type, items) {
+    const preferred = this.detailPreferredKeys(type);
+    const tail = ['mesh', 'icon'];
     const present = Object.create(null);
     const source = Array.isArray(items) ? items : [];
     source.forEach(x => {
@@ -1242,19 +1308,20 @@ class Component extends DCLogic {
       if (x.mesh) present.mesh = 1;
       if (x.hasContents && x.contentIds && x.contentIds.length) present.contents = 1;
       if ((x.effects && x.effects.length) || (x.alchemy && x.alchemy.effects && x.alchemy.effects.length) || (x.enchantment && x.enchantment.effects && x.enchantment.effects.length)) present.effects_summary = 1;
-      if (x.enchantment) present.enchantment_summary = 1;
+      if (x.enchantment && x.detailKind !== 'spell') present.enchantment_summary = 1;
       Object.keys(x.detail || {}).forEach(k => { present[k] = 1; });
     });
     present.thumb = 1;
     present.id = 1;
-    if (type !== 'Static' && type !== 'Bodypart') present.name = 1;
+    if (type !== 'Static' && type !== 'Bodypart' && !this.isLeveledListType(type)) present.name = 1;
     const ordered = preferred.filter(k => present[k]);
     Object.keys(present).sort().forEach(k => {
-      if (ordered.indexOf(k) === -1) ordered.push(k);
+      if (ordered.indexOf(k) === -1 && tail.indexOf(k) === -1) ordered.push(k);
     });
+    tail.forEach(k => { if (present[k] && ordered.indexOf(k) === -1) ordered.push(k); });
     return ordered.map(key => {
       const isThumb = key === 'thumb';
-      const width = isThumb ? '54px' : (key === 'id' ? '220px' : (key === 'mesh' ? '260px' : '150px'));
+      const width = this.detailColumnWidth(key);
       return {
         key,
         label: this.detailLabel(key),
@@ -1266,6 +1333,17 @@ class Component extends DCLogic {
         sortTitle: key === 'thumb' ? 'Preview' : 'Sort by ' + this.detailLabel(key),
       };
     });
+  }
+
+  detailColumnWidth(key) {
+    if (key === 'thumb') return '54px';
+    if (key === 'id') return '220px';
+    if (key === 'mesh') return '260px';
+    if (key === 'icon') return '230px';
+    if (key === 'leveled_item_flags' || key === 'leveled_creature_flags') return '210px';
+    if (key === 'enchantment_summary' || key === 'effects_summary') return '220px';
+    if (key === 'contents') return '130px';
+    return '150px';
   }
 
   detailColumnPixelWidth(column) {
@@ -1378,6 +1456,7 @@ class Component extends DCLogic {
         isThumb: false,
         isId: false,
         isContents: true,
+        isColor: false,
         isPlain: false,
         value: count ? (count + ' item' + (count === 1 ? '' : 's')) : '',
         hasContents: !!count,
@@ -1387,12 +1466,31 @@ class Component extends DCLogic {
       };
     }
     const value = this.detailDisplayValue(item, key);
+    if (key === 'color' && value) {
+      const hex = String(item.lightHex || value || '').trim();
+      const css = item.lightColor || hex;
+      return {
+        key,
+        className: 'library-detail-cell-color',
+        isThumb: false,
+        isId: false,
+        isContents: false,
+        isColor: true,
+        isPlain: false,
+        colorHex: hex,
+        colorCss: css,
+        colorTitle: hex ? 'Copy ' + hex : '',
+        value: hex,
+        title: hex,
+      };
+    }
     return {
       key,
       className: key === 'id' ? 'library-detail-cell-id' : '',
       isThumb: false,
       isId: key === 'id',
       isContents: false,
+      isColor: false,
       isPlain: key !== 'id',
       value: value || '-',
       title: value || '',
@@ -2015,6 +2113,30 @@ class Component extends DCLogic {
       .filter(Boolean)
       .map(x => x.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase()))
       .join(', ');
+  }
+
+  copyText(value) {
+    const text = String(value || '');
+    if (!text) return Promise.reject(new Error('No text to copy'));
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve, reject) => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        ok ? resolve() : reject(new Error('Copy command failed'));
+      } catch (e) {
+        reject(e);
+      }
+    });
   }
 
   magicEffectEntries(effects, limit, options) {
@@ -3405,12 +3527,16 @@ class Component extends DCLogic {
         if (e.stopPropagation) e.stopPropagation();
         const color = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.color || '') : '';
         if (!color) return;
-        this.setState({ query: color, searchMode: '', searchSuggestOpen: false });
-        requestAnimationFrame(() => {
-          const input = document.querySelector('.search-input');
-          if (input) {
-            try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
-          }
+        const el = e.currentTarget;
+        const oldTitle = el ? (el.getAttribute('title') || color) : color;
+        this.copyText(color).then(() => {
+          if (!el) return;
+          el.setAttribute('title', 'Copied ' + color);
+          setTimeout(() => { el.setAttribute('title', oldTitle); }, 1200);
+        }).catch(() => {
+          if (!el) return;
+          el.setAttribute('title', 'Copy failed: ' + color);
+          setTimeout(() => { el.setAttribute('title', oldTitle); }, 1200);
         });
       },
       pickInventoryContents: (e) => {
