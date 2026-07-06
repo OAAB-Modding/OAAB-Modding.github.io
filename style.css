@@ -1972,18 +1972,35 @@ button {
 }
 .tab-list {
   flex:1 1 auto;
+  min-width:0;
+  position:relative;
+  font-size:0;
+}
+.tabs-row-controls {
+  float:right;
+  margin:0 0 8px 15px;
+  padding-left:15px;
+  border-left:1px solid #221c15;
   display:flex;
-  flex-wrap:wrap;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:8px;
+}
+.tabs-row-controls-buttons {
+  display:flex;
+  align-items:center;
   gap:8px;
 }
 .type-tab {
   flex:0 0 auto;
   display:inline-flex;
+  vertical-align:top;
   align-items:center;
-  gap:8px;
+  gap:7px;
+  margin:0 7px 7px 0;
   font-family:'EB Garamond',serif;
-  font-size:15px;
-  padding:8px 16px;
+  font-size:14px;
+  padding:6px 13px;
   border-radius:999px;
   cursor:pointer;
   white-space:nowrap;
@@ -2541,6 +2558,37 @@ button {
 .filter-history-button:disabled {
   cursor:default;
   opacity:.34;
+}
+.view-mode-group {
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  height:42px;
+  border:1px solid #322a20;
+  border-radius:9px;
+  overflow:hidden;
+  background:#15100b;
+}
+.view-mode-button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:42px;
+  height:40px;
+  border:0;
+  border-right:1px solid #322a20;
+  color:#9a8d77;
+  cursor:pointer;
+  transition:background .18s,color .18s;
+}
+.view-mode-button:last-child {
+  border-right:0;
+}
+.view-mode-button:hover:not(:disabled)[aria-pressed="false"] {
+  color:#f0e5d5;
+}
+.view-mode-button:disabled {
+  cursor:not-allowed;
 }
 .icon-svg {
   width:17px;
@@ -4774,6 +4822,9 @@ button {
 .theme-light .library-tabs-row {
   border-bottom-color:#ddd2bf;
 }
+.theme-light .tabs-row-controls {
+  border-left-color:#ddd2bf;
+}
 .theme-light .library-body-section {
   background:#f4ede0;
 }
@@ -4841,6 +4892,13 @@ button {
 .theme-light .filter-history-control {
   background:#fbf7ef;
   border-color:#d8cdb8;
+}
+.theme-light .view-mode-group {
+  background:#fbf7ef;
+  border-color:#d8cdb8;
+}
+.theme-light .view-mode-button {
+  border-right-color:#d8cdb8;
 }
 .theme-light .filter-history-button {
   color:#8a7c66;
