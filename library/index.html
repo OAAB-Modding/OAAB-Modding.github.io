@@ -234,6 +234,14 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="icon-svg"><line x1="5" y1="7" x2="19" y2="7"></line><line x1="5" y1="12" x2="19" y2="12"></line><line x1="5" y1="17" x2="19" y2="17"></line></svg>
         </sc-if>
       </button>
+      <div style="order:{{ ctrlBtnOrder }};" class="filter-history-control">
+        <button type="button" onClick="{{ filterHistoryBack }}" title="Previous filter" aria-label="Previous filter" disabled="{{ filterBackDisabled }}" class="filter-history-button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <button type="button" onClick="{{ filterHistoryForward }}" title="Next filter" aria-label="Next filter" disabled="{{ filterForwardDisabled }}" class="filter-history-button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
       <sc-if value="{{ anyFilter }}" hint-placeholder-val="{{ false }}">
         <button onClick="{{ clearAll }}" title="Clear all filters" style="order:{{ ctrlBtnOrder }};margin-left:{{ ctrlBtnMargin }};" class="clear-filters-button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M13.013 3H2l8 9.46V19l4 2v-8.54l.9-1.055"></path><path d="m22 3-5 5"></path><path d="m17 3 5 5"></path></svg>
@@ -619,6 +627,7 @@ class Component extends DCLogic {
     searchMode: '', searchModeOpen: false, searchSuggestOpen: false,
     relData: [], releases: [], relKinds: ['added', 'modified'], relOpen: false,
     filtersOpen: false,
+    filterHistory: [], filterHistoryIndex: -1, filterHistoryCoalesce: '',
     gridWidth: 0, virtualStartRow: 0, virtualEndRow: 8,
     compactActionsId: null,
     detailView: (typeof localStorage !== 'undefined' && localStorage.getItem('oaab_detail_view') === '1'),
@@ -1071,6 +1080,141 @@ class Component extends DCLogic {
         this.setState({ theme: n });
       },
     };
+  }
+
+  filterSnapshot(state) {
+    const s = state || this.state || {};
+    const filters = s.detailFilters || {};
+    return {
+      active: s.active || 'All',
+      tags: (s.tags || []).slice(),
+      query: s.query || '',
+      searchMode: s.searchMode || '',
+      releases: (s.releases || []).slice(),
+      relKinds: (s.relKinds || ['added', 'modified']).slice(),
+      vanilla: !!s.vanilla,
+      detailFilters: Object.assign({}, filters),
+    };
+  }
+
+  filterSnapshotKey(snapshot) {
+    try { return JSON.stringify(snapshot || {}); }
+    catch (e) { return ''; }
+  }
+
+  filterPatchForSnapshot(snapshot) {
+    const snap = snapshot || this.filterSnapshot();
+    return {
+      active: snap.active || 'All',
+      tags: (snap.tags || []).slice(),
+      query: snap.query || '',
+      searchMode: snap.searchMode || '',
+      releases: (snap.releases || []).slice(),
+      relKinds: (snap.relKinds || ['added', 'modified']).slice(),
+      vanilla: !!snap.vanilla,
+      detailFilters: Object.assign({}, snap.detailFilters || {}),
+      tagOpen: false,
+      typeOpen: false,
+      relOpen: false,
+      searchModeOpen: false,
+      searchSuggestOpen: false,
+      compactActionsId: null,
+      renderPreview: null,
+      renderPreviewLoaded: false,
+      virtualStartRow: 0,
+      virtualEndRow: 8,
+    };
+  }
+
+  setFilterState(updater, options) {
+    this.setState(s => {
+      const patch = typeof updater === 'function' ? updater(s) : updater;
+      if (!patch) return {};
+      if (Object.prototype.hasOwnProperty.call(patch, 'vanilla')) {
+        try { localStorage.setItem('oaab_vanilla', patch.vanilla ? '1' : '0'); } catch (e) {}
+        if (patch.vanilla && !this._vanillaItems) this.loadVanilla();
+        patch.data = this.buildData(!!patch.vanilla);
+      }
+
+      const nextState = Object.assign({}, s, patch);
+      const prevSnap = this.filterSnapshot(s);
+      const nextSnap = this.filterSnapshot(nextState);
+      const prevKey = this.filterSnapshotKey(prevSnap);
+      const nextKey = this.filterSnapshotKey(nextSnap);
+      if (prevKey === nextKey) return patch;
+
+      let history = Array.isArray(s.filterHistory) ? s.filterHistory.slice() : [];
+      let index = typeof s.filterHistoryIndex === 'number' ? s.filterHistoryIndex : history.length - 1;
+      if (!history.length || index < 0) {
+        history = [prevSnap];
+        index = 0;
+      } else {
+        index = Math.max(0, Math.min(index, history.length - 1));
+        if (this.filterSnapshotKey(history[index]) !== prevKey) {
+          history = history.slice(0, index + 1);
+          history.push(prevSnap);
+          index = history.length - 1;
+        }
+      }
+
+      const coalesceKey = options && options.coalesceKey ? options.coalesceKey : '';
+      if (coalesceKey && s.filterHistoryCoalesce === coalesceKey && index === history.length - 1) {
+        history[index] = nextSnap;
+      } else {
+        history = history.slice(0, index + 1);
+        history.push(nextSnap);
+        index = history.length - 1;
+      }
+
+      if (history.length > 10) {
+        const drop = history.length - 10;
+        history = history.slice(drop);
+        index = Math.max(0, index - drop);
+      }
+      return Object.assign({}, patch, {
+        filterHistory: history,
+        filterHistoryIndex: index,
+        filterHistoryCoalesce: coalesceKey,
+      });
+    });
+  }
+
+  moveFilterHistory(delta) {
+    this.setState(s => {
+      let history = Array.isArray(s.filterHistory) ? s.filterHistory.slice() : [];
+      let index = typeof s.filterHistoryIndex === 'number' ? s.filterHistoryIndex : history.length - 1;
+      const curSnap = this.filterSnapshot(s);
+      const curKey = this.filterSnapshotKey(curSnap);
+
+      if (!history.length || index < 0) {
+        history = [curSnap];
+        index = 0;
+      } else {
+        index = Math.max(0, Math.min(index, history.length - 1));
+        if (this.filterSnapshotKey(history[index]) !== curKey) {
+          history = history.slice(0, index + 1);
+          history.push(curSnap);
+          index = history.length - 1;
+          if (history.length > 10) {
+            const drop = history.length - 10;
+            history = history.slice(drop);
+            index = Math.max(0, index - drop);
+          }
+        }
+      }
+
+      const target = index + delta;
+      if (target < 0 || target >= history.length) return {};
+      const patch = this.filterPatchForSnapshot(history[target]);
+      try { localStorage.setItem('oaab_vanilla', patch.vanilla ? '1' : '0'); } catch (e) {}
+      if (patch.vanilla && !this._vanillaItems) this.loadVanilla();
+      patch.data = this.buildData(!!patch.vanilla);
+      return Object.assign({}, patch, {
+        filterHistory: history,
+        filterHistoryIndex: target,
+        filterHistoryCoalesce: '',
+      });
+    });
   }
 
   // Normalise a mesh path to a lowercase, forward-slash key relative to
@@ -1620,7 +1764,7 @@ class Component extends DCLogic {
     if (!targetId) return;
     const item = this.findCatalogItem(targetId);
     const nextType = (item && item.type) || (this.state.active && this.state.active !== 'All' ? this.state.active : 'All');
-    this.setState({
+    this.setFilterState({
       active: nextType,
       tags: [],
       query: targetId,
@@ -3231,6 +3375,8 @@ class Component extends DCLogic {
       (active !== 'All' ? 1 : 0) + selTags.length + (rawQuery || selectedSearchMode ? 1 : 0) + relSels.length +
       (vanillaOn ? 1 : 0) + detailFilterCount;
     const filtersOpen = !!this.state.filtersOpen;
+    const filterHistory = Array.isArray(this.state.filterHistory) ? this.state.filterHistory : [];
+    const filterHistoryIndex = typeof this.state.filterHistoryIndex === 'number' ? this.state.filterHistoryIndex : -1;
     const searchModeMenu = this.searchModeDefs()
       .filter(mode => mode.key === '' || allowedSearchModes[mode.key])
       .map(mode => {
@@ -3284,6 +3430,10 @@ class Component extends DCLogic {
         : (compact
           ? (detailAvailable ? 'Compact thumbnails - click for detail table' : 'Compact thumbnails - click for gallery view')
           : 'Gallery thumbnails - click for compact view'),
+      filterBackDisabled: !(filterHistoryIndex > 0),
+      filterForwardDisabled: !(filterHistoryIndex >= 0 && filterHistoryIndex < filterHistory.length - 1),
+      filterHistoryBack: () => this.moveFilterHistory(-1),
+      filterHistoryForward: () => this.moveFilterHistory(1),
       cycleViewMode: (e) => {
         if (e && e.preventDefault) e.preventDefault();
         this.setState(s => {
@@ -3326,12 +3476,12 @@ class Component extends DCLogic {
         const key = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.detailFilter || '') : '';
         if (!key) return;
         const value = e.currentTarget.value || '';
-        this.setState(s => {
+        this.setFilterState(s => {
           const next = Object.assign({}, s.detailFilters || {});
           if (value) next[key] = value;
           else delete next[key];
           return { detailFilters: next };
-        });
+        }, { coalesceKey: 'detail:' + key });
       },
       syncDetailScrollTop: (e) => {
         if (this._syncingDetailScroll) return;
@@ -3372,8 +3522,7 @@ class Component extends DCLogic {
       toggleVanilla: () => {
         const next = !this.state.vanilla;
         try { localStorage.setItem('oaab_vanilla', next ? '1' : '0'); } catch (e) {}
-        if (next && !this._vanillaItems) this.loadVanilla();
-        this.setState({ vanilla: next, data: this.buildData(next) });
+        this.setFilterState({ vanilla: next });
       },
       isPopout,
       showChrome: !isPopout,
@@ -3546,9 +3695,9 @@ class Component extends DCLogic {
       searchModeMenu,
       showSearchSuggestions: !!(this.state.searchSuggestOpen && rawQuery && searchSuggestions.length),
       searchSuggestions,
-      onSearch: (e) => this.setState({ query: e.target.value, searchSuggestOpen: true, virtualStartRow: 0, virtualEndRow: 8 }),
+      onSearch: (e) => this.setFilterState({ query: e.target.value, searchSuggestOpen: true, virtualStartRow: 0, virtualEndRow: 8 }, { coalesceKey: 'search' }),
       openSearchSuggestions: () => this.setState({ searchSuggestOpen: true }),
-      clearSearch: () => this.setState({ query: '', searchMode: '', searchModeOpen: false, searchSuggestOpen: false, virtualStartRow: 0, virtualEndRow: 8 }),
+      clearSearch: () => this.setFilterState({ query: '', searchMode: '', searchModeOpen: false, searchSuggestOpen: false, virtualStartRow: 0, virtualEndRow: 8 }),
       toggleSearchMode: (e) => {
         if (e && e.preventDefault) e.preventDefault();
         if (e && e.stopPropagation) e.stopPropagation();
@@ -3558,7 +3707,7 @@ class Component extends DCLogic {
         if (e && e.preventDefault) e.preventDefault();
         if (e && e.stopPropagation) e.stopPropagation();
         const mode = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.searchMode || '') : '';
-        this.setState({
+        this.setFilterState({
           searchMode: allowedSearchModes[mode] ? mode : '',
           searchModeOpen: false,
           searchSuggestOpen: true,
@@ -3579,7 +3728,7 @@ class Component extends DCLogic {
         const value = data.suggestion || '';
         const mode = data.suggestionMode || '';
         if (!value) return;
-        this.setState({
+        this.setFilterState({
           query: value,
           searchMode: allowedSearchModes[mode] ? mode : '',
           searchSuggestOpen: false,
@@ -3617,7 +3766,7 @@ class Component extends DCLogic {
         if (!id) return;
         const curSearch = this.activeSearchMode(this.state.query || '', this.state.searchMode || '', this.allowedSearchModesForType(this.state.active || 'All'));
         const isCurrent = curSearch.mode === 'inventory' && curSearch.term.toLowerCase() === id.toLowerCase();
-        this.setState({
+        this.setFilterState({
           query: isCurrent ? '' : id,
           searchMode: isCurrent ? '' : 'inventory',
           searchModeOpen: false,
@@ -3656,7 +3805,7 @@ class Component extends DCLogic {
         const parsed = { mode: mode || 'ingredient', term: effect };
         const curSearch = this.activeSearchMode(this.state.query || '', this.state.searchMode || '', this.allowedSearchModesForType(this.state.active || 'All'));
         const isCurrent = curSearch.mode === parsed.mode && this.effectSearchKey(curSearch.term) === this.effectSearchKey(parsed.term);
-        this.setState({
+        this.setFilterState({
           query: isCurrent ? '' : parsed.term,
           searchMode: isCurrent ? '' : parsed.mode,
           searchModeOpen: false,
@@ -3693,7 +3842,7 @@ class Component extends DCLogic {
         const parsed = { mode: mode || 'enchant', term: effect };
         const curSearch = this.activeSearchMode(this.state.query || '', this.state.searchMode || '', this.allowedSearchModesForType(this.state.active || 'All'));
         const isCurrent = curSearch.mode === parsed.mode && this.effectSearchKey(curSearch.term) === this.effectSearchKey(parsed.term);
-        this.setState({
+        this.setFilterState({
           query: isCurrent ? '' : parsed.term,
           searchMode: isCurrent ? '' : parsed.mode,
           searchModeOpen: false,
@@ -3734,7 +3883,7 @@ class Component extends DCLogic {
       pickType: (e) => {
         const nextType = e.currentTarget.dataset.type;
         const allowed = this.allowedSearchModesForType(nextType);
-        this.setState(s => ({
+        this.setFilterState(s => ({
           active: nextType,
           typeOpen: false,
           searchModeOpen: false,
@@ -3788,21 +3937,21 @@ class Component extends DCLogic {
       relBtnBd: relSels.length ? '#5a5380' : P.border,
       toggleRel: () => this.setState(s => ({ relOpen: !s.relOpen, tagOpen: false })),
       pickRel: (e) => {
-        if (e.currentTarget.dataset.all === '1') { this.setState({ releases: [], relKinds: ['added', 'modified'], relOpen: false }); return; }
+        if (e.currentTarget.dataset.all === '1') { this.setFilterState({ releases: [], relKinds: ['added', 'modified'], relOpen: false }); return; }
         const v = e.currentTarget.dataset.rel || '';
         const cur = this.state.releases || [];
         const next = cur.indexOf(v) !== -1 ? cur.filter(x => x !== v) : cur.concat(v);
-        this.setState({ releases: next });
+        this.setFilterState({ releases: next });
       },
       setRelMode: (e) => {
         const k = e.currentTarget.dataset.mode;
         const cur = this.state.relKinds || ['added', 'modified'];
         const next = cur.indexOf(k) !== -1 ? cur.filter(x => x !== k) : cur.concat(k);
         if (next.length === 0) return; // keep at least one kind selected
-        this.setState({ relKinds: next });
+        this.setFilterState({ relKinds: next });
       },
       anyFilter: active !== 'All' || selTags.length > 0 || !!rawQuery || !!selectedSearchMode || relSels.length > 0 || detailFilterCount > 0,
-      clearAll: () => this.setState({
+      clearAll: () => this.setFilterState({
         active: 'All', tags: [], query: '', releases: [], relKinds: ['added', 'modified'],
         tagOpen: false, typeOpen: false, relOpen: false, searchMode: '', searchModeOpen: false, searchSuggestOpen: false,
         detailFilters: {}, detailSort: null,
@@ -3815,7 +3964,7 @@ class Component extends DCLogic {
       pickTab: (e) => {
         const label = e.currentTarget.dataset.ttab;
         const allowed = this.allowedSearchModesForType(label);
-        this.setState(s => ({
+        this.setFilterState(s => ({
           active: label,
           searchMode: allowed[s.searchMode] ? s.searchMode : '',
           searchModeOpen: false,
@@ -3829,10 +3978,10 @@ class Component extends DCLogic {
       },
       pickTag: (e) => {
         const label = e.currentTarget.dataset.tag;
-        if (e.currentTarget.dataset.all === '1') { this.setState({ tags: [] }); return; }
+        if (e.currentTarget.dataset.all === '1') { this.setFilterState({ tags: [] }); return; }
         const cur = this.state.tags || [];
         const next = cur.indexOf(label) !== -1 ? cur.filter(l => l !== label) : cur.concat(label);
-        this.setState({ tags: next });
+        this.setFilterState({ tags: next });
       },
       isLight: light,
       isDark: !light,
