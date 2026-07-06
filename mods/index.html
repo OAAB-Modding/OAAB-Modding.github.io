@@ -103,24 +103,22 @@
         </div>
       </a>
 
-      <div class="section-heading-row-wide latest-mods-heading">
-        <div class="section-copy-block">
-          <div class="section-eyebrow">Latest Mods</div>
-          <p class="section-copy">Newest mods tagged #OAAB_Data on Nexus.</p>
+      <div class="latest-mods-head">
+        <div>
+          <div class="section-kicker-live"><span class="pulse-dot"></span>Nexus feed</div>
+          <h3 class="latest-mods-title">Latest Mods</h3>
         </div>
-        <a href="https://www.nexusmods.com/games/morrowind/mods?tag=OAAB_Data" target="_blank" rel="noopener" class="btn-primary-compact">Browse all</a>
+        <a href="https://www.nexusmods.com/games/morrowind/mods?tag=OAAB_Data" target="_blank" rel="noopener" class="btn-ghost-compact">Browse all</a>
       </div>
 
-      <div class="showcase-grid latest-mods-grid">
+      <div class="latest-mods-grid">
         <sc-for list="{{ latestMods }}" as="mod" hint-placeholder-count="5">
-          <a href="{{ mod.url }}" target="_blank" rel="noopener" class="card-link">
-            <div class="showcase-media">
+          <a href="{{ mod.url }}" target="_blank" rel="noopener" class="card-link latest-mod-card">
+            <div class="showcase-media latest-mod-media">
               <div class="showcase-initial">{{ mod.initial }}</div>
               <div class="showcase-radial"></div>
-              <sc-if value="{{ mod.hasImage }}" hint-placeholder-val="{{ false }}">
-                <div key="{{ mod.imageKey }}" class="showcase-thumb-layer">
-                  <img src="{{ mod.image }}" alt="{{ mod.name }}" loading="lazy" decoding="async" class="cover-fill showcase-image-static">
-                </div>
+              <sc-if value="{{ mod.hasImage }}" hint-placeholder-val="{{ true }}">
+                <img src="{{ mod.image }}" alt="{{ mod.name }}" loading="lazy" onerror="this.style.display='none'" class="cover-fill">
               </sc-if>
               <div class="showcase-shade"></div>
               <sc-if value="{{ mod.hasCat }}" hint-placeholder-val="{{ true }}"><span class="media-label">{{ mod.cat }}</span></sc-if>
@@ -351,15 +349,11 @@ class Component extends DCLogic {
     this.setState({ order: this.shuffleOrder(this._pool.length), page: 0 });
   }
   async loadMods() {
-    const CACHE_KEY = 'oaab_mods_v4';
-    const OLD_CACHE_KEY = 'oaab_mods_v3';
-    const CACHE_MAX_AGE = 10 * 60 * 1000;
     try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      const c = JSON.parse(cached || localStorage.getItem(OLD_CACHE_KEY) || 'null');
-      if (c && c.ts && Array.isArray(c.mods) && c.mods.length) {
+      const c = JSON.parse(localStorage.getItem('oaab_mods_v3') || 'null');
+      if (c && c.ts && (Date.now() - c.ts < 864e5) && Array.isArray(c.mods) && c.mods.length) {
         this.applyPool(c.mods);
-        if (cached && Date.now() - c.ts < CACHE_MAX_AGE) return;
+        return;
       }
     } catch (e) {}
     for (const rich of [true, false]) {
@@ -387,7 +381,7 @@ class Component extends DCLogic {
               description: n.description || '',
             };
           });
-          try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), mods: mods })); } catch (e) {}
+          try { localStorage.setItem('oaab_mods_v3', JSON.stringify({ ts: Date.now(), mods: mods })); } catch (e) {}
           this.applyPool(mods);
           return;
         }
