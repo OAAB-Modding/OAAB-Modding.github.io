@@ -1487,6 +1487,35 @@ button {
   overflow:hidden;
   background:repeating-linear-gradient(135deg,#1a1208 0 16px,#1f160d 16px 32px);
 }
+.latest-mods-head {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:24px;
+  margin-top:58px;
+  padding-top:34px;
+  border-top:1px solid #2b241c;
+}
+.latest-mods-title {
+  font-family:'Cormorant Garamond',serif;
+  font-weight:600;
+  font-size:clamp(28px,3.4vw,42px);
+  line-height:1.04;
+  color:#f1e8d8;
+  margin:12px 0 0;
+}
+.latest-mods-grid {
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+  margin-top:26px;
+}
+.latest-mod-card {
+  min-width:0;
+}
+.latest-mod-media {
+  aspect-ratio:16/9;
+}
 .mod-team-list {
   display:flex;
   flex-wrap:wrap;
@@ -4480,6 +4509,9 @@ button {
 .theme-light .member-mods-head {
   border-top-color:#d3c8b2;
 }
+.theme-light .latest-mods-head {
+  border-top-color:#d3c8b2;
+}
 .theme-light .member-mods-count {
   color:#8a7c66;
 }
@@ -5352,6 +5384,17 @@ button {
   .mod-month-media {
     min-height: 0;
     aspect-ratio: 16 / 9;
+  }
+  .latest-mods-head {
+    align-items:flex-start;
+    flex-direction:column;
+    margin-top:38px;
+    padding-top:28px;
+  }
+  .latest-mods-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top:22px;
   }
   /* When stacked, fade from the bottom (not the side) so the badge/cover read */
   .featured-release-side-shade {
