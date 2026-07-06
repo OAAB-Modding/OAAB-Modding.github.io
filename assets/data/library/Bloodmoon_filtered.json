@@ -22293,7 +22293,77 @@
         1,
         "bm_randomboots_smugglers"
       ]
-    ]
+    ],
+    "spells": [
+      "brittlewind"
+    ],
+    "ai_data": {
+      "hello": 0,
+      "fight": 100,
+      "flee": 30,
+      "alarm": 0,
+      "services": ""
+    },
+    "ai_packages": [],
+    "travel_destinations": [],
+    "race": "Nord",
+    "class": "Witch",
+    "faction": "",
+    "head": "B_N_Nord_F_Head_07",
+    "hair": "b_n_nord_f_hair_01",
+    "npc_flags": "FEMALE | RESPAWN | IS_BASE",
+    "blood_type": 0,
+    "data": {
+      "level": 30,
+      "stats": {
+        "attributes": [
+          88,
+          76,
+          100,
+          71,
+          100,
+          57,
+          79,
+          50
+        ],
+        "skills": [
+          8,
+          8,
+          40,
+          40,
+          18,
+          13,
+          18,
+          13,
+          8,
+          27,
+          90,
+          64,
+          78,
+          78,
+          78,
+          27,
+          27,
+          78,
+          8,
+          44,
+          44,
+          44,
+          59,
+          8,
+          8,
+          44,
+          8
+        ],
+        "health": 159,
+        "magicka": 2000,
+        "fatigue": 316
+      },
+      "disposition": 50,
+      "reputation": 0,
+      "rank": 0,
+      "gold": 0
+    }
   },
   {
     "type": "Armor",

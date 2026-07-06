@@ -50261,7 +50261,101 @@
         1,
         "torch_infinite_time"
       ]
-    ]
+    ],
+    "spells": [
+      "deadly poison [ranged]",
+      "weakness to blight disease",
+      "weakness to corprus disease",
+      "dire weakness to fire",
+      "dire weakness to frost",
+      "dire weakness to magicka",
+      "dire weakness to poison",
+      "dire weakness to shock",
+      "daedric bite"
+    ],
+    "ai_data": {
+      "hello": 30,
+      "fight": 30,
+      "flee": 0,
+      "alarm": 100,
+      "services": ""
+    },
+    "ai_packages": [
+      {
+        "type": "Wander",
+        "distance": 256,
+        "duration": 5,
+        "game_hour": 0,
+        "idle2": 60,
+        "idle3": 20,
+        "idle4": 10,
+        "idle5": 10,
+        "idle6": 0,
+        "idle7": 0,
+        "idle8": 0,
+        "idle9": 0,
+        "reset": 1
+      }
+    ],
+    "travel_destinations": [],
+    "race": "Dark Elf",
+    "class": "Guard",
+    "faction": "Telvanni",
+    "head": "b_n_dark elf_f_head_07",
+    "hair": "b_n_dark elf_f_hair_08",
+    "npc_flags": "FEMALE | RESPAWN | IS_BASE",
+    "blood_type": 0,
+    "data": {
+      "level": 18,
+      "stats": {
+        "attributes": [
+          62,
+          82,
+          62,
+          91,
+          69,
+          64,
+          45,
+          40
+        ],
+        "skills": [
+          20,
+          20,
+          60,
+          20,
+          20,
+          25,
+          60,
+          20,
+          50,
+          47,
+          57,
+          7,
+          7,
+          7,
+          12,
+          32,
+          7,
+          7,
+          32,
+          47,
+          32,
+          12,
+          17,
+          47,
+          7,
+          32,
+          7
+        ],
+        "health": 171,
+        "magicka": 164,
+        "fatigue": 279
+      },
+      "disposition": 50,
+      "reputation": 8,
+      "rank": 3,
+      "gold": 0
+    }
   },
   {
     "type": "Npc",
@@ -50323,7 +50417,101 @@
         1,
         "exquisite_skirt_01"
       ]
-    ]
+    ],
+    "spells": [
+      "deadly poison [ranged]",
+      "weakness to blight disease",
+      "weakness to corprus disease",
+      "dire weakness to fire",
+      "dire weakness to frost",
+      "dire weakness to magicka",
+      "dire weakness to poison",
+      "dire weakness to shock",
+      "daedric bite"
+    ],
+    "ai_data": {
+      "hello": 30,
+      "fight": 30,
+      "flee": 0,
+      "alarm": 100,
+      "services": ""
+    },
+    "ai_packages": [
+      {
+        "type": "Wander",
+        "distance": 256,
+        "duration": 5,
+        "game_hour": 0,
+        "idle2": 60,
+        "idle3": 20,
+        "idle4": 10,
+        "idle5": 10,
+        "idle6": 0,
+        "idle7": 0,
+        "idle8": 0,
+        "idle9": 0,
+        "reset": 1
+      }
+    ],
+    "travel_destinations": [],
+    "race": "Dark Elf",
+    "class": "Guard",
+    "faction": "Telvanni",
+    "head": "b_n_dark elf_f_head_07",
+    "hair": "b_n_dark elf_f_hair_08",
+    "npc_flags": "FEMALE | RESPAWN | IS_BASE",
+    "blood_type": 0,
+    "data": {
+      "level": 18,
+      "stats": {
+        "attributes": [
+          62,
+          82,
+          62,
+          91,
+          69,
+          64,
+          45,
+          40
+        ],
+        "skills": [
+          20,
+          20,
+          60,
+          20,
+          20,
+          25,
+          20,
+          20,
+          50,
+          47,
+          57,
+          7,
+          7,
+          7,
+          12,
+          32,
+          7,
+          7,
+          32,
+          47,
+          32,
+          12,
+          17,
+          52,
+          7,
+          32,
+          7
+        ],
+        "health": 171,
+        "magicka": 164,
+        "fatigue": 279
+      },
+      "disposition": 50,
+      "reputation": 8,
+      "rank": 3,
+      "gold": 0
+    }
   },
   {
     "type": "Npc",
@@ -50381,7 +50569,94 @@
         1,
         "torch_infinite_time"
       ]
-    ]
+    ],
+    "spells": [
+      "flamebolt",
+      "hearth heal"
+    ],
+    "ai_data": {
+      "hello": 30,
+      "fight": 30,
+      "flee": 0,
+      "alarm": 100,
+      "services": ""
+    },
+    "ai_packages": [
+      {
+        "type": "Wander",
+        "distance": 2000,
+        "duration": 5,
+        "game_hour": 0,
+        "idle2": 60,
+        "idle3": 20,
+        "idle4": 10,
+        "idle5": 10,
+        "idle6": 0,
+        "idle7": 0,
+        "idle8": 0,
+        "idle9": 0,
+        "reset": 1
+      }
+    ],
+    "travel_destinations": [],
+    "race": "Dark Elf",
+    "class": "Guard",
+    "faction": "Telvanni",
+    "head": "b_n_dark elf_m_head_05",
+    "hair": "b_n_dark elf_m_hair_09",
+    "npc_flags": "RESPAWN | IS_BASE",
+    "blood_type": 0,
+    "data": {
+      "level": 30,
+      "stats": {
+        "attributes": [
+          95,
+          100,
+          90,
+          86,
+          91,
+          100,
+          56,
+          40
+        ],
+        "skills": [
+          78,
+          27,
+          78,
+          78,
+          84,
+          84,
+          27,
+          27,
+          68,
+          8,
+          84,
+          84,
+          8,
+          8,
+          13,
+          84,
+          8,
+          8,
+          44,
+          8,
+          44,
+          13,
+          18,
+          13,
+          8,
+          44,
+          44
+        ],
+        "health": 274,
+        "magicka": 356,
+        "fatigue": 339
+      },
+      "disposition": 50,
+      "reputation": 12,
+      "rank": 5,
+      "gold": 0
+    }
   },
   {
     "type": "Armor",

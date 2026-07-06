@@ -20559,7 +20559,91 @@
         5,
         "p_restore_health_e"
       ]
-    ]
+    ],
+    "spells": [],
+    "ai_data": {
+      "hello": 30,
+      "fight": 30,
+      "flee": 30,
+      "alarm": 100,
+      "services": ""
+    },
+    "ai_packages": [
+      {
+        "type": "Wander",
+        "distance": 1000,
+        "duration": 5,
+        "game_hour": 0,
+        "idle2": 60,
+        "idle3": 20,
+        "idle4": 10,
+        "idle5": 0,
+        "idle6": 0,
+        "idle7": 0,
+        "idle8": 0,
+        "idle9": 0,
+        "reset": 1
+      }
+    ],
+    "travel_destinations": [],
+    "race": "Dark Elf",
+    "class": "Guard",
+    "faction": "Royal Guard",
+    "head": "b_n_dark elf_m_head_07",
+    "hair": "b_n_dark elf_m_hair_10",
+    "npc_flags": "RESPAWN | IS_BASE",
+    "blood_type": 0,
+    "data": {
+      "level": 50,
+      "stats": {
+        "attributes": [
+          100,
+          94,
+          69,
+          100,
+          100,
+          100,
+          74,
+          40
+        ],
+        "skills": [
+          100,
+          39,
+          100,
+          100,
+          100,
+          100,
+          39,
+          39,
+          98,
+          10,
+          20,
+          10,
+          10,
+          10,
+          15,
+          10,
+          10,
+          10,
+          64,
+          10,
+          64,
+          15,
+          20,
+          15,
+          10,
+          64,
+          64
+        ],
+        "health": 400,
+        "magicka": 188,
+        "fatigue": 369
+      },
+      "disposition": 40,
+      "reputation": 2,
+      "rank": 0,
+      "gold": 0
+    }
   },
   {
     "type": "Npc",
@@ -20609,7 +20693,75 @@
         1,
         "Indoril_MH_Guard_helmet"
       ]
-    ]
+    ],
+    "spells": [],
+    "ai_data": {
+      "hello": 30,
+      "fight": 30,
+      "flee": 0,
+      "alarm": 100,
+      "services": ""
+    },
+    "ai_packages": [],
+    "travel_destinations": [],
+    "race": "Dark Elf",
+    "class": "Guard",
+    "faction": "Temple",
+    "head": "b_n_dark elf_m_head_01",
+    "hair": "b_n_dark elf_m_hair_02",
+    "npc_flags": "RESPAWN | IS_BASE",
+    "blood_type": 0,
+    "data": {
+      "level": 60,
+      "stats": {
+        "attributes": [
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          80
+        ],
+        "skills": [
+          100,
+          45,
+          100,
+          100,
+          100,
+          100,
+          45,
+          45,
+          100,
+          11,
+          21,
+          11,
+          11,
+          11,
+          16,
+          11,
+          11,
+          11,
+          74,
+          11,
+          74,
+          16,
+          21,
+          16,
+          11,
+          74,
+          74
+        ],
+        "health": 500,
+        "magicka": 200,
+        "fatigue": 400
+      },
+      "disposition": 40,
+      "reputation": 14,
+      "rank": 6,
+      "gold": 0
+    }
   },
   {
     "type": "Npc",
@@ -20659,7 +20811,91 @@
         1,
         "Indoril_MH_Guard_helmet"
       ]
-    ]
+    ],
+    "spells": [],
+    "ai_data": {
+      "hello": 30,
+      "fight": 30,
+      "flee": 0,
+      "alarm": 100,
+      "services": ""
+    },
+    "ai_packages": [
+      {
+        "type": "Wander",
+        "distance": 2000,
+        "duration": 5,
+        "game_hour": 0,
+        "idle2": 60,
+        "idle3": 20,
+        "idle4": 10,
+        "idle5": 10,
+        "idle6": 0,
+        "idle7": 0,
+        "idle8": 0,
+        "idle9": 0,
+        "reset": 1
+      }
+    ],
+    "travel_destinations": [],
+    "race": "Dark Elf",
+    "class": "Guard",
+    "faction": "Temple",
+    "head": "b_n_dark elf_m_head_01",
+    "hair": "b_n_dark elf_m_hair_02",
+    "npc_flags": "RESPAWN | IS_BASE",
+    "blood_type": 0,
+    "data": {
+      "level": 60,
+      "stats": {
+        "attributes": [
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          80
+        ],
+        "skills": [
+          100,
+          45,
+          100,
+          100,
+          100,
+          100,
+          45,
+          45,
+          100,
+          11,
+          21,
+          11,
+          11,
+          11,
+          16,
+          11,
+          11,
+          11,
+          74,
+          11,
+          74,
+          16,
+          21,
+          16,
+          11,
+          74,
+          74
+        ],
+        "health": 500,
+        "magicka": 200,
+        "fatigue": 400
+      },
+      "disposition": 40,
+      "reputation": 14,
+      "rank": 6,
+      "gold": 0
+    }
   },
   {
     "type": "Armor",
