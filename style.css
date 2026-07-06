@@ -2844,6 +2844,9 @@ button {
 .library-detail-cell-color {
   max-width:150px;
 }
+.library-detail-cell-effects {
+  max-width:420px;
+}
 .library-detail-color-swatch {
   width:34px;
   height:20px;

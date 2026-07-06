@@ -1068,7 +1068,12 @@ class Component extends DCLogic {
   // Map a record's raw type tag to a readable label. Some records carry a raw
   // numeric TES3 record tag instead of a string label.
   labelType(t) {
-    const TYPE_LABELS = { '1497648962': 'Body Part', 'npc': 'NPC' };
+    const TYPE_LABELS = {
+      '1497648962': 'Body Part',
+      npc: 'NPC',
+      MiscItem: 'Misc Item',
+      RepairItem: 'Repair Item',
+    };
     t = (t == null ? '' : String(t));
     if (TYPE_LABELS[t]) return TYPE_LABELS[t];
     if (TYPE_LABELS[t.toLowerCase()]) return TYPE_LABELS[t.toLowerCase()];
@@ -1112,7 +1117,7 @@ class Component extends DCLogic {
 
   hiddenDetailKey(typeKey, key) {
     const flagsHidden = {
-      alchemy: 1, armor: 1, book: 1, clothing: 1, container: 1,
+      activator: 1, alchemy: 1, armor: 1, book: 1, clothing: 1, container: 1,
       creature: 1, door: 1, ingredient: 1, static: 1,
     };
     if (key === 'enchanting') return true;
@@ -1264,7 +1269,8 @@ class Component extends DCLogic {
     if (typeKey === 'creature') {
       return [
         'thumb', 'id', 'name', 'creature_type', 'contents',
-      ].concat(attributes, vitals, [
+        'level',
+      ].concat(vitals, attributes.filter(k => k !== 'level'), [
         'soul', 'combat', 'magic', 'stealth', 'attack1', 'attack2', 'attack3',
         'creature_flags', 'script', 'scale', 'travel_destinations',
       ]);
@@ -1278,6 +1284,12 @@ class Component extends DCLogic {
         'combat', 'magic', 'stealth',
         'script', 'head', 'hair', 'npc_flags', 'travel_destinations',
       ]);
+    }
+    if (typeKey === 'light') {
+      return [
+        'thumb', 'id', 'name', 'color', 'weight', 'value', 'radius', 'time',
+        'flags', 'script', 'sound',
+      ];
     }
     return [
       'thumb', 'id', 'name',
@@ -1341,7 +1353,8 @@ class Component extends DCLogic {
     if (key === 'mesh') return '260px';
     if (key === 'icon') return '230px';
     if (key === 'leveled_item_flags' || key === 'leveled_creature_flags') return '210px';
-    if (key === 'enchantment_summary' || key === 'effects_summary') return '220px';
+    if (key === 'enchantment_summary') return '220px';
+    if (key === 'effects_summary') return '420px';
     if (key === 'contents') return '130px';
     return '150px';
   }
@@ -1486,7 +1499,7 @@ class Component extends DCLogic {
     }
     return {
       key,
-      className: key === 'id' ? 'library-detail-cell-id' : '',
+      className: key === 'id' ? 'library-detail-cell-id' : (key === 'effects_summary' ? 'library-detail-cell-effects' : ''),
       isThumb: false,
       isId: key === 'id',
       isContents: false,
