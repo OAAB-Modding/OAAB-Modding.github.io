@@ -79,7 +79,7 @@
 </sc-if>
 
 <div data-tabbar="" style="top:{{ tabbarTop }}px;" class="library-toolbar">
-  <div style="padding:12px {{ barPadX }}px 13px;" class="container-wide">
+  <div style="padding:13px {{ barPadX }}px 13px;" class="container-wide">
     <sc-if value="{{ showTabBar }}" hint-placeholder-val="{{ true }}">
     <div class="library-tabs-row">
       <span class="filter-label">Type</span>
@@ -690,6 +690,19 @@ class Component extends DCLogic {
       if (this._mql.addEventListener) this._mql.addEventListener('change', this._onMql);
       else if (this._mql.addListener) this._mql.addListener(this._onMql);
     } catch (e) {}
+    // The library toolbar is sticky and must park directly below the fixed
+    // .site-nav. Measuring the nav's real height keeps the toolbar's top
+    // padding intact when scrolled — a hard-coded offset lets the nav overlap
+    // and clip it. Re-measure on resize since the nav height is responsive.
+    this._measureNav = () => {
+      try {
+        const nav = document.querySelector('.site-nav');
+        const h = nav ? Math.round(nav.getBoundingClientRect().height) : 0;
+        if (h && h !== this.state.navHeight) this.setState({ navHeight: h });
+      } catch (e) {}
+    };
+    this._measureNav();
+    window.addEventListener('resize', this._measureNav, { passive: true });
     // In popout mode, remember it for this window and tidy the address bar so
     // the ?popout=1 query string isn't shown (the browser's own URL bar on a
     // popup window can't be removed by the page, but we keep it clean).
@@ -1014,6 +1027,7 @@ class Component extends DCLogic {
       window.removeEventListener('scroll', this._onScroll);
       window.removeEventListener('resize', this._onScroll);
     }
+    if (this._measureNav) window.removeEventListener('resize', this._measureNav);
     if (this._raf) cancelAnimationFrame(this._raf);
     this.syncContentsScrollLock(true);
   }
@@ -3591,7 +3605,7 @@ class Component extends DCLogic {
       filterToggleFg: P.tagText,
       filterToggleBg: P.surface,
       filterToggleBd: P.border,
-      tabbarTop: isPopout ? 0 : (narrow ? 54 : 61),
+      tabbarTop: isPopout ? 0 : (this.state.navHeight || (narrow ? 65 : 73)),
       barPadX: isPopout ? 12 : (narrow ? 14 : 32),
       secPadX: isPopout ? 12 : (narrow ? 14 : 32),
       openPopout: () => {
