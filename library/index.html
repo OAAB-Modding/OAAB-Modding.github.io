@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=library-search-ui-20260703c">
+<link rel="stylesheet" href="../style.css?v=library-books-20260706a">
 <script src="../theme.js"></script>
 </helmet>
 
@@ -368,6 +368,17 @@
                       <span class="library-detail-empty">-</span>
                     </sc-if>
                   </sc-if>
+                  <sc-if value="{{ cell.isBookText }}" hint-placeholder-val="{{ false }}">
+                    <sc-if value="{{ cell.hasBookText }}" hint-placeholder-val="{{ false }}">
+                      <button type="button" data-book-id="{{ row.id }}" onClick="{{ openBookText }}" title="{{ cell.bookTitle }}" class="library-detail-book-button">
+                        <span>Read</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="asset-book-icon"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3z"></path><path d="M21 18a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-5a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3z"></path></svg>
+                      </button>
+                    </sc-if>
+                    <sc-if value="{{ cell.hasNoBookText }}" hint-placeholder-val="{{ true }}">
+                      <span class="library-detail-empty">-</span>
+                    </sc-if>
+                  </sc-if>
                   <sc-if value="{{ cell.isColor }}" hint-placeholder-val="{{ false }}">
                     <button type="button" data-color="{{ cell.colorHex }}" onClick="{{ pickColor }}" title="{{ cell.colorTitle }}" style="background:{{ cell.colorCss }};" class="library-detail-color-swatch"></button>
                   </sc-if>
@@ -435,6 +446,13 @@
             </sc-if>
             </sc-if>
             <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
+            <sc-if value="{{ it.hasBookText }}" hint-placeholder-val="{{ false }}">
+              <button type="button" data-book-id="{{ it.id }}" onClick="{{ openBookText }}" title="{{ it.bookTitle }}" class="asset-book-button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="asset-book-icon"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3z"></path><path d="M21 18a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-5a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3z"></path></svg>
+              </button>
+            </sc-if>
+            </sc-if>
+            <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
             <sc-if value="{{ it.hasContents }}" hint-placeholder-val="{{ false }}">
               <button type="button" data-inventory-id="{{ it.id }}" onClick="{{ pickInventoryContents }}" title="{{ it.contentsTitle }}" class="asset-container-button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="asset-container-icon"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>
@@ -477,6 +495,9 @@
                   <button type="button" data-compact-action-id="{{ it.id }}" onClick="{{ toggleCompactActions }}" aria-label="Show item actions" title="Actions" class="asset-compact-actions-button">...</button>
                   <sc-if value="{{ it.compactActionsOpen }}" hint-placeholder-val="{{ false }}">
                     <div class="asset-compact-actions-menu" onClick="{{ stopCompactActionsClick }}">
+                      <sc-if value="{{ it.hasBookText }}" hint-placeholder-val="{{ false }}">
+                        <button type="button" data-book-id="{{ it.id }}" onClick="{{ openBookText }}" class="asset-compact-actions-row">Read book</button>
+                      </sc-if>
                       <sc-if value="{{ it.hasContents }}" hint-placeholder-val="{{ false }}">
                         <button type="button" data-inventory-id="{{ it.id }}" onClick="{{ pickInventoryContents }}" class="asset-compact-actions-row">{{ it.compactContentsLabel }}</button>
                       </sc-if>
@@ -571,6 +592,11 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="asset-alchemy-icon"><path d="M10 3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a6 6 0 0 0 1.2 3.6l.6.8A6 6 0 0 1 17 13v8a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-8a6 6 0 0 1 1.2-3.6l.6-.8A6 6 0 0 0 10 5z"></path><path d="M17 13h-4a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h4"></path></svg>
         </button>
       </sc-if>
+      <sc-if value="{{ renderPreviewHasBookText }}" hint-placeholder-val="{{ false }}">
+        <button type="button" data-render-control="1" data-book-id="{{ renderPreviewId }}" onClick="{{ openBookText }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="{{ renderPreviewBookTitle }}" class="asset-book-button library-render-book-button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="asset-book-icon"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3z"></path><path d="M21 18a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-5a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3z"></path></svg>
+        </button>
+      </sc-if>
       <sc-if value="{{ renderPreviewHasEffects }}" hint-placeholder-val="{{ false }}">
         <div data-render-control="1" class="asset-effect-row library-render-effect-row">
           <sc-for list="{{ renderPreviewEffects }}" as="eff" hint-placeholder-count="4">
@@ -586,6 +612,51 @@
       <sc-if value="{{ hasRenderPreviewMeta }}" hint-placeholder-val="{{ true }}">
         <span class="library-render-meta">{{ renderPreviewMeta }}</span>
       </sc-if>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ showBookPreview }}" hint-placeholder-val="{{ false }}">
+<div class="library-book-backdrop" onClick="{{ closeBookText }}">
+  <div class="library-book-dialog" role="dialog" aria-modal="true" aria-label="{{ bookPreviewTitle }}" onClick="{{ stopBookTextClick }}">
+    <button type="button" class="library-book-close" onClick="{{ closeBookText }}" aria-label="Close book" title="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+    </button>
+    <div class="library-book-head">
+      <div class="library-book-title-group">
+        <h1 class="library-book-title">{{ bookPreviewTitle }}</h1>
+      </div>
+      <sc-if value="{{ bookPreviewSourceUrl }}" hint-placeholder-val="{{ false }}">
+        <a href="{{ bookPreviewSourceUrl }}" target="_blank" rel="noopener" class="library-book-source">Wiki</a>
+      </sc-if>
+    </div>
+    <div class="library-book-body">
+      <sc-if value="{{ bookPreviewLoading }}" hint-placeholder-val="{{ false }}">
+        <div class="library-book-status">Loading book text...</div>
+      </sc-if>
+      <sc-if value="{{ bookPreviewError }}" hint-placeholder-val="{{ false }}">
+        <div class="library-book-status library-book-status-error">{{ bookPreviewError }}</div>
+      </sc-if>
+      <sc-for list="{{ bookPreviewBlocks }}" as="block" hint-placeholder-count="14">
+        <sc-if value="{{ block.isHeading }}" hint-placeholder-val="{{ false }}">
+          <h2 class="library-book-heading">{{ block.text }}</h2>
+        </sc-if>
+        <sc-if value="{{ block.isQuote }}" hint-placeholder-val="{{ false }}">
+          <blockquote class="library-book-quote">{{ block.text }}</blockquote>
+        </sc-if>
+        <sc-if value="{{ block.isRule }}" hint-placeholder-val="{{ false }}">
+          <hr class="library-book-rule">
+        </sc-if>
+        <sc-if value="{{ block.isImage }}" hint-placeholder-val="{{ false }}">
+          <figure class="library-book-image">
+            <img src="{{ block.src }}" alt="{{ block.alt }}" loading="lazy" decoding="async">
+          </figure>
+        </sc-if>
+        <sc-if value="{{ block.isParagraph }}" hint-placeholder-val="{{ true }}">
+          <p class="library-book-paragraph">{{ block.text }}</p>
+        </sc-if>
+      </sc-for>
     </div>
   </div>
 </div>
@@ -678,6 +749,7 @@ class Component extends DCLogic {
     renderPreviewLoaded: false,
     enchantmentPreview: null,
     contentsPreview: null,
+    bookPreview: null,
   };
 
   componentDidMount() {
@@ -752,6 +824,12 @@ class Component extends DCLogic {
     this._typeTs = 0;
     this._typeIdx = 0;
     this._onKey = (e) => {
+      if (this.state.bookPreview) {
+        if (e.key === 'Escape') {
+          this.setState({ bookPreview: null });
+          return;
+        }
+      }
       if (this.state.contentsPreview) {
         if (e.key === 'Escape') {
           this.setState({ contentsPreview: null });
@@ -874,12 +952,21 @@ class Component extends DCLogic {
     const NPC_RENDER = '/assets/images/library/renders/npc/';
     const EFFECT = '/assets/images/library/effects/';
     const LIGHT_MASK = REPO + '/assets/images/library/masks/marker_light_mask.webp';
+    const WIKI_BOOK_API = 'https://api.github.com/repos/OAAB-Modding/wiki/contents/oaab-content/books?ref=main';
+    const WIKI_RAW_ROOT = 'https://raw.githubusercontent.com/OAAB-Modding/wiki/main/';
+    const WIKI_BOOK_RAW = 'https://raw.githubusercontent.com/OAAB-Modding/wiki/main/oaab-content/books/';
+    const WIKI_BOOK_SITE = 'https://www.oaab.dev/wiki/books/';
+    const WIKI_BOOKART_RAW = 'https://www.oaab.dev/wiki/resources/gallery/bookart/';
     this._THUMB = THUMB;
     this._NPC_THUMB = NPC_THUMB;
     this._RENDER = RENDER;
     this._NPC_RENDER = NPC_RENDER;
     this._EFFECT = EFFECT;
     this._LIGHT_MASK = LIGHT_MASK;
+    this._WIKI_RAW_ROOT = WIKI_RAW_ROOT;
+    this._WIKI_BOOK_RAW = WIKI_BOOK_RAW;
+    this._WIKI_BOOK_SITE = WIKI_BOOK_SITE;
+    this._WIKI_BOOKART_RAW = WIKI_BOOKART_RAW;
 
     // Data JSON must always reflect the freshly deployed source. jsdelivr caches
     // the mutable @main ref for hours, so a lowercased mesh path (or any data
@@ -908,12 +995,68 @@ class Component extends DCLogic {
         return set;
       })
       .catch(e => { console.warn('deprecated list load failed', e); return Object.create(null); });
+    const loadWikiBooks = fetch(WIKI_BOOK_API)
+      .then(r => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(rows => {
+        const entries = [];
+        (Array.isArray(rows) ? rows : []).forEach(row => {
+          const name = row && row.name ? String(row.name) : '';
+          if (!/\.md$/i.test(name) || name.toLowerCase() === 'index.md') return;
+          const slug = name.replace(/\.md$/i, '');
+          entries.push({
+            file: name,
+            rawUrl: row.download_url || (WIKI_BOOK_RAW + encodeURIComponent(name)),
+            wikiUrl: WIKI_BOOK_SITE + encodeURIComponent(slug),
+          });
+        });
+        return Promise.all(entries.map(entry =>
+          fetch(entry.rawUrl)
+            .then(r => {
+              if (!r.ok) throw new Error('http ' + r.status);
+              return r.text();
+            })
+            .then(markdown => {
+              const meta = this.wikiBookFrontmatter(markdown);
+              return Object.assign({}, entry, {
+                markdown,
+                title: meta.title || entry.file.replace(/\.md$/i, ''),
+                ids: meta.ids || [],
+              });
+            })
+            .catch(e => {
+              console.warn('wiki book metadata load failed', entry.file, e);
+              return null;
+            })
+        ));
+      })
+      .then(entries => {
+        const byId = Object.create(null);
+        (entries || []).forEach(entry => {
+          if (!entry || !entry.ids || !entry.ids.length) return;
+          const multi = entry.ids.length > 1;
+          entry.ids.forEach((id, index) => {
+            const key = String(id || '').trim().toLowerCase();
+            if (!key || byId[key]) return;
+            const anchor = multi ? this.wikiBookAnchorForOrdinal(entry.markdown, index + 1) : '';
+            byId[key] = {
+              file: entry.file,
+              rawUrl: entry.rawUrl,
+              wikiUrl: entry.wikiUrl + (anchor ? '#' + anchor : ''),
+              anchor,
+              title: entry.title,
+            };
+          });
+        });
+        return byId;
+      })
+      .catch(e => { console.warn('wiki book index load failed', e); return Object.create(null); });
 
     Promise.all([
       fetchData('OAAB_Data_filtered.json').then(r => r.json()),
       loadDeprecated,
+      loadWikiBooks,
     ])
-      .then(([records, deprecated]) => {
+      .then(([records, deprecated, wikiBooks]) => {
         const enchantmentsByKey = this.enchantmentMap(records);
         const labelType = (t) => this.displayType(t);
         const thumbnailPath = (mesh) => {
@@ -948,6 +1091,7 @@ class Component extends DCLogic {
           const lightColor = this.labelType(r.type).toLowerCase() === 'light' ? this.lightColorCss(r) : '';
           const lightHex = lightColor ? this.lightColorHex(r) : '';
           const lightRgb = lightColor ? this.lightColorRgb(r) : null;
+          const bookRef = this.wikiBookRef(r, wikiBooks);
           if (leveledList) {
             if (!id || seen[id] || deprecated[id]) return;
             seen[id] = 1;
@@ -966,6 +1110,7 @@ class Component extends DCLogic {
               effects: [],
               enchantment: null,
               alchemy: null,
+              bookRef: null,
               detail: this.detailSourceRecord(r),
             });
             return;
@@ -1003,6 +1148,7 @@ class Component extends DCLogic {
             effects: spell || alchemy ? [] : this.ingredientEffects(r),
             enchantment: spell ? this.spellDetails(r) : this.itemEnchantment(r, enchantmentsByKey),
             alchemy: alchemy,
+            bookRef: bookRef,
             detail: this.detailSourceRecord(r),
           });
         });
@@ -1043,19 +1189,19 @@ class Component extends DCLogic {
 
   applyTheme() { if (window.OAAB_THEME) window.OAAB_THEME.apply(this.state.theme); }
   scrollContentsList(deltaY) {
-    const list = document.querySelector('.library-contents-list');
+    const list = document.querySelector('.library-contents-list') || document.querySelector('.library-book-body');
     if (!list || !deltaY) return;
     list.scrollTop += deltaY;
   }
   syncContentsScrollLock(forceUnlock) {
     try {
-      const shouldLock = !forceUnlock && !!this.state.contentsPreview;
+      const shouldLock = !forceUnlock && !!(this.state.contentsPreview || this.state.bookPreview);
       if (shouldLock === !!this._contentsScrollLocked) return;
       if (shouldLock) {
         this._contentsScrollLocked = true;
         this._onContentsWheel = (e) => {
           if (e && e.preventDefault) e.preventDefault();
-          const list = document.querySelector('.library-contents-list');
+          const list = document.querySelector('.library-contents-list') || document.querySelector('.library-book-body');
           const unit = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 && list ? list.clientHeight : 1);
           this.scrollContentsList((e.deltaY || 0) * unit);
         };
@@ -1446,6 +1592,7 @@ class Component extends DCLogic {
       name: 'Name',
       mesh: 'Mesh',
       contents: 'Contents',
+      book_text: 'Text',
       effects_summary: 'Effects',
       enchantment_summary: 'Enchantment',
       flags: 'Flags',
@@ -1538,7 +1685,7 @@ class Component extends DCLogic {
       'enchantment', 'enchantment_summary', 'effects_summary', 'speed', 'reach', 'radius', 'time',
       'level', 'strength', 'intelligence', 'willpower', 'agility', 'endurance',
       'personality', 'luck', 'magicka', 'fatigue', 'soul', 'combat', 'magic',
-      'stealth', 'attack1', 'attack2', 'attack3', 'gold', 'contents', 'chance_none',
+      'stealth', 'attack1', 'attack2', 'attack3', 'gold', 'contents', 'book_text', 'chance_none',
       'flags', 'container_flags', 'leveled_item_flags', 'leveled_creature_flags',
       'creature_flags', 'color', 'script', 'sound', 'open_sound', 'close_sound',
       'encumbrance', 'scale', 'race', 'class', 'faction', 'rank', 'head', 'hair',
@@ -1558,6 +1705,7 @@ class Component extends DCLogic {
       if (x.name) present.name = 1;
       if (x.mesh) present.mesh = 1;
       if (x.hasContents && x.contentIds && x.contentIds.length) present.contents = 1;
+      if (x.bookRef) present.book_text = 1;
       if ((x.effects && x.effects.length) || (x.alchemy && x.alchemy.effects && x.alchemy.effects.length) || (x.enchantment && x.enchantment.effects && x.enchantment.effects.length)) present.effects_summary = 1;
       if (x.enchantment && x.detailKind !== 'spell') present.enchantment_summary = 1;
       Object.keys(x.detail || {}).forEach(k => { present[k] = 1; });
@@ -1595,6 +1743,7 @@ class Component extends DCLogic {
     if (key === 'enchantment_summary') return '220px';
     if (key === 'effects_summary') return '420px';
     if (key === 'contents') return '130px';
+    if (key === 'book_text') return '96px';
     return '150px';
   }
 
@@ -1715,6 +1864,24 @@ class Component extends DCLogic {
         hasNoContents: !count,
         contentsTitle: count ? 'Show contents for ' + item.id : '',
         title: count ? (item.contentIds || []).join(', ') : '',
+      };
+    }
+    if (key === 'book_text') {
+      const ref = item && item.bookRef;
+      return {
+        key,
+        className: 'library-detail-cell-book',
+        isThumb: false,
+        isId: false,
+        isContents: false,
+        isBookText: true,
+        isColor: false,
+        isPlain: false,
+        hasBookText: !!ref,
+        hasNoBookText: !ref,
+        bookTitle: ref ? ('Read ' + (item.name || item.id || 'book')) : '',
+        value: ref ? 'Read' : '',
+        title: ref ? (ref.file + (ref.anchor ? '#' + ref.anchor : '')) : '',
       };
     }
     const value = this.detailDisplayValue(item, key);
@@ -1867,6 +2034,267 @@ class Component extends DCLogic {
     return key ? this._NPC_RENDER + key + '.webp' : '';
   }
 
+  wikiBookSlug(value) {
+    return String(value || '')
+      .replace(/['`]/g, '')
+      .replace(/&/g, ' and ')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  yamlScalar(value) {
+    return String(value || '')
+      .trim()
+      .replace(/^['"]|['"]$/g, '')
+      .trim();
+  }
+
+  wikiBookFrontmatter(markdown) {
+    const text = String(markdown || '').replace(/\r\n?/g, '\n');
+    if (text.indexOf('---\n') !== 0) return { title: '', ids: [] };
+    const end = text.indexOf('\n---', 4);
+    if (end === -1) return { title: '', ids: [] };
+    const lines = text.slice(4, end).split('\n');
+    const ids = [];
+    let title = '';
+    let key = '';
+    lines.forEach(raw => {
+      const line = String(raw || '');
+      const top = /^([A-Za-z0-9_-]+):\s*(.*)$/.exec(line);
+      if (top) {
+        key = top[1].trim().toLowerCase();
+        const value = this.yamlScalar(top[2]);
+        if (key === 'title') title = value;
+        if ((key === 'id' || key === 'ids') && value) {
+          if (/^\[.*\]$/.test(value)) {
+            value.replace(/^\[|\]$/g, '').split(',').forEach(part => {
+              const id = this.yamlScalar(part);
+              if (id) ids.push(id);
+            });
+          } else {
+            ids.push(value);
+          }
+        }
+        return;
+      }
+      const item = /^\s*-\s*(.+?)\s*$/.exec(line);
+      if (item && (key === 'id' || key === 'ids')) {
+        const id = this.yamlScalar(item[1]);
+        if (id) ids.push(id);
+      }
+    });
+    return { title, ids };
+  }
+
+  ordinalVariants(index) {
+    const n = parseInt(index, 10) || 0;
+    const cardinal = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'][n] || String(n);
+    const weird = ['', 'oneth', 'twoth', 'threeth', 'fourth', 'fiveth', 'sixth', 'seventh', 'eighth', 'nineth', 'tenth', 'eleventh', 'twelfth'][n] || cardinal;
+    const ordinal = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'][n] || cardinal;
+    const roman = ['', 'i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 'xi', 'xii'][n] || '';
+    return [String(n), cardinal, weird, ordinal, roman].filter(Boolean).filter((value, i, arr) => arr.indexOf(value) === i);
+  }
+
+  wikiBookAnchorForOrdinal(markdown, ordinalIndex) {
+    const variants = this.ordinalVariants(ordinalIndex).map(v => this.wikiBookSlug(v)).filter(Boolean);
+    const headings = String(markdown || '').replace(/\r\n?/g, '\n').split('\n')
+      .filter(line => /^(#{1,6})\s+/.test(line))
+      .map(line => {
+        const text = this.wikiHeadingText(line);
+        const slug = this.wikiBookSlug(text);
+        const tokens = slug.split('-').filter(Boolean);
+        return { text, slug, tokens };
+      })
+      .filter(x => x.slug);
+    const hasVariant = (heading) => variants.some(v => heading.tokens.indexOf(v) !== -1 || heading.slug === v);
+    const preferred = headings.find(h => hasVariant(h) && /\b(book|chapter|part|volume|vol)\b/i.test(h.text));
+    if (preferred) return preferred.slug;
+    const fallback = headings.find(hasVariant);
+    return fallback ? fallback.slug : '';
+  }
+
+  wikiBookRef(record, wikiBooks) {
+    if (!record || this.labelType(record.type).toLowerCase() !== 'book') return null;
+    const key = String(record.id || '').trim().toLowerCase();
+    const ref = key ? (wikiBooks || Object.create(null))[key] : null;
+    if (!ref) return null;
+    return Object.assign({}, ref, {
+      title: record.name || ref.title || record.id || ref.file,
+    });
+  }
+
+  wikiHeadingText(line) {
+    return String(line || '')
+      .replace(/^#{1,6}\s*/, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/[*_~`]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  markdownSection(markdown, anchor) {
+    const lines = String(markdown || '').replace(/\r\n?/g, '\n').split('\n');
+    const target = String(anchor || '').replace(/^#/, '').trim();
+    if (!target) return lines.join('\n');
+    let start = -1, level = 7;
+    for (let i = 0; i < lines.length; i++) {
+      const m = /^(#{1,6})\s+/.exec(lines[i]);
+      if (!m) continue;
+      const text = this.wikiHeadingText(lines[i]);
+      if (this.wikiBookSlug(text) === target) {
+        start = i;
+        level = m[1].length;
+        break;
+      }
+    }
+    if (start === -1) return lines.join('\n');
+    let end = lines.length;
+    for (let i = start + 1; i < lines.length; i++) {
+      const m = /^(#{1,6})\s+/.exec(lines[i]);
+      if (m && m[1].length <= level) {
+        end = i;
+        break;
+      }
+    }
+    return lines.slice(start, end).join('\n');
+  }
+
+  markdownInlineText(value) {
+    return String(value || '')
+      .replace(/!\[\[([^\]]+)\]\]/g, '')
+      .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/?[^>]+>/g, '')
+      .replace(/\\([\\`*_{}\[\]()#+\-.!>])/g, '$1')
+      .replace(/[*_~`]/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .trim();
+  }
+
+  wikiEncodePath(path) {
+    return String(path || '')
+      .replace(/\\/g, '/')
+      .split('/')
+      .filter(Boolean)
+      .map(part => encodeURIComponent(part))
+      .join('/');
+  }
+
+  wikiImageAlt(target, label) {
+    const given = String(label || '').trim();
+    if (given && !/^\d+(?:x\d+)?$/i.test(given)) return this.markdownInlineText(given);
+    const file = String(target || '').replace(/\\/g, '/').split('/').pop() || 'Book art';
+    return file.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ').trim() || 'Book art';
+  }
+
+  wikiImageUrl(target, ref) {
+    let path = String(target || '').trim().replace(/^<|>$/g, '');
+    if (!path) return '';
+    if (/^\/\//.test(path)) return 'https:' + path;
+    if (/^https?:\/\//i.test(path)) return path;
+    path = path.split('#')[0].split('?')[0].trim().replace(/\\/g, '/');
+    if (!path) return '';
+    if (path.indexOf('/') === -1) return this._WIKI_BOOKART_RAW + this.wikiEncodePath(path);
+    let clean = path.replace(/^\.?\//, '');
+    if (/^oaab-content\//i.test(clean)) return this._WIKI_RAW_ROOT + this.wikiEncodePath(clean);
+    if (/^resources\/gallery\/bookart\//i.test(clean)) return this._WIKI_RAW_ROOT + this.wikiEncodePath('oaab-content/' + clean);
+    if (/^bookart\//i.test(clean)) return this._WIKI_BOOKART_RAW + this.wikiEncodePath(clean.replace(/^bookart\//i, ''));
+    try {
+      return new URL(path, (ref && ref.rawUrl) || this._WIKI_BOOK_RAW).href;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  markdownImageBlocks(line, ref) {
+    const images = [];
+    let text = String(line || '');
+    text = text.replace(/!\[\[([^\]]+)\]\]/g, (match, target) => {
+      const parts = String(target || '').split('|');
+      const imageTarget = parts.shift() || '';
+      const src = this.wikiImageUrl(imageTarget, ref);
+      if (src) images.push({ isImage: true, src, alt: this.wikiImageAlt(imageTarget, parts.join('|')) });
+      return ' ';
+    });
+    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, target) => {
+      const src = this.wikiImageUrl(target, ref);
+      if (src) images.push({ isImage: true, src, alt: this.wikiImageAlt(target, alt) });
+      return ' ';
+    });
+    return { text: text.trim(), images };
+  }
+
+  markdownBookBlocks(markdown, ref) {
+    const lines = String(markdown || '').replace(/\r\n?/g, '\n').split('\n');
+    const blocks = [];
+    let para = [];
+    let inFrontMatter = false;
+    const flush = () => {
+      const text = this.markdownInlineText(para.join('\n'));
+      para = [];
+      if (text) blocks.push({ isParagraph: true, text });
+    };
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i] || '';
+      if (i === 0 && line.trim() === '---') { inFrontMatter = true; continue; }
+      if (inFrontMatter) {
+        if (line.trim() === '---') inFrontMatter = false;
+        continue;
+      }
+      if (!line.trim()) { flush(); continue; }
+      if (/^\s*(?:---+|\*\*\*+|___+)\s*$/.test(line)) {
+        flush();
+        blocks.push({ isRule: true, text: '' });
+        continue;
+      }
+      if (/^#{1,6}\s+/.test(line)) {
+        flush();
+        const text = this.wikiHeadingText(line);
+        if (text) blocks.push({ isHeading: true, text });
+        continue;
+      }
+      if (/^\s*>/.test(line)) {
+        flush();
+        continue;
+      }
+      const media = this.markdownImageBlocks(line, ref);
+      if (media.images.length) {
+        flush();
+        media.images.forEach(image => blocks.push(image));
+        if (media.text) para.push(media.text);
+        continue;
+      }
+      para.push(line.trim());
+    }
+    flush();
+    return blocks;
+  }
+
+  fetchBookPreview(item) {
+    const ref = item && item.bookRef;
+    if (!ref || !ref.rawUrl) return Promise.reject(new Error('No wiki book text found.'));
+    return fetch(ref.rawUrl)
+      .then(r => {
+        if (!r.ok) throw new Error('http ' + r.status);
+        return r.text();
+      })
+      .then(markdown => {
+        const section = this.markdownSection(markdown, ref.anchor);
+        const blocks = this.markdownBookBlocks(section, ref);
+        return {
+          id: item.id || '',
+          title: item.name || item.id || ref.title || 'Book',
+          meta: '',
+          sourceUrl: ref.wikiUrl || '',
+          loading: false,
+          error: '',
+          blocks: blocks.length ? blocks : [{ isParagraph: true, text: 'No readable text was found for this wiki entry.' }],
+        };
+      });
+  }
+
   renderPreviewPayload(x) {
     const contentCount = x && x.contentIds && x.contentIds.length ? x.contentIds.length : 0;
     const isSpell = !!(x && x.isSpell);
@@ -1888,6 +2316,8 @@ class Component extends DCLogic {
       enchantmentTitle: x && x.enchantment ? (x.enchantment.title || x.enchantment.id || 'Enchantment details') : '',
       hasAlchemy: !!(x && x.alchemy),
       alchemyTitle: x && x.alchemy ? (x.alchemy.title || x.alchemy.id || 'Alchemy details') : '',
+      hasBookText: !!(x && x.bookRef),
+      bookTitle: x && x.bookRef ? ('Read ' + (x.name || x.id || 'book')) : '',
       hasEffects: !!(x && x.effects && x.effects.length),
       effects: (x && x.effects) || [],
       isSpell: isSpell,
@@ -3351,6 +3781,8 @@ class Component extends DCLogic {
         enchantmentTitle: x.enchantment ? x.enchantment.title : '',
         hasAlchemy: !!x.alchemy,
         alchemyTitle: x.alchemy ? x.alchemy.title : '',
+        hasBookText: !!x.bookRef,
+        bookTitle: x.bookRef ? ('Read ' + (x.name || x.id || 'book')) : '',
         detailsLabel: x.detailKind === 'spell' ? 'Inspect spell' : 'Inspect enchantment',
         isSpell: !!x.isSpell,
         isNotSpell: !x.isSpell,
@@ -3364,7 +3796,7 @@ class Component extends DCLogic {
         spellEffects: x.spellEffects || [],
         spellLayoutClass: this.spellLayoutClass(x.spellEffects ? x.spellEffects.length : 0),
         previewClass: (x.isSpell || x.isLeveledList) ? 'asset-thumb-frame-no-preview' : '',
-        hasCompactActions: !!((x.hasContents && x.contentIds && x.contentIds.length) || (x.effects && x.effects.length) || x.enchantment || x.alchemy),
+        hasCompactActions: !!(x.bookRef || (x.hasContents && x.contentIds && x.contentIds.length) || (x.effects && x.effects.length) || x.enchantment || x.alchemy),
         compactActionsOpen: this.state.compactActionsId === x.id,
         nif: x.mesh || (x.img || ''),
         tip: comfortable
@@ -3693,6 +4125,46 @@ class Component extends DCLogic {
         if (!payload) return;
         this.setState({ enchantmentPreview: payload, compactActionsId: null });
       },
+      openBookText: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        const id = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.bookId || '') : '';
+        const item = this.findCatalogItem(id);
+        if (!item || !item.bookRef) return;
+        const loadingPayload = {
+          id: item.id || '',
+          title: item.name || item.id || 'Book',
+          meta: '',
+          sourceUrl: item.bookRef.wikiUrl || '',
+          loading: true,
+          error: '',
+          blocks: [],
+        };
+        this.setState({
+          bookPreview: loadingPayload,
+          compactActionsId: null,
+          renderPreview: null,
+          renderPreviewLoaded: false,
+        });
+        this.fetchBookPreview(item)
+          .then(payload => {
+            if (this.state.bookPreview && this.state.bookPreview.id === payload.id) {
+              this.setState({ bookPreview: payload });
+            }
+          })
+          .catch(err => {
+            if (this.state.bookPreview && this.state.bookPreview.id === (item.id || '')) {
+              this.setState({
+                bookPreview: Object.assign({}, loadingPayload, {
+                  loading: false,
+                  meta: 'OAAB wiki text unavailable',
+                  error: 'Could not load this book from the wiki.',
+                }),
+              });
+            }
+            console.warn('wiki book text load failed', err);
+          });
+      },
       openContentsDetails: (e) => {
         if (e && e.preventDefault) e.preventDefault();
         if (e && e.stopPropagation) e.stopPropagation();
@@ -3714,6 +4186,14 @@ class Component extends DCLogic {
         this.setState({ contentsPreview: null });
       },
       stopContentsDetailsClick: (e) => {
+        if (e && e.stopPropagation) e.stopPropagation();
+      },
+      closeBookText: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        this.setState({ bookPreview: null });
+      },
+      stopBookTextClick: (e) => {
         if (e && e.stopPropagation) e.stopPropagation();
       },
       closeEnchantmentDetails: (e) => {
@@ -4066,12 +4546,21 @@ class Component extends DCLogic {
       renderPreviewEnchantmentTitle: this.state.renderPreview ? (this.state.renderPreview.enchantmentTitle || '') : '',
       renderPreviewHasAlchemy: !!(this.state.renderPreview && this.state.renderPreview.hasAlchemy),
       renderPreviewAlchemyTitle: this.state.renderPreview ? (this.state.renderPreview.alchemyTitle || '') : '',
+      renderPreviewHasBookText: !!(this.state.renderPreview && this.state.renderPreview.hasBookText),
+      renderPreviewBookTitle: this.state.renderPreview ? (this.state.renderPreview.bookTitle || '') : '',
       renderPreviewHasEffects: !!(this.state.renderPreview && this.state.renderPreview.hasEffects),
       renderPreviewEffects: this.state.renderPreview ? (this.state.renderPreview.effects || []) : [],
       showContentsPreview: !!this.state.contentsPreview,
       contentsPreviewTitle: this.state.contentsPreview ? this.state.contentsPreview.title : '',
       contentsPreviewMeta: this.state.contentsPreview ? this.state.contentsPreview.meta : '',
       contentsPreviewRows: this.state.contentsPreview ? (this.state.contentsPreview.rows || []) : [],
+      showBookPreview: !!this.state.bookPreview,
+      bookPreviewTitle: this.state.bookPreview ? (this.state.bookPreview.title || '') : '',
+      bookPreviewMeta: this.state.bookPreview ? (this.state.bookPreview.meta || '') : '',
+      bookPreviewSourceUrl: this.state.bookPreview ? (this.state.bookPreview.sourceUrl || '') : '',
+      bookPreviewLoading: !!(this.state.bookPreview && this.state.bookPreview.loading),
+      bookPreviewError: this.state.bookPreview ? (this.state.bookPreview.error || '') : '',
+      bookPreviewBlocks: this.state.bookPreview ? (this.state.bookPreview.blocks || []) : [],
       showEnchantmentPreview: !!this.state.enchantmentPreview,
       enchantmentPreviewTitle: this.state.enchantmentPreview ? this.state.enchantmentPreview.title : '',
       enchantmentPreviewIsSpell: !!(this.state.enchantmentPreview && this.state.enchantmentPreview.kind === 'spell'),
