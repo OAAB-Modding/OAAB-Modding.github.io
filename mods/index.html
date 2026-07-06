@@ -102,35 +102,6 @@
           <span class="read-more-link">Open the mod page &rarr;</span>
         </div>
       </a>
-
-      <div class="latest-mods-head">
-        <div>
-          <div class="section-kicker-live"><span class="pulse-dot"></span>Nexus feed</div>
-          <h3 class="latest-mods-title">Latest Mods</h3>
-        </div>
-        <a href="https://www.nexusmods.com/games/morrowind/mods?tag=OAAB_Data" target="_blank" rel="noopener" class="btn-ghost-compact">Browse all</a>
-      </div>
-
-      <div class="latest-mods-grid">
-        <sc-for list="{{ latestMods }}" as="mod" hint-placeholder-count="5">
-          <a href="{{ mod.url }}" target="_blank" rel="noopener" class="card-link latest-mod-card">
-            <div class="showcase-media latest-mod-media">
-              <div class="showcase-initial">{{ mod.initial }}</div>
-              <div class="showcase-radial"></div>
-              <sc-if value="{{ mod.hasImage }}" hint-placeholder-val="{{ true }}">
-                <img src="{{ mod.image }}" alt="{{ mod.name }}" loading="lazy" onerror="this.style.display='none'" class="cover-fill">
-              </sc-if>
-              <div class="showcase-shade"></div>
-              <sc-if value="{{ mod.hasCat }}" hint-placeholder-val="{{ true }}"><span class="media-label">{{ mod.cat }}</span></sc-if>
-            </div>
-            <div class="showcase-body">
-              <h4 class="showcase-title">{{ mod.name }}</h4>
-              <div class="showcase-byline">by {{ mod.by }}</div>
-              <span class="card-cta">View on Nexus &rarr;</span>
-            </div>
-          </a>
-        </sc-for>
-      </div>
     </div>
   </section>
 
@@ -526,7 +497,6 @@ class Component extends DCLogic {
     const memberMods = allMemberMods.slice(memberStart, memberStart + memberPageSize);
     const dayPick = this.dailyPick(POOL) || POOL[0];
     const dayLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-    const latestMods = POOL.slice(0, 5).map(m => this.decorateMod(m));
 
     return {
       isLight: light,
@@ -566,7 +536,6 @@ class Component extends DCLogic {
       prevMemberPage: () => { this.setState(s => ({ memberPage: Math.max(0, (s.memberPage || 0) - 1) })); },
       nextMemberPage: () => { this.setState(s => ({ memberPage: Math.min(memberPages - 1, (s.memberPage || 0) + 1) })); },
       visible: visible,
-      latestMods: latestMods,
       monthLabel: dayLabel,
       modOfMonth: this.decorateMod(dayPick),
       contributors: teamWithMods.map(c => {
