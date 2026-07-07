@@ -3618,7 +3618,8 @@ button {
   width:18px;
   height:18px;
 }
-.library-render-enchantment-button {
+.library-render-enchantment-button,
+.library-render-book-button {
   right:16px;
   bottom:16px;
   z-index:5;
@@ -3626,7 +3627,8 @@ button {
   height:30px;
   border-radius:5px;
 }
-.library-render-enchantment-button .asset-enchantment-icon {
+.library-render-enchantment-button .asset-enchantment-icon,
+.library-render-book-button .asset-book-icon {
   width:19px;
   height:19px;
 }
