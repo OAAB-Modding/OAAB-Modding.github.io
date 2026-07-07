@@ -4006,9 +4006,10 @@ button {
 }
 .library-book-image {
   max-width:100%;
-  margin:8px 8px 18px 0;
-  display:inline-flex;
-  vertical-align:middle;
+  width:100%;
+  margin:14px auto 22px;
+  display:flex;
+  justify-content:center;
 }
 .library-book-image img {
   max-width:min(100%,560px);
@@ -5652,7 +5653,7 @@ button {
     line-height:1.56;
   }
   .library-book-image {
-    margin-right:5px;
+    margin:12px auto 20px;
   }
   .library-book-image img {
     max-width:100%;
