@@ -829,6 +829,13 @@ class Component extends DCLogic {
           this.setState({ bookPreview: null });
           return;
         }
+        if (!e.metaKey && !e.ctrlKey && !e.altKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+          if (e.preventDefault) e.preventDefault();
+          if (e.stopPropagation) e.stopPropagation();
+          this.showAdjacentBookPreview(e.key === 'ArrowRight' ? 1 : -1);
+          return;
+        }
+        return;
       }
       if (this.state.contentsPreview) {
         if (e.key === 'Escape') {
@@ -2604,6 +2611,52 @@ class Component extends DCLogic {
       });
   }
 
+  openBookPreviewForItem(item) {
+    if (!item || !item.bookRef) return;
+    const loadingPayload = {
+      id: item.id || '',
+      title: item.name || item.id || 'Book',
+      meta: '',
+      sourceUrl: item.bookRef.wikiUrl || '',
+      loading: true,
+      error: '',
+      blocks: [],
+    };
+    this.setState({
+      bookPreview: loadingPayload,
+      compactActionsId: null,
+    });
+    this.fetchBookPreview(item)
+      .then(payload => {
+        if (this.state.bookPreview && this.state.bookPreview.id === payload.id) {
+          this.setState({ bookPreview: payload });
+        }
+      })
+      .catch(err => {
+        if (this.state.bookPreview && this.state.bookPreview.id === (item.id || '')) {
+          this.setState({
+            bookPreview: Object.assign({}, loadingPayload, {
+              loading: false,
+              meta: 'Book text unavailable',
+              error: 'Could not load this book text.',
+            }),
+          });
+        }
+        console.warn('book text load failed', err);
+      });
+  }
+
+  showAdjacentBookPreview(step) {
+    const list = this._bookPreviewItems || [];
+    const cur = this.state.bookPreview;
+    if (!cur || !list.length) return;
+    let idx = list.findIndex(x => x && x.id && cur.id && x.id === cur.id);
+    if (idx < 0) return;
+    const next = list[(idx + step + list.length) % list.length];
+    if (!next || !next.bookRef) return;
+    this.openBookPreviewForItem(next);
+  }
+
   renderPreviewPayload(x) {
     const contentCount = x && x.contentIds && x.contentIds.length ? x.contentIds.length : 0;
     const isSpell = !!(x && x.isSpell);
@@ -4047,6 +4100,7 @@ class Component extends DCLogic {
     const startIndex = startRow * metrics.columns;
     const endIndex = Math.min(filtered.length, endRow * metrics.columns);
     this._renderPreviewItems = (detailView ? detailItems : filtered).map(x => this.renderPreviewPayload(x)).filter(x => x && x.src);
+    this._bookPreviewItems = (detailView ? detailItems : filtered).filter(x => x && x.bookRef);
     const REL_ADDED = { bg: 'rgba(210,130,63,0.94)', fg: '#1a120a', bd: 'rgba(210,130,63,0.94)', glyph: '+' };
     const REL_UPD = light
       ? { bg: 'rgba(154,146,214,0.18)', fg: '#352d5e', bd: 'rgba(120,110,185,0.85)', glyph: '\u21bb' }
@@ -4442,38 +4496,7 @@ class Component extends DCLogic {
         if (e && e.stopPropagation) e.stopPropagation();
         const id = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.bookId || '') : '';
         const item = this.findCatalogItem(id);
-        if (!item || !item.bookRef) return;
-        const loadingPayload = {
-          id: item.id || '',
-          title: item.name || item.id || 'Book',
-          meta: '',
-          sourceUrl: item.bookRef.wikiUrl || '',
-          loading: true,
-          error: '',
-          blocks: [],
-        };
-        this.setState({
-          bookPreview: loadingPayload,
-          compactActionsId: null,
-        });
-        this.fetchBookPreview(item)
-          .then(payload => {
-            if (this.state.bookPreview && this.state.bookPreview.id === payload.id) {
-              this.setState({ bookPreview: payload });
-            }
-          })
-          .catch(err => {
-            if (this.state.bookPreview && this.state.bookPreview.id === (item.id || '')) {
-              this.setState({
-                bookPreview: Object.assign({}, loadingPayload, {
-                  loading: false,
-                  meta: 'Book text unavailable',
-                  error: 'Could not load this book text.',
-                }),
-              });
-            }
-            console.warn('book text load failed', err);
-          });
+        this.openBookPreviewForItem(item);
       },
       openContentsDetails: (e) => {
         if (e && e.preventDefault) e.preventDefault();
