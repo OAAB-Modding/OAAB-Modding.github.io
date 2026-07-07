@@ -452,7 +452,7 @@
             </sc-if>
             <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
             <sc-if value="{{ it.lightColor }}" hint-placeholder-val="{{ false }}">
-              <button type="button" data-color="{{ it.lightHex }}" onClick="{{ pickColor }}" title="{{ it.lightHex }}" style="background:{{ it.lightColor }};" class="asset-light-swatch"></button>
+              <button type="button" data-color="{{ it.lightHex }}" onClick="{{ pickColor }}" title="Search similar colors: {{ it.lightHex }}" style="background:{{ it.lightColor }};" class="asset-light-swatch"></button>
             </sc-if>
             </sc-if>
             <sc-if value="{{ comfortable }}" hint-placeholder-val="{{ true }}">
@@ -585,7 +585,7 @@
         <span aria-hidden="true" style="background:{{ renderPreviewLightTint }};--asset-light-mask:url('{{ renderPreviewLightMask }}');" class="asset-light-tint library-render-light-tint"></span>
       </sc-if>
       <sc-if value="{{ renderPreviewLightColor }}" hint-placeholder-val="{{ false }}">
-        <button type="button" data-render-control="1" data-color="{{ renderPreviewLightHex }}" onClick="{{ pickColor }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="{{ renderPreviewLightHex }}" style="background:{{ renderPreviewLightColor }};" class="asset-light-swatch library-render-light-swatch"></button>
+        <button type="button" data-render-control="1" data-color="{{ renderPreviewLightHex }}" onClick="{{ pickColor }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="Search similar colors: {{ renderPreviewLightHex }}" style="background:{{ renderPreviewLightColor }};" class="asset-light-swatch library-render-light-swatch"></button>
       </sc-if>
       <sc-if value="{{ renderPreviewHasContents }}" hint-placeholder-val="{{ false }}">
         <button type="button" data-render-control="1" data-inventory-id="{{ renderPreviewId }}" onClick="{{ pickInventoryContents }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" title="{{ renderPreviewContentsTitle }}" class="asset-container-button library-render-container-button">
@@ -1968,7 +1968,7 @@ class Component extends DCLogic {
         isPlain: false,
         colorHex: hex,
         colorCss: css,
-        colorTitle: hex ? 'Copy ' + hex : '',
+        colorTitle: hex ? 'Search similar colors: ' + hex : '',
         value: hex,
         title: hex,
       };
@@ -3663,6 +3663,7 @@ class Component extends DCLogic {
   searchModeDefs() {
     return [
       { key: '', label: 'All', kind: 'ID' },
+      { key: 'color', label: 'Color', kind: 'Color' },
       { key: 'effect', label: 'Effect', kind: 'Effect' },
       { key: 'ingredient', label: 'IngredEffect', kind: 'Effect' },
       { key: 'alchemy', label: 'AlchemyEffect', kind: 'Effect' },
@@ -3686,6 +3687,8 @@ class Component extends DCLogic {
     const hasSpell = scope.some(x => x && x.detailKind === 'spell' && x.enchantment && Array.isArray(x.enchantment.effects) && x.enchantment.effects.length);
     const hasEnchant = scope.some(x => x && x.detailKind !== 'spell' && x.enchantment && Array.isArray(x.enchantment.effects) && x.enchantment.effects.length);
     const hasInventory = scope.some(x => x && x.hasContents && x.contentIds && x.contentIds.length);
+    const hasColor = scope.some(x => x && (x.lightHex || x.lightRgb));
+    if (hasColor) allowed.color = true;
     if (hasIngredient || hasAlchemy || hasSpell || hasEnchant) allowed.effect = true;
     if (hasIngredient) allowed.ingredient = true;
     if (hasAlchemy) allowed.alchemy = true;
@@ -3739,6 +3742,11 @@ class Component extends DCLogic {
     let values;
     if (mode === 'effect' || mode === 'ingredient' || mode === 'alchemy' || mode === 'spell' || mode === 'enchant') {
       values = this.effectSuggestionLabels(source, mode);
+    } else if (mode === 'color') {
+      values = source
+        .map(x => String((x && x.lightHex) || '').trim())
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
     } else {
       values = source
         .filter(x => mode !== 'inventory' || (x && x.hasContents && x.contentIds && x.contentIds.length))
@@ -4084,8 +4092,9 @@ class Component extends DCLogic {
     const enchantEffectKey = this.effectSearchKey(enchantEffectQuery);
     const spellEffectQuery = activeSearch.mode === 'spell' ? activeSearch.term : '';
     const spellEffectKey = this.effectSearchKey(spellEffectQuery);
-    const colorQuery = activeSearch.mode ? null : this.parseColorQuery(rawQuery);
-    const colorKey = colorQuery ? colorQuery.hex + '~' + colorQuery.tolerance : '';
+    const colorSearchQuery = activeSearch.mode === 'color' ? activeSearch.term : '';
+    const colorQuery = activeSearch.mode === 'color' ? this.parseColorQuery(colorSearchQuery) : (activeSearch.mode ? null : this.parseColorQuery(rawQuery));
+    const colorKey = colorQuery ? colorQuery.hex + '~' + colorQuery.tolerance : (colorSearchQuery ? 'invalid:' + colorSearchQuery.toLowerCase() : '');
     let filtered;
     const queryCache = this._queryCache;
     if (
@@ -4115,6 +4124,10 @@ class Component extends DCLogic {
         filtered = this.enchantmentEffectSearchItems(enchantEffectKey, all);
       } else if (effectQuery) {
         filtered = this.effectSearchItems(effectKey, all);
+      } else if (colorSearchQuery) {
+        filtered = colorQuery
+          ? relFiltered.filter(x => this.colorDistanceSq(x.lightRgb, colorQuery.rgb) <= colorQuery.toleranceSq)
+          : [];
       } else {
         filtered = !q ? relFiltered : relFiltered.filter(x => {
           const mesh = (x.mesh || '').toLowerCase();
@@ -4316,6 +4329,7 @@ class Component extends DCLogic {
       spell: 'Search spell effect names',
       enchant: 'Search enchantment effect names',
       inventory: 'Search content owner IDs',
+      color: 'Search light colors by hex',
     };
     const searchPlaceholder = searchPlaceholderMap[selectedSearchMode] || 'Search ID, name, mesh, or light color';
 
@@ -4715,16 +4729,24 @@ class Component extends DCLogic {
         if (e.stopPropagation) e.stopPropagation();
         const color = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.color || '') : '';
         if (!color) return;
-        const el = e.currentTarget;
-        const oldTitle = el ? (el.getAttribute('title') || color) : color;
-        this.copyText(color).then(() => {
-          if (!el) return;
-          el.setAttribute('title', 'Copied ' + color);
-          setTimeout(() => { el.setAttribute('title', oldTitle); }, 1200);
-        }).catch(() => {
-          if (!el) return;
-          el.setAttribute('title', 'Copy failed: ' + color);
-          setTimeout(() => { el.setAttribute('title', oldTitle); }, 1200);
+        const allowed = this.allowedSearchModesForType(this.state.active || 'All');
+        const curSearch = this.activeSearchMode(this.state.query || '', this.state.searchMode || '', allowed);
+        const curColor = this.parseColorQuery(curSearch.mode === 'color' ? curSearch.term : '');
+        const nextColor = this.parseColorQuery(color);
+        const isCurrent = curSearch.mode === 'color' && curColor && nextColor && curColor.hex === nextColor.hex;
+        this.setFilterState({
+          query: isCurrent ? '' : color,
+          searchMode: isCurrent ? '' : (allowed.color ? 'color' : ''),
+          searchModeOpen: false,
+          searchSuggestOpen: false,
+          virtualStartRow: 0,
+          virtualEndRow: 8,
+        });
+        requestAnimationFrame(() => {
+          const input = document.querySelector('.search-input');
+          if (input) {
+            try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
+          }
         });
       },
       pickInventoryContents: (e) => {
