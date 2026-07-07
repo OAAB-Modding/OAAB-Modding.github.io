@@ -338,7 +338,7 @@
         </thead>
         <tbody>
           <sc-for list="{{ detailRows }}" as="row" hint-placeholder-count="24">
-            <tr data-eid="{{ row.id }}" title="{{ row.tip }}" class="library-detail-row">
+            <tr draggable="{{ yes }}" data-eid="{{ row.id }}" onMouseDown="{{ detailRowMouseDown }}" onDragStart="{{ onDrag }}" title="{{ row.tip }}" class="library-detail-row">
               <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="8">
                 <td class="{{ cell.className }}" title="{{ cell.title }}">
                   <sc-if value="{{ cell.isThumb }}" hint-placeholder-val="{{ false }}">
@@ -4583,6 +4583,25 @@ class Component extends DCLogic {
         e.dataTransfer.setData('text/html',
           '<div data-cs-object="' + id + '">' + id + '</div>');
         e.dataTransfer.effectAllowed = 'copy';
+      },
+      detailRowMouseDown: (e) => {
+        const row = e && e.currentTarget;
+        const target = e && e.target;
+        if (!row || !target || e.button !== 0) return;
+        const restore = () => {
+          row.draggable = true;
+          document.removeEventListener('mouseup', restore, true);
+          document.removeEventListener('dragend', restore, true);
+        };
+        const interactive = target.closest && target.closest('button,input,textarea,select,a');
+        const selectableText = target.closest && target.closest('.library-detail-id,.library-detail-table td > span:not(.library-detail-empty)');
+        if (selectableText || (interactive && !interactive.classList.contains('library-detail-thumb'))) {
+          row.draggable = false;
+          document.addEventListener('mouseup', restore, true);
+          document.addEventListener('dragend', restore, true);
+        } else {
+          row.draggable = true;
+        }
       },
       total,
       query: this.state.query || '',
