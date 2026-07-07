@@ -338,11 +338,11 @@
         </thead>
         <tbody>
           <sc-for list="{{ detailRows }}" as="row" hint-placeholder-count="24">
-            <tr draggable="{{ yes }}" data-eid="{{ row.id }}" onDragStart="{{ onDrag }}" title="{{ row.tip }}" class="library-detail-row">
+            <tr data-eid="{{ row.id }}" title="{{ row.tip }}" class="library-detail-row">
               <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="8">
                 <td class="{{ cell.className }}" title="{{ cell.title }}">
                   <sc-if value="{{ cell.isThumb }}" hint-placeholder-val="{{ false }}">
-                    <button type="button" data-render-id="{{ cell.renderId }}" data-render="{{ cell.render }}" data-render-title="{{ cell.renderTitle }}" data-render-meta="{{ cell.renderMeta }}" onClick="{{ openRenderPreview }}" class="library-detail-thumb {{ cell.previewClass }}">
+                    <button type="button" draggable="{{ yes }}" data-eid="{{ row.id }}" data-render-id="{{ cell.renderId }}" data-render="{{ cell.render }}" data-render-title="{{ cell.renderTitle }}" data-render-meta="{{ cell.renderMeta }}" onDragStart="{{ onDrag }}" onClick="{{ openRenderPreview }}" class="library-detail-thumb {{ cell.previewClass }}">
                       <sc-if value="{{ cell.img }}" hint-placeholder-val="{{ true }}">
                         <div data-spin="" class="asset-spinner-wrap library-detail-spinner-wrap">
                           <div class="asset-spinner library-detail-spinner"></div>

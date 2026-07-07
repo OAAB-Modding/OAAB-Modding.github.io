@@ -2857,7 +2857,7 @@ button {
   box-shadow:0 0 0 2px rgba(210,130,63,0.14);
 }
 .library-detail-row {
-  cursor:grab;
+  cursor:default;
 }
 .library-detail-row:nth-child(even) td {
   background:rgba(255,255,255,0.018);
@@ -2874,6 +2874,7 @@ button {
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+  user-select:text;
 }
 .library-detail-cell-thumb {
   width:54px;
