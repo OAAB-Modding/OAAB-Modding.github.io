@@ -4143,8 +4143,6 @@ class Component extends DCLogic {
         this.setState({
           bookPreview: loadingPayload,
           compactActionsId: null,
-          renderPreview: null,
-          renderPreviewLoaded: false,
         });
         this.fetchBookPreview(item)
           .then(payload => {
