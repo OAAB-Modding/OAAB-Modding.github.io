@@ -1462,6 +1462,29 @@ class Component extends DCLogic {
     return this.csCompareStrings(a, b);
   }
 
+  naturalCompareStrings(a, b) {
+    const aa = String(a == null ? '' : a);
+    const bb = String(b == null ? '' : b);
+    const aparts = aa.match(/\d+|\D+/g) || [''];
+    const bparts = bb.match(/\d+|\D+/g) || [''];
+    const n = Math.min(aparts.length, bparts.length);
+    for (let i = 0; i < n; i++) {
+      const ap = aparts[i];
+      const bp = bparts[i];
+      if (/^\d+$/.test(ap) && /^\d+$/.test(bp)) {
+        const an = parseInt(ap, 10);
+        const bn = parseInt(bp, 10);
+        if (an !== bn) return an - bn;
+        if (ap.length !== bp.length) return ap.length - bp.length;
+      } else {
+        const d = this.csCompareStrings(ap, bp);
+        if (d) return d;
+      }
+    }
+    if (aparts.length !== bparts.length) return aparts.length - bparts.length;
+    return this.csCompareStrings(aa, bb);
+  }
+
   // Map a record's raw type tag to a readable label. Some records carry a raw
   // numeric TES3 record tag instead of a string label.
   labelType(t) {
@@ -1833,7 +1856,7 @@ class Component extends DCLogic {
       if (isFinite(an) && isFinite(bn) && String(av).match(/^-?\d+(\.\d+)?$/) && String(bv).match(/^-?\d+(\.\d+)?$/)) {
         cmp = an - bn;
       } else {
-        cmp = this.csCompareStrings(String(av || ''), String(bv || ''));
+        cmp = this.naturalCompareStrings(String(av || ''), String(bv || ''));
       }
       if (!cmp) cmp = this.csCompareIds(a && a.id, b && b.id);
       return cmp * dir;
