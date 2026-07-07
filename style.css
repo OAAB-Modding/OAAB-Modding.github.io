@@ -3861,8 +3861,7 @@ button {
   align-items:center;
   justify-content:center;
   padding:24px;
-  background:rgba(8,6,4,0.7);
-  backdrop-filter:blur(6px);
+  background:#0B0806;
   animation:oaabFade .16s ease both;
   overscroll-behavior:contain;
 }
@@ -5334,7 +5333,7 @@ button {
   box-shadow:0 24px 70px rgba(60,45,25,0.28);
 }
 .theme-light .library-book-backdrop {
-  background:rgba(42,33,22,0.34);
+  background:#AFA79A;
 }
 .theme-light .library-book-dialog {
   background:#fbf7ef;
