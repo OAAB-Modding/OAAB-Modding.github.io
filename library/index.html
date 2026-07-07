@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html class="library-html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,13 +13,13 @@
 <meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/OAAB-Modding/OAAB-Modding.github.io@main/assets/images/general/og-image.png">
 <script src="../support.js"></script>
 </head>
-<body>
+<body class="library-page">
 <x-dc>
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=library-render-book-icon-20260707a">
+<link rel="stylesheet" href="../style.css?v=library-detail-virtual-20260707b">
 <script src="../theme.js"></script>
 </helmet>
 
@@ -742,7 +742,7 @@ class Component extends DCLogic {
     relData: [], releases: [], relKinds: ['added', 'modified'], relOpen: false,
     filtersOpen: false,
     filterHistory: [], filterHistoryIndex: -1, filterHistoryCoalesce: '',
-    gridWidth: 0, virtualStartRow: 0, virtualEndRow: 8, detailRowHeight: 51,
+    gridWidth: 0, virtualStartRow: 0, virtualEndRow: 8,
     compactActionsId: null,
     detailView: (typeof localStorage !== 'undefined' && localStorage.getItem('oaab_detail_view') === '1'),
     detailFilters: {},
@@ -936,12 +936,15 @@ class Component extends DCLogic {
         const detailBody = document.querySelector('[data-detail-virtual-body]');
         if (detailBody) {
           const rowCount = this._detailRowCount || 0;
-          const row = detailBody.querySelector('.library-detail-row');
-          const measuredHeight = row ? Math.max(1, Math.round(row.getBoundingClientRect().height)) : (this.state.detailRowHeight || 51);
-          const bodyTop = detailBody.getBoundingClientRect().top + window.scrollY;
-          const overscan = 12;
-          const firstVisible = Math.floor((window.scrollY - bodyTop) / measuredHeight);
-          const lastVisible = Math.ceil((window.scrollY + window.innerHeight - bodyTop) / measuredHeight);
+          const table = detailBody.closest ? detailBody.closest('.library-detail-table') : null;
+          const head = table ? table.querySelector('thead') : null;
+          const rowPitch = this.detailRowPitch();
+          const tableTop = table ? (table.getBoundingClientRect().top + window.scrollY) : (detailBody.getBoundingClientRect().top + window.scrollY);
+          const bodyTop = tableTop + (head ? Math.ceil(head.getBoundingClientRect().height) : 0);
+          const viewportRows = Math.max(1, Math.ceil(window.innerHeight / rowPitch));
+          const overscan = viewportRows * 2;
+          const firstVisible = Math.floor((window.scrollY - bodyTop) / rowPitch);
+          const lastVisible = Math.ceil((window.scrollY + window.innerHeight - bodyTop) / rowPitch);
           const maxStart = Math.max(0, rowCount - 1);
           const start = Math.max(0, Math.min(maxStart, firstVisible - overscan));
           const end = rowCount === 0 ? 0 : Math.min(
@@ -951,7 +954,6 @@ class Component extends DCLogic {
           const next = {};
           if (start !== this.state.virtualStartRow) next.virtualStartRow = start;
           if (end !== this.state.virtualEndRow) next.virtualEndRow = end;
-          if (measuredHeight !== this.state.detailRowHeight) next.detailRowHeight = measuredHeight;
           if (Object.keys(next).length) this.setState(next);
           return;
         }
@@ -3547,6 +3549,10 @@ class Component extends DCLogic {
     return { columns, rowHeight, rowPitch: rowHeight + gap };
   }
 
+  detailRowPitch() {
+    return this.state.narrow ? 49 : 51;
+  }
+
   // Extract a TOML array literal (key = [ "a", "b", ... ]) by key, returning the
   // decoded string entries. Tolerates nested brackets and \u escapes.
   tomlArray(toml, key) {
@@ -4235,7 +4241,7 @@ class Component extends DCLogic {
       };
     });
     this._detailRowCount = detailView ? detailItems.length : 0;
-    const detailRowHeight = Math.max(1, this.state.detailRowHeight || 51);
+    const detailRowHeight = this.detailRowPitch();
     const detailMaxStart = Math.max(0, detailItems.length - 1);
     const detailStartIndex = detailView ? Math.max(0, Math.min(detailMaxStart, this.state.virtualStartRow || 0)) : 0;
     const detailEndIndex = detailView && detailItems.length

@@ -18,6 +18,9 @@ html {
   /* offset for the fixed top nav on anchor jumps */
   scroll-padding-top: 88px;
 }
+.library-html {
+  scroll-behavior: auto;
+}
 
 body {
   margin: 0;
@@ -26,6 +29,9 @@ body {
   font-family: 'EB Garamond', Georgia, serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+.library-page {
+  overflow-anchor: none;
 }
 
 ::selection {
@@ -2713,6 +2719,7 @@ button {
 }
 .library-detail-shell {
   width:100%;
+  overflow-anchor:none;
 }
 .library-detail-shell::before {
   content:"";
@@ -2747,6 +2754,7 @@ button {
   width:100%;
   overflow-x:clip;
   overflow-y:visible;
+  overflow-anchor:none;
   border:1px solid #2c241b;
   border-radius:0 0 8px 8px;
   background:#15100b;
@@ -2789,6 +2797,7 @@ button {
   min-width:100%;
   border-collapse:separate;
   border-spacing:0;
+  overflow-anchor:none;
   font-family:'JetBrains Mono',monospace;
   font-size:11px;
   color:#cdbfa6;
@@ -2857,6 +2866,7 @@ button {
   box-shadow:0 0 0 2px rgba(210,130,63,0.14);
 }
 .library-detail-row {
+  height:51px;
   cursor:grab;
 }
 .library-detail-row-even td {
@@ -5633,6 +5643,9 @@ button {
   .library-detail-table td {
     max-width:240px;
     padding:5px 7px;
+  }
+  .library-detail-row {
+    height:49px;
   }
   .library-contents-backdrop {
     padding:14px;
