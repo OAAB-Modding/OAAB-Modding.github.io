@@ -336,9 +336,14 @@
             </sc-for>
           </tr>
         </thead>
-        <tbody>
+        <tbody data-detail-virtual-body="">
+          <sc-if value="{{ detailHasTopPad }}" hint-placeholder-val="{{ false }}">
+            <tr aria-hidden="true" class="library-detail-spacer-row">
+              <td colspan="{{ detailColumnCount }}" style="height:{{ detailTopPad }}px;"></td>
+            </tr>
+          </sc-if>
           <sc-for list="{{ detailRows }}" as="row" hint-placeholder-count="24">
-            <tr draggable="{{ yes }}" data-eid="{{ row.id }}" onMouseDown="{{ detailRowMouseDown }}" onDragStart="{{ onDrag }}" title="{{ row.tip }}" class="library-detail-row">
+            <tr draggable="{{ yes }}" data-eid="{{ row.id }}" onMouseDown="{{ detailRowMouseDown }}" onDragStart="{{ onDrag }}" title="{{ row.tip }}" class="library-detail-row {{ row.parityClass }}">
               <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="8">
                 <td class="{{ cell.className }}" title="{{ cell.title }}">
                   <sc-if value="{{ cell.isThumb }}" hint-placeholder-val="{{ false }}">
@@ -389,6 +394,11 @@
               </sc-for>
             </tr>
           </sc-for>
+          <sc-if value="{{ detailHasBottomPad }}" hint-placeholder-val="{{ false }}">
+            <tr aria-hidden="true" class="library-detail-spacer-row">
+              <td colspan="{{ detailColumnCount }}" style="height:{{ detailBottomPad }}px;"></td>
+            </tr>
+          </sc-if>
         </tbody>
       </table>
     </div>
@@ -732,7 +742,7 @@ class Component extends DCLogic {
     relData: [], releases: [], relKinds: ['added', 'modified'], relOpen: false,
     filtersOpen: false,
     filterHistory: [], filterHistoryIndex: -1, filterHistoryCoalesce: '',
-    gridWidth: 0, virtualStartRow: 0, virtualEndRow: 8,
+    gridWidth: 0, virtualStartRow: 0, virtualEndRow: 8, detailRowHeight: 51,
     compactActionsId: null,
     detailView: (typeof localStorage !== 'undefined' && localStorage.getItem('oaab_detail_view') === '1'),
     detailFilters: {},
@@ -923,6 +933,29 @@ class Component extends DCLogic {
       this._raf = requestAnimationFrame(() => {
         this._raf = null;
         this.updateDetailStickyTop();
+        const detailBody = document.querySelector('[data-detail-virtual-body]');
+        if (detailBody) {
+          const rowCount = this._detailRowCount || 0;
+          const row = detailBody.querySelector('.library-detail-row');
+          const measuredHeight = row ? Math.max(1, Math.round(row.getBoundingClientRect().height)) : (this.state.detailRowHeight || 51);
+          const bodyTop = detailBody.getBoundingClientRect().top + window.scrollY;
+          const overscan = 12;
+          const firstVisible = Math.floor((window.scrollY - bodyTop) / measuredHeight);
+          const lastVisible = Math.ceil((window.scrollY + window.innerHeight - bodyTop) / measuredHeight);
+          const maxStart = Math.max(0, rowCount - 1);
+          const start = Math.max(0, Math.min(maxStart, firstVisible - overscan));
+          const end = rowCount === 0 ? 0 : Math.min(
+            rowCount,
+            Math.max(start + 1, lastVisible + overscan)
+          );
+          const next = {};
+          if (start !== this.state.virtualStartRow) next.virtualStartRow = start;
+          if (end !== this.state.virtualEndRow) next.virtualEndRow = end;
+          if (measuredHeight !== this.state.detailRowHeight) next.detailRowHeight = measuredHeight;
+          if (Object.keys(next).length) this.setState(next);
+          return;
+        }
+
         const grid = document.querySelector('[data-grid]');
         if (!grid) return;
 
@@ -1951,10 +1984,12 @@ class Component extends DCLogic {
     };
   }
 
-  detailRowsFor(items, columns) {
+  detailRowsFor(items, columns, startIndex) {
+    let rowIndex = startIndex || 0;
     return (items || []).map(item => ({
       id: item.id || '',
       tip: (item.type ? item.type + '\n' : '') + (item.id || '') + (item.name ? '  ' + String.fromCharCode(183) + '  ' + item.name : '') + (item.mesh ? '\n' + item.mesh : ''),
+      parityClass: (rowIndex++ % 2) ? 'library-detail-row-even' : '',
       cells: columns.map(col => this.detailCell(item, col)),
     }));
   }
@@ -4199,7 +4234,16 @@ class Component extends DCLogic {
         relBd: sty.bd,
       };
     });
-    const detailRows = detailView ? this.detailRowsFor(detailItems, detailColumns) : [];
+    this._detailRowCount = detailView ? detailItems.length : 0;
+    const detailRowHeight = Math.max(1, this.state.detailRowHeight || 51);
+    const detailMaxStart = Math.max(0, detailItems.length - 1);
+    const detailStartIndex = detailView ? Math.max(0, Math.min(detailMaxStart, this.state.virtualStartRow || 0)) : 0;
+    const detailEndIndex = detailView && detailItems.length
+      ? Math.min(detailItems.length, Math.max(detailStartIndex + 1, this.state.virtualEndRow || 8))
+      : 0;
+    const detailRows = detailView ? this.detailRowsFor(detailItems.slice(detailStartIndex, detailEndIndex), detailColumns, detailStartIndex) : [];
+    const detailTopPad = detailView ? detailStartIndex * detailRowHeight : 0;
+    const detailBottomPad = detailView ? Math.max(0, detailItems.length - detailEndIndex) * detailRowHeight : 0;
     const detailTableWidth = detailView
       ? Math.max(1180, detailColumns.reduce((sum, col) => sum + this.detailColumnPixelWidth(col), 0))
       : 1180;
@@ -4350,7 +4394,7 @@ class Component extends DCLogic {
         this.setState(s => {
           const cur = s.detailSort || {};
           const dir = cur.key === key && cur.dir !== 'desc' ? 'desc' : 'asc';
-          return { detailSort: { key, dir } };
+          return { detailSort: { key, dir }, virtualStartRow: 0, virtualEndRow: 8 };
         });
       },
       filterDetailColumn: (e) => {
@@ -4361,7 +4405,7 @@ class Component extends DCLogic {
           const next = Object.assign({}, s.detailFilters || {});
           if (value) next[key] = value;
           else delete next[key];
-          return { detailFilters: next };
+          return { detailFilters: next, virtualStartRow: 0, virtualEndRow: 8 };
         }, { coalesceKey: 'detail:' + key });
       },
       syncDetailScrollTop: (e) => {
@@ -4832,6 +4876,11 @@ class Component extends DCLogic {
       items,
       detailColumns,
       detailRows,
+      detailColumnCount: detailColumns.length || 1,
+      detailTopPad,
+      detailBottomPad,
+      detailHasTopPad: detailTopPad > 0,
+      detailHasBottomPad: detailBottomPad > 0,
       detailTableWidth,
       showDetailView: detailView,
       showGalleryView: !detailView,

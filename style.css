@@ -2859,11 +2859,18 @@ button {
 .library-detail-row {
   cursor:grab;
 }
-.library-detail-row:nth-child(even) td {
+.library-detail-row-even td {
   background:rgba(255,255,255,0.018);
 }
 .library-detail-row:hover td {
   background:rgba(210,130,63,0.07);
+}
+.library-detail-spacer-row td {
+  height:0;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  pointer-events:none;
 }
 .library-detail-table td {
   max-width:320px;
@@ -5201,7 +5208,7 @@ button {
   border-right-color:#e8dfcf;
   border-bottom-color:#e8dfcf;
 }
-.theme-light .library-detail-row:nth-child(even) td {
+.theme-light .library-detail-row-even td {
   background:rgba(80,62,40,0.025);
 }
 .theme-light .library-detail-row:hover td {
