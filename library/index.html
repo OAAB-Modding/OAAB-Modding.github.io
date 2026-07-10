@@ -806,7 +806,7 @@ class Component extends DCLogic {
     // and clip it. Re-measure on resize since the nav height is responsive.
     this._measureNav = () => {
       try {
-        const nav = document.querySelector('.site-nav');
+        const nav = this.activeDoc().querySelector('.site-nav');
         const h = nav ? Math.round(nav.getBoundingClientRect().height) : 0;
         if (h && h !== this.state.navHeight) this.setState({ navHeight: h });
       } catch (e) {}
@@ -913,7 +913,7 @@ class Component extends DCLogic {
       if (e.key === 'Escape') { this.setState({ tagOpen: false }); return; }
       const k = e.key;
       if (!k || k.length !== 1 || !/[a-z0-9]/i.test(k)) return;
-      const dd = document.querySelector('[data-tagdd]');
+      const dd = this.activeDoc().querySelector('[data-tagdd]');
       if (!dd) return;
       const scroller = dd.querySelector('.dropdown-scroll');
       const btns = [].slice.call(dd.querySelectorAll('[data-tag]'));
@@ -961,18 +961,18 @@ class Component extends DCLogic {
       this._raf = requestAnimationFrame(() => {
         this._raf = null;
         this.updateDetailStickyTop();
-        const detailBody = document.querySelector('[data-detail-virtual-body]');
+        const detailBody = this.activeDoc().querySelector('[data-detail-virtual-body]');
         if (detailBody) {
           const rowCount = this._detailRowCount || 0;
           const table = detailBody.closest ? detailBody.closest('.library-detail-table') : null;
           const head = table ? table.querySelector('thead') : null;
           const rowPitch = this.detailRowPitch();
-          const tableTop = table ? (table.getBoundingClientRect().top + window.scrollY) : (detailBody.getBoundingClientRect().top + window.scrollY);
+          const tableTop = table ? (table.getBoundingClientRect().top + this.activeWin().scrollY) : (detailBody.getBoundingClientRect().top + this.activeWin().scrollY);
           const bodyTop = tableTop + (head ? Math.ceil(head.getBoundingClientRect().height) : 0);
-          const viewportRows = Math.max(1, Math.ceil(window.innerHeight / rowPitch));
+          const viewportRows = Math.max(1, Math.ceil(this.activeWin().innerHeight / rowPitch));
           const overscan = viewportRows * 2;
-          const firstVisible = Math.floor((window.scrollY - bodyTop) / rowPitch);
-          const lastVisible = Math.ceil((window.scrollY + window.innerHeight - bodyTop) / rowPitch);
+          const firstVisible = Math.floor((this.activeWin().scrollY - bodyTop) / rowPitch);
+          const lastVisible = Math.ceil((this.activeWin().scrollY + this.activeWin().innerHeight - bodyTop) / rowPitch);
           const maxStart = Math.max(0, rowCount - 1);
           const start = Math.max(0, Math.min(maxStart, firstVisible - overscan));
           const end = rowCount === 0 ? 0 : Math.min(
@@ -986,16 +986,16 @@ class Component extends DCLogic {
           return;
         }
 
-        const grid = document.querySelector('[data-grid]');
+        const grid = this.activeDoc().querySelector('[data-grid]');
         if (!grid) return;
 
         const width = grid.clientWidth;
         const metrics = this.gridMetrics(width);
         const rowCount = Math.ceil((this._filteredCount || 0) / metrics.columns);
-        const gridTop = grid.getBoundingClientRect().top + window.scrollY;
+        const gridTop = grid.getBoundingClientRect().top + this.activeWin().scrollY;
         const overscan = 3;
-        const firstVisible = Math.floor((window.scrollY - gridTop) / metrics.rowPitch);
-        const lastVisible = Math.ceil((window.scrollY + window.innerHeight - gridTop) / metrics.rowPitch);
+        const firstVisible = Math.floor((this.activeWin().scrollY - gridTop) / metrics.rowPitch);
+        const lastVisible = Math.ceil((this.activeWin().scrollY + this.activeWin().innerHeight - gridTop) / metrics.rowPitch);
         const maxStart = Math.max(0, rowCount - 1);
         const start = Math.max(0, Math.min(maxStart, firstVisible - overscan));
         const end = rowCount === 0 ? 0 : Math.min(
@@ -1247,11 +1247,11 @@ class Component extends DCLogic {
       if (this._mql.removeEventListener) this._mql.removeEventListener('change', this._onMql);
       else if (this._mql.removeListener) this._mql.removeListener(this._onMql);
     }
-    if (this._onDocDown) document.removeEventListener('mousedown', this._onDocDown, true);
-    if (this._onKey) document.removeEventListener('keydown', this._onKey, true);
+    if (this._onDocDown) this.activeDoc().removeEventListener('mousedown', this._onDocDown, true);
+    if (this._onKey) this.activeDoc().removeEventListener('keydown', this._onKey, true);
     if (this._onScroll) {
-      window.removeEventListener('scroll', this._onScroll);
-      window.removeEventListener('resize', this._onScroll);
+      this.activeWin().removeEventListener('scroll', this._onScroll);
+      this.activeWin().removeEventListener('resize', this._onScroll);
     }
     if (this._measureNav) window.removeEventListener('resize', this._measureNav);
     if (this._raf) cancelAnimationFrame(this._raf);
@@ -1267,7 +1267,17 @@ class Component extends DCLogic {
     if (this._onScroll) this._onScroll();
   }
 
-  applyTheme() { if (window.OAAB_THEME) window.OAAB_THEME.apply(this.state.theme); }
+  activeWin() { return this._pipWin || window; }
+  activeDoc() { return this._pipWin ? this._pipWin.document : document; }
+
+  applyTheme() {
+    if (window.OAAB_THEME) window.OAAB_THEME.apply(this.state.theme);
+    if (this._pipWin && this._pipWin.document && this._pipWin.document.body) {
+      const root = this.activeDoc().querySelector('[data-root]');
+      if (root) root.classList.toggle('theme-light', this.state.theme === 'light');
+      this._pipWin.document.body.style.background = this.state.theme === 'light' ? '#f4ede0' : '#100d0a';
+    }
+  }
 
   // Always-on-top via the Document Picture-in-Picture API — the only web
   // mechanism that yields an OS-level always-on-top window. The whole app is
@@ -1284,7 +1294,7 @@ class Component extends DCLogic {
       return;
     }
     const w = Math.min(1180, Math.round(window.innerWidth || 1180));
-    const h = Math.min(820, Math.round(window.innerHeight || 820));
+    const h = Math.min(820, Math.round(this.activeWin().innerHeight || 820));
     window.documentPictureInPicture.requestWindow({ width: w, height: h }).then((pip) => {
       // Mirror stylesheets + font links so the moved DOM stays styled.
       document.querySelectorAll('link[rel="stylesheet"], link[rel="preconnect"], style').forEach((node) => {
@@ -1299,14 +1309,44 @@ class Component extends DCLogic {
         pip.document.body.appendChild(n);
       });
       this._pipWin = pip;
+      window.removeEventListener('scroll', this._onScroll);
+      window.removeEventListener('resize', this._onScroll);
+      document.removeEventListener('mousedown', this._onDocDown, true);
+      document.removeEventListener('keydown', this._onKey, true);
+      pip.addEventListener('scroll', this._onScroll, { passive: true });
+      pip.addEventListener('resize', this._onScroll, { passive: true });
+      pip.document.addEventListener('mousedown', this._onDocDown, true);
+      pip.document.addEventListener('keydown', this._onKey, true);
+      this.applyTheme();
+      this.syncContentsScrollLock();
       this.setState({ aot: true });
+      requestAnimationFrame(() => {
+        this.updateDetailStickyTop();
+        this.updateDetailScrollWidth();
+        if (this._onScroll) this._onScroll();
+      });
       const restore = () => {
+        if (this._pipWin !== pip) return;
+        pip.removeEventListener('scroll', this._onScroll);
+        pip.removeEventListener('resize', this._onScroll);
+        pip.document.removeEventListener('mousedown', this._onDocDown, true);
+        pip.document.removeEventListener('keydown', this._onKey, true);
         try {
           (this._pipParked || []).forEach((n) => document.body.appendChild(n));
         } catch (e) {}
         this._pipParked = null;
         this._pipWin = null;
+        window.addEventListener('scroll', this._onScroll, { passive: true });
+        window.addEventListener('resize', this._onScroll, { passive: true });
+        document.addEventListener('mousedown', this._onDocDown, true);
+        document.addEventListener('keydown', this._onKey, true);
+        this.syncContentsScrollLock();
         this.setState({ aot: false });
+        requestAnimationFrame(() => {
+          this.updateDetailStickyTop();
+          this.updateDetailScrollWidth();
+          if (this._onScroll) this._onScroll();
+        });
       };
       pip.addEventListener('pagehide', restore, { once: true });
     }).catch((e) => {
@@ -1315,19 +1355,27 @@ class Component extends DCLogic {
   }
 
   scrollContentsList(deltaY) {
-    const list = document.querySelector('.library-contents-list') || document.querySelector('.library-book-body');
+    const list = this.activeDoc().querySelector('.library-contents-list') || this.activeDoc().querySelector('.library-book-body');
     if (!list || !deltaY) return;
     list.scrollTop += deltaY;
   }
   syncContentsScrollLock(forceUnlock) {
     try {
       const shouldLock = !forceUnlock && !!(this.state.contentsPreview || this.state.bookPreview);
-      if (shouldLock === !!this._contentsScrollLocked) return;
+      const lockDoc = this.activeDoc();
+      if (shouldLock === !!this._contentsScrollLocked && (!shouldLock || this._contentsLockDoc === lockDoc)) return;
+      if (this._contentsScrollLocked) {
+        const oldDoc = this._contentsLockDoc || document;
+        if (this._onContentsWheel) oldDoc.removeEventListener('wheel', this._onContentsWheel, true);
+        if (this._onContentsTouchStart) oldDoc.removeEventListener('touchstart', this._onContentsTouchStart, true);
+        if (this._onContentsTouchMove) oldDoc.removeEventListener('touchmove', this._onContentsTouchMove, true);
+        this._contentsScrollLocked = false;
+      }
       if (shouldLock) {
         this._contentsScrollLocked = true;
         this._onContentsWheel = (e) => {
           if (e && e.preventDefault) e.preventDefault();
-          const list = document.querySelector('.library-contents-list') || document.querySelector('.library-book-body');
+          const list = this.activeDoc().querySelector('.library-contents-list') || this.activeDoc().querySelector('.library-book-body');
           const unit = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 && list ? list.clientHeight : 1);
           this.scrollContentsList((e.deltaY || 0) * unit);
         };
@@ -1343,15 +1391,18 @@ class Component extends DCLogic {
           this.scrollContentsList(deltaY);
           this._contentsTouchY = y;
         };
-        document.addEventListener('wheel', this._onContentsWheel, { passive: false, capture: true });
-        document.addEventListener('touchstart', this._onContentsTouchStart, { passive: false, capture: true });
-        document.addEventListener('touchmove', this._onContentsTouchMove, { passive: false, capture: true });
+        this._contentsLockDoc = lockDoc;
+        lockDoc.addEventListener('wheel', this._onContentsWheel, { passive: false, capture: true });
+        lockDoc.addEventListener('touchstart', this._onContentsTouchStart, { passive: false, capture: true });
+        lockDoc.addEventListener('touchmove', this._onContentsTouchMove, { passive: false, capture: true });
         return;
       }
-      if (this._onContentsWheel) document.removeEventListener('wheel', this._onContentsWheel, true);
-      if (this._onContentsTouchStart) document.removeEventListener('touchstart', this._onContentsTouchStart, true);
-      if (this._onContentsTouchMove) document.removeEventListener('touchmove', this._onContentsTouchMove, true);
+      const oldDoc = this._contentsLockDoc || document;
+      if (this._onContentsWheel) oldDoc.removeEventListener('wheel', this._onContentsWheel, true);
+      if (this._onContentsTouchStart) oldDoc.removeEventListener('touchstart', this._onContentsTouchStart, true);
+      if (this._onContentsTouchMove) oldDoc.removeEventListener('touchmove', this._onContentsTouchMove, true);
       this._contentsScrollLocked = false;
+      this._contentsLockDoc = null;
       this._onContentsWheel = null;
       this._onContentsTouchStart = null;
       this._onContentsTouchMove = null;
@@ -1360,17 +1411,17 @@ class Component extends DCLogic {
   }
   updateDetailStickyTop() {
     try {
-      const toolbar = document.querySelector('[data-tabbar]');
+      const toolbar = this.activeDoc().querySelector('[data-tabbar]');
       const bottom = toolbar ? Math.max(0, Math.ceil(toolbar.getBoundingClientRect().bottom)) : 0;
-      document.documentElement.style.setProperty('--library-detail-sticky-top', bottom + 'px');
+      this.activeDoc().documentElement.style.setProperty('--library-detail-sticky-top', bottom + 'px');
     } catch (e) {}
   }
   updateDetailScrollWidth() {
     try {
-      const body = document.querySelector('[data-detail-wrap]');
+      const body = this.activeDoc().querySelector('[data-detail-wrap]');
       const table = body ? body.querySelector('.library-detail-table') : null;
-      const top = document.querySelector('[data-detail-top-scroll]');
-      const spacer = document.querySelector('.library-detail-top-scroll-spacer');
+      const top = this.activeDoc().querySelector('[data-detail-top-scroll]');
+      const spacer = this.activeDoc().querySelector('.library-detail-top-scroll-spacer');
       if (!body || !table || !top || !spacer) return;
       const tableWidth = Math.ceil(table.getBoundingClientRect().width);
       const viewportGap = Math.max(0, (top.clientWidth || 0) - (body.clientWidth || 0));
@@ -2152,14 +2203,14 @@ class Component extends DCLogic {
       virtualEndRow: 8,
     });
     requestAnimationFrame(() => {
-      const target = document.querySelector('.library-results-header') || document.querySelector('[data-detail-wrap]') || document.querySelector('[data-grid]');
-      const toolbar = document.querySelector('[data-tabbar]');
+      const target = this.activeDoc().querySelector('.library-results-header') || this.activeDoc().querySelector('[data-detail-wrap]') || this.activeDoc().querySelector('[data-grid]');
+      const toolbar = this.activeDoc().querySelector('[data-tabbar]');
       if (target) {
         const offset = (toolbar ? toolbar.getBoundingClientRect().height : 0) + 20;
-        const top = target.getBoundingClientRect().top + window.scrollY - offset;
-        window.scrollTo({ top: Math.max(0, Math.floor(top)), behavior: 'auto' });
+        const top = target.getBoundingClientRect().top + this.activeWin().scrollY - offset;
+        this.activeWin().scrollTo({ top: Math.max(0, Math.floor(top)), behavior: 'auto' });
       }
-      const input = document.querySelector('.search-input');
+      const input = this.activeDoc().querySelector('.search-input');
       if (input) {
         try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
       }
@@ -4510,7 +4561,7 @@ class Component extends DCLogic {
       syncDetailScrollTop: (e) => {
         if (this._syncingDetailScroll) return;
         const top = e.currentTarget;
-        const body = document.querySelector('[data-detail-wrap]');
+        const body = this.activeDoc().querySelector('[data-detail-wrap]');
         if (!top || !body) return;
         this._syncingDetailScroll = true;
         body.style.setProperty('--library-detail-scroll-left', (top.scrollLeft || 0) + 'px');
@@ -4519,7 +4570,7 @@ class Component extends DCLogic {
       syncDetailScrollBody: (e) => {
         if (this._syncingDetailScroll) return;
         const body = e.currentTarget;
-        const top = document.querySelector('[data-detail-top-scroll]');
+        const top = this.activeDoc().querySelector('[data-detail-top-scroll]');
         if (!top || !body) return;
         this._syncingDetailScroll = true;
         body.style.setProperty('--library-detail-scroll-left', (top.scrollLeft || 0) + 'px');
@@ -4783,7 +4834,7 @@ class Component extends DCLogic {
           virtualEndRow: 8,
         });
         requestAnimationFrame(() => {
-          const input = document.querySelector('.search-input');
+          const input = this.activeDoc().querySelector('.search-input');
           if (input) {
             try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
           }
@@ -4804,7 +4855,7 @@ class Component extends DCLogic {
           virtualEndRow: 8,
         });
         requestAnimationFrame(() => {
-          const input = document.querySelector('.search-input');
+          const input = this.activeDoc().querySelector('.search-input');
           if (input) {
             try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
           }
@@ -4829,7 +4880,7 @@ class Component extends DCLogic {
           virtualEndRow: 8,
         });
         requestAnimationFrame(() => {
-          const input = document.querySelector('.search-input');
+          const input = this.activeDoc().querySelector('.search-input');
           if (input) {
             try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
           }
@@ -4858,15 +4909,15 @@ class Component extends DCLogic {
         });
         requestAnimationFrame(() => {
           if (!isCurrent) {
-            const target = document.querySelector('.library-results-header') || document.querySelector('[data-grid]');
-            const toolbar = document.querySelector('[data-tabbar]');
+            const target = this.activeDoc().querySelector('.library-results-header') || this.activeDoc().querySelector('[data-grid]');
+            const toolbar = this.activeDoc().querySelector('[data-tabbar]');
             if (target) {
               const offset = (toolbar ? toolbar.getBoundingClientRect().height : 0) + 20;
-              const top = target.getBoundingClientRect().top + window.scrollY - offset;
-              window.scrollTo({ top: Math.max(0, Math.floor(top)), behavior: 'auto' });
+              const top = target.getBoundingClientRect().top + this.activeWin().scrollY - offset;
+              this.activeWin().scrollTo({ top: Math.max(0, Math.floor(top)), behavior: 'auto' });
             }
           }
-          const input = document.querySelector('.search-input');
+          const input = this.activeDoc().querySelector('.search-input');
           if (input) {
             try { input.focus({ preventScroll: true }); } catch (err) { input.focus(); }
           }
@@ -4897,15 +4948,15 @@ class Component extends DCLogic {
         });
         requestAnimationFrame(() => {
           if (!isCurrent) {
-            const target = document.querySelector('.library-results-header') || document.querySelector('[data-grid]');
-            const toolbar = document.querySelector('[data-tabbar]');
+            const target = this.activeDoc().querySelector('.library-results-header') || this.activeDoc().querySelector('[data-grid]');
+            const toolbar = this.activeDoc().querySelector('[data-tabbar]');
             if (target) {
               const offset = (toolbar ? toolbar.getBoundingClientRect().height : 0) + 20;
-              const top = target.getBoundingClientRect().top + window.scrollY - offset;
-              window.scrollTo({ top: Math.max(0, Math.floor(top)), behavior: 'auto' });
+              const top = target.getBoundingClientRect().top + this.activeWin().scrollY - offset;
+              this.activeWin().scrollTo({ top: Math.max(0, Math.floor(top)), behavior: 'auto' });
             }
           }
-          const input = document.querySelector('.search-input');
+          const input = this.activeDoc().querySelector('.search-input');
           if (input) input.blur();
         });
       },
@@ -4934,15 +4985,15 @@ class Component extends DCLogic {
         });
         requestAnimationFrame(() => {
           if (!isCurrent) {
-            const target = document.querySelector('.library-results-header') || document.querySelector('[data-grid]');
-            const toolbar = document.querySelector('[data-tabbar]');
+            const target = this.activeDoc().querySelector('.library-results-header') || this.activeDoc().querySelector('[data-grid]');
+            const toolbar = this.activeDoc().querySelector('[data-tabbar]');
             if (target) {
               const offset = (toolbar ? toolbar.getBoundingClientRect().height : 0) + 20;
-              const top = target.getBoundingClientRect().top + window.scrollY - offset;
-              window.scrollTo({ top: Math.max(0, Math.floor(top)), behavior: 'auto' });
+              const top = target.getBoundingClientRect().top + this.activeWin().scrollY - offset;
+              this.activeWin().scrollTo({ top: Math.max(0, Math.floor(top)), behavior: 'auto' });
             }
           }
-          const input = document.querySelector('.search-input');
+          const input = this.activeDoc().querySelector('.search-input');
           if (input) input.blur();
         });
       },
@@ -5055,7 +5106,7 @@ class Component extends DCLogic {
           virtualStartRow: 0,
           virtualEndRow: 8,
         }));
-        window.scrollTo({ top: Math.min(window.scrollY, 620), behavior: 'auto' });
+        this.activeWin().scrollTo({ top: Math.min(this.activeWin().scrollY, 620), behavior: 'auto' });
       },
       pickTag: (e) => {
         const label = e.currentTarget.dataset.tag;
