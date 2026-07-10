@@ -1058,6 +1058,14 @@ class Component extends DCLogic {
         .catch(() => fetch(DATA_RAW + file));
     this._fetchData = fetchData;
 
+    // Tag rules live beside the other library JSON so they can be edited and
+    // deployed independently of this page. Invalid individual rules are
+    // ignored; a failed tag file never prevents the asset catalogue loading.
+    const loadTags = fetchData('tags.json')
+      .then(r => r.json())
+      .then(data => this.tagDefinitions(data))
+      .catch(e => { console.warn('tag definitions load failed', e); return []; });
+
     // Deprecated IDs come straight from OAAB_Data's own metadata file
     // ([tools.csse] deprecated = [ ... ]), so the list stays current as the
     // team marks new objects deprecated — no separate snapshot to maintain.
@@ -1130,8 +1138,10 @@ class Component extends DCLogic {
       fetchData('OAAB_Data_filtered.json').then(r => r.json()),
       loadDeprecated,
       loadWikiBooks,
+      loadTags,
     ])
-      .then(([records, deprecated, wikiBooks]) => {
+      .then(([records, deprecated, wikiBooks, tagDefs]) => {
+        this._tagDefs = tagDefs;
         const enchantmentsByKey = this.enchantmentMap(records);
         const labelType = (t) => this.displayType(t);
         const thumbnailPath = (mesh) => {
@@ -1694,6 +1704,57 @@ class Component extends DCLogic {
 
   displayType(type) {
     return this.isLeveledListType(type) ? 'Leveled List' : this.labelType(type);
+  }
+
+  tagDefinitions(payload) {
+    const rows = Array.isArray(payload)
+      ? payload
+      : (payload && Array.isArray(payload.tags) ? payload.tags : []);
+    const seen = Object.create(null);
+    const definitions = [];
+
+    rows.forEach((row, index) => {
+      const label = String((row && row.label) || '').trim();
+      const cleanValues = (values) => (Array.isArray(values) ? values : [])
+        .map(value => String(value || '').trim().toLowerCase())
+        .filter(Boolean);
+      const cleanWords = (values) => cleanValues(values)
+        .filter(value => value.replace(/\*/g, ''));
+      const include = cleanWords(row && row.include);
+      const exclude = cleanWords(row && row.exclude);
+      const excludeTypes = cleanValues(row && row.exclude_types);
+      const labelKey = label.toLowerCase();
+
+      if (!label || !include.length) {
+        console.warn('tag rule skipped at index ' + index + ': label and at least one include word are required');
+        return;
+      }
+      if (seen[labelKey]) {
+        console.warn('tag rule skipped at index ' + index + ': duplicate label "' + label + '"');
+        return;
+      }
+
+      definitions.push({ label, include, exclude, excludeTypes });
+      seen[labelKey] = 1;
+    });
+
+    if (!definitions.length) console.warn('no valid library tag definitions were loaded');
+    return definitions;
+  }
+
+  // Tag files use ordinary, case-insensitive ID fragments. A single * may be
+  // placed between fragments when any text is allowed there (for example,
+  // "b_*head" finds an ID containing "b_" followed later by "head").
+  tagWordMatches(id, word) {
+    const parts = String(word || '').split('*').filter(Boolean);
+    if (!parts.length) return false;
+    let offset = 0;
+    for (let i = 0; i < parts.length; i++) {
+      const found = id.indexOf(parts[i], offset);
+      if (found === -1) return false;
+      offset = found + parts[i].length;
+    }
+    return true;
   }
 
   detailTypeKey(type) {
@@ -3979,50 +4040,21 @@ class Component extends DCLogic {
       ? { surface: '#fbf7ef', border: '#d8cdb8', muted: '#6a5d49', soft: '#8a7c66', strong: '#2b2218', dim: '#b3a89a', tagText: '#5b5170', tagOn: '#3f3768' }
       : { surface: '#15100b', border: '#322a20', muted: '#b3a690', soft: '#9a8d77', strong: '#f4ecdd', dim: '#5a5346', tagText: '#cabfdb', tagOn: '#efe9f6' };
 
-    // Tag rules: each matches against the object ID only. Keep matching
-    // case-insensitive because vanilla IDs are not consistently cased.
-    const TAG_DEFS = this._tagDefs || (this._tagDefs = [
-      { label: 'Ashlander',      re: /(?:^|_)ashl(?!and)|dungburnt/i },
-      { label: 'Telvanni',       re: /_t_|_tel|telvanni|parasol/i },
-      { label: 'Velothi',        re: /_v_|_vel|velothi|in_sewer/i },
-      { label: 'Sixth House',    re: /6th|sixth|corprus/i },
-      { label: 'Bonemold',       re: /bonemold/i },
-      { label: 'Mold Cave',      re: /in_mold|cavemold/i },
-      { label: 'Effects',        re: /fx/i },
-      { label: 'Head',           re: /_head_|b_.*head/i },
-      { label: 'Hair',           re: /_hair_|b_.*hair/i },
-      { label: 'Ascadian Isles', re: /_ai_|(flora|terr)_ai/i },
-      { label: 'Bitter Coast',   re: /_bc_|(flora|terr)_bc/i },
-      { label: "Azura's Coast",  re: /_ac_|(flora|terr)_ac/i },
-      { label: 'Dunmer',         re: /furn_de|guarcart|temple|furn_urn/i },
-      { label: 'Common',         re: /_c_|comcook|comrch|commid|compln|furn_com|in_com|ex_com/i },
-      { label: 'Colony',         re: /colony/i },
-      { label: 'Crypt',          re: /crypt|comgraves|coffin/i },
-      { label: 'Dwemer',         re: /dwrv|dwe|dwemer|dwarven|oilslick/i },
-      { label: 'Hlaalu',         re: /hlaalu|_hla/i },
-      { label: 'Imperial',       re: /_imp|imperial/i },
-      { label: 'Oblivion',       re: /infernace|mv|dae|vae/i },
-      { label: 'Redoran',        re: /redoran|in_red|ex_red/i },
-      { label: 'Stronghold',     re: /strong|strruin/i },
-      { label: 'Ashlands',       re: /ashland|flora_ash|terr_al|terr_ash|flora_al/i },
-      { label: 'Grazelands',     re: /_gl_|flora_gl|terr_gl/i },
-      { label: 'West Gash',      re: /_wg_|flora_wg|terr_wg/i },
-      { label: 'Red Mountain',   re: /_rm_|terr_rm/i },
-      { label: 'Underwater',     re: /_kelp|kelp/i },
-      { label: 'Horror',         re: /furn_bone|blood|corpse|stakehead|web/i },
-      { label: 'Dungeon',        re: /dng/i },
-      { label: 'Mine',           re: /_rail(?:_|[0-9]|$)|mine|climbingpick|wheelbarrow|wheelbr|cavewood/i, exclude: /ingmine/i },
-      { label: 'Py Cave',        re: /in_pycave|cavepy/i },
-      { label: 'Docks',          re: /ship|dock|gall/i },
-      { label: 'Farm',           re: /straw|grain|sackhuge/i },
-      { label: 'Kwama',          re: /kwama/i },
-      { label: 'Nord',           re: /nord/i },
-    ]);
-    const tagsFor = (id) => {
+    // Tag rules are loaded from assets/data/library/tags.json. They use plain
+    // include/exclude word lists matched against IDs and can exclude complete
+    // object types; all comparisons are case-insensitive.
+    const TAG_DEFS = this._tagDefs || [];
+    const tagsFor = (item) => {
       const cache = this._tagCache || (this._tagCache = Object.create(null));
-      const key = String(id || '');
+      const idText = String((item && item.id) || '').toLowerCase();
+      const typeText = String((item && item.type) || '').trim().toLowerCase();
+      const key = typeText + '\u0000' + idText;
       return cache[key] || (cache[key] = TAG_DEFS
-        .filter(t => t.re.test(key) && !(t.exclude && t.exclude.test(key)))
+        .filter(t =>
+          t.excludeTypes.indexOf(typeText) === -1 &&
+          t.include.some(word => this.tagWordMatches(idText, word)) &&
+          !t.exclude.some(word => this.tagWordMatches(idText, word))
+        )
         .map(t => t.label));
     };
 
@@ -4037,7 +4069,7 @@ class Component extends DCLogic {
       typeFiltered = active === 'All' ? all : all.filter(x => x.type === active);
       tagCounts = {};
       TAG_DEFS.forEach(t => { tagCounts[t.label] = 0; });
-      typeFiltered.forEach(x => tagsFor(x.id).forEach(l => { tagCounts[l]++; }));
+      typeFiltered.forEach(x => tagsFor(x).forEach(l => { tagCounts[l]++; }));
       this._typeCache = { data: d, active, items: typeFiltered, tagCounts };
     }
 
@@ -4096,7 +4128,7 @@ class Component extends DCLogic {
       tagFiltered = tagFilterCache.filtered;
     } else {
       tagFiltered = noTags ? typeFiltered : typeFiltered.filter(x => {
-        const tl = tagsFor(x.id);
+        const tl = tagsFor(x);
         return selTags.some(s => tl.indexOf(s) !== -1);
       });
       this._tagFilterCache = { items: typeFiltered, key: tagKey, filtered: tagFiltered };
