@@ -6051,40 +6051,42 @@ button {
    The full Library keeps the OAAB site language. Only the deliberately
    minimal popup gets the compact, square, neutral desktop-tool treatment. */
 .library-page--popout {
-  --csse-app:#111111;
-  --csse-panel:#252525;
-  --csse-panel-raised:#2c2c2c;
-  --csse-field:#181818;
-  --csse-control:#303030;
-  --csse-control-hover:#3a3a3a;
-  --csse-border:#555555;
-  --csse-line:#3d3d3d;
-  --csse-text:#d6d6d6;
-  --csse-text-strong:#f0f0f0;
-  --csse-muted:#929292;
-  --csse-selection:#315c78;
-  --csse-selection-border:#6d8fa4;
+  /* Exact CSSE DarkMode.h palette (MWSE/CSSE/DarkMode.h) */
+  --csse-app:#171717;            /* surface */
+  --csse-panel:#2b2b2b;          /* background */
+  --csse-panel-raised:#2b2b2b;   /* background */
+  --csse-field:#171717;          /* surface */
+  --csse-control:#3c3c3c;        /* control */
+  --csse-control-hover:#555555;  /* controlHot */
+  --csse-border:#646464;         /* border */
+  --csse-line:#484848;           /* clientEdge */
+  --csse-text:#d0d0d0;           /* text */
+  --csse-text-strong:#d0d0d0;    /* text */
+  --csse-muted:#838383;          /* textDisabled */
+  --csse-selection:#0078d7;      /* system highlight */
+  --csse-selection-border:#d8d8d8; /* selectionHotBorder */
   --csse-accent:#c94e4e;
   background:var(--csse-app) !important;
   color:var(--csse-text);
-  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,"Segoe UI",sans-serif;
   -webkit-font-smoothing:auto;
   text-rendering:auto;
 }
 .library-page--popout .theme-light {
-  --csse-app:#ffffff;
-  --csse-panel:#f2f2f2;
-  --csse-panel-raised:#e8e8e8;
-  --csse-field:#ffffff;
-  --csse-control:#ededed;
-  --csse-control-hover:#dedede;
-  --csse-border:#949494;
-  --csse-line:#c8c8c8;
-  --csse-text:#202020;
-  --csse-text-strong:#090909;
-  --csse-muted:#686868;
-  --csse-selection:#0a73bf;
-  --csse-selection-border:#075b98;
+  /* Classic (unthemed) Win32 system colors */
+  --csse-app:#ffffff;            /* COLOR_WINDOW (listview interior) */
+  --csse-panel:#f0f0f0;          /* COLOR_BTNFACE */
+  --csse-panel-raised:#f0f0f0;   /* COLOR_BTNFACE */
+  --csse-field:#ffffff;          /* COLOR_WINDOW */
+  --csse-control:#f0f0f0;        /* COLOR_BTNFACE */
+  --csse-control-hover:#f0f0f0;  /* classic controls: no hover tint */
+  --csse-border:#a0a0a0;         /* COLOR_BTNSHADOW */
+  --csse-line:#e3e3e3;           /* COLOR_3DLIGHT */
+  --csse-text:#000000;           /* COLOR_BTNTEXT */
+  --csse-text-strong:#000000;
+  --csse-muted:#6d6d6d;          /* COLOR_GRAYTEXT */
+  --csse-selection:#0078d7;      /* COLOR_HIGHLIGHT */
+  --csse-selection-border:#0078d7;
   --csse-accent:#c33434;
 }
 .library-page--popout .site-root-fill,
@@ -6095,18 +6097,18 @@ button {
 }
 .library-page--popout button,
 .library-page--popout input {
-  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,"Segoe UI",sans-serif;
 }
 .library-page--popout ::selection {
   background:var(--csse-selection);
   color:#fff;
 }
 .library-popout-html {
-  scrollbar-color:#666 #1e1e1e;
+  scrollbar-color:#555555 #2b2b2b;
   scrollbar-width:auto;
 }
 .library-popout-html:has(.theme-light) {
-  scrollbar-color:#b0b0b0 #efefef;
+  scrollbar-color:#cdcdcd #f0f0f0;
 }
 .library-page--popout ::-webkit-scrollbar {
   width:15px;
@@ -6283,7 +6285,7 @@ button {
   width:6px;
   height:6px;
   border-radius:0;
-  background:var(--csse-selection-border);
+  background:var(--csse-selection);
 }
 .library-page--popout .vanilla-toggle {
   padding:0 9px 0 7px;
@@ -6317,7 +6319,7 @@ button {
 .library-page--popout .scale-slider {
   width:82px;
   height:15px;
-  accent-color:var(--csse-selection-border);
+  accent-color:var(--csse-selection);
 }
 .library-page--popout .scale-icon-small,
 .library-page--popout .scale-icon-large,
@@ -6326,7 +6328,7 @@ button {
 }
 .library-page--popout .scale-value {
   min-width:32px;
-  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,"Segoe UI",sans-serif;
   font-size:10px;
 }
 .library-page--popout .view-mode-button,
@@ -6386,7 +6388,7 @@ button {
   padding:4px 6px;
   border-radius:0;
   color:var(--csse-text) !important;
-  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,"Segoe UI",sans-serif;
   font-size:11px;
 }
 .library-page--popout .dropdown-row:hover,
@@ -6458,7 +6460,7 @@ button {
   border-radius:0;
   background:rgba(20,20,20,.82);
   color:#d9d9d9;
-  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,"Segoe UI",sans-serif;
   font-size:9px;
   font-weight:400;
   letter-spacing:.03em;
@@ -6488,7 +6490,7 @@ button {
 }
 .library-page--popout .asset-name {
   color:var(--csse-muted);
-  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,"Segoe UI",sans-serif;
   font-size:10px;
   line-height:1.25;
 }
@@ -6523,7 +6525,7 @@ button {
 }
 .library-page--popout .library-detail-table {
   color:var(--csse-text);
-  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,"Segoe UI",sans-serif;
   font-size:11px;
 }
 .library-page--popout .library-detail-table th {
@@ -6608,7 +6610,7 @@ button {
 .library-page--popout .empty-state-title,
 .library-page--popout .empty-state-copy {
   color:var(--csse-text);
-  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,"Segoe UI",sans-serif;
 }
 
 .library-page--popout .library-render-dialog,
@@ -6642,7 +6644,7 @@ button {
 .library-page--popout .library-book-title,
 .library-page--popout .library-enchant-title {
   color:var(--csse-text-strong);
-  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,"Segoe UI",sans-serif;
 }
 
 @media (max-width:760px) {
@@ -6655,4 +6657,109 @@ button {
   .library-page--popout .filter-collapse {
     gap:4px !important;
   }
+}
+
+/* --- Classic (unthemed) Win32 light theme for the popout ----------------
+   Raised buttons (hilight/shadow bevel), sunken edit fields, dotted focus,
+   no hover tinting — matching the pre-visual-styles common controls. */
+.library-page--popout .theme-light .library-popout-titlebar {
+  background:#ffffff;
+  border-bottom-color:#a0a0a0;
+}
+.library-page--popout .theme-light .dropdown-button,
+.library-page--popout .theme-light .dropdown-button-type,
+.library-page--popout .theme-light .dropdown-button-release,
+.library-page--popout .theme-light .vanilla-toggle,
+.library-page--popout .theme-light .release-mode-button,
+.library-page--popout .theme-light .clear-filters-button,
+.library-page--popout .theme-light .search-mode-button,
+.library-page--popout .theme-light .search-clear,
+.library-page--popout .theme-light .library-detail-contents-button,
+.library-page--popout .theme-light .library-detail-book-button,
+.library-page--popout .theme-light .library-detail-color-swatch,
+.library-page--popout .theme-light .library-render-close,
+.library-page--popout .theme-light .library-contents-close,
+.library-page--popout .theme-light .library-book-close,
+.library-page--popout .theme-light .library-enchant-close {
+  border:1px solid !important;
+  border-color:#ffffff #696969 #696969 #ffffff !important;
+  box-shadow:inset 1px 1px 0 #e3e3e3, inset -1px -1px 0 #a0a0a0 !important;
+}
+.library-page--popout .theme-light .dropdown-button:hover,
+.library-page--popout .theme-light .dropdown-button-type:hover,
+.library-page--popout .theme-light .dropdown-button-release:hover,
+.library-page--popout .theme-light .vanilla-toggle:hover,
+.library-page--popout .theme-light .release-mode-button:hover,
+.library-page--popout .theme-light .clear-filters-button:hover,
+.library-page--popout .theme-light .search-mode-button:hover,
+.library-page--popout .theme-light .search-clear:hover {
+  background:#f0f0f0 !important;
+  color:#000000 !important;
+  border-color:#ffffff #696969 #696969 #ffffff !important;
+}
+.library-page--popout .theme-light .dropdown-button:active,
+.library-page--popout .theme-light .dropdown-button-type:active,
+.library-page--popout .theme-light .dropdown-button-release:active,
+.library-page--popout .theme-light .vanilla-toggle:active,
+.library-page--popout .theme-light .release-mode-button:active,
+.library-page--popout .theme-light .clear-filters-button:active,
+.library-page--popout .theme-light .search-mode-button:active,
+.library-page--popout .theme-light .search-clear:active {
+  border-color:#696969 #ffffff #ffffff #696969 !important;
+  box-shadow:inset 1px 1px 0 #a0a0a0, inset -1px -1px 0 #e3e3e3 !important;
+}
+.library-page--popout .theme-light .thumb-scale-control,
+.library-page--popout .theme-light .view-mode-group,
+.library-page--popout .theme-light .filter-history-control {
+  border:1px solid;
+  border-color:#ffffff #696969 #696969 #ffffff;
+  box-shadow:inset 1px 1px 0 #e3e3e3, inset -1px -1px 0 #a0a0a0;
+}
+.library-page--popout .theme-light .view-mode-button[aria-pressed="true"] {
+  background:#ffffff !important;
+  color:#000000 !important;
+  box-shadow:inset 1px 1px 0 #a0a0a0, inset -1px -1px 0 #ffffff;
+}
+.library-page--popout .theme-light .view-mode-button[aria-pressed="true"]:hover {
+  background:#ffffff !important;
+}
+.library-page--popout .theme-light .search-box,
+.library-page--popout .theme-light .library-detail-filter {
+  border:1px solid;
+  border-color:#a0a0a0 #ffffff #ffffff #a0a0a0;
+  box-shadow:inset 1px 1px 0 #696969;
+  background:#ffffff;
+}
+.library-page--popout .theme-light .search-box:focus-within,
+.library-page--popout .theme-light .library-detail-filter:focus {
+  border-color:#a0a0a0 #ffffff #ffffff #a0a0a0;
+  box-shadow:inset 1px 1px 0 #696969;
+}
+.library-page--popout .theme-light .dropdown-button:focus-visible,
+.library-page--popout .theme-light .dropdown-button-type:focus-visible,
+.library-page--popout .theme-light .dropdown-button-release:focus-visible,
+.library-page--popout .theme-light .vanilla-toggle:focus-visible,
+.library-page--popout .theme-light .release-mode-button:focus-visible,
+.library-page--popout .theme-light .clear-filters-button:focus-visible,
+.library-page--popout .theme-light .view-mode-button:focus-visible,
+.library-page--popout .theme-light .filter-history-button:focus-visible {
+  outline:1px dotted #000000;
+  outline-offset:-4px;
+}
+.library-page--popout .theme-light .asset-type-label,
+.library-page--popout .theme-light .asset-release-badge {
+  background:rgba(240,240,240,.92);
+  color:#000000;
+}
+.library-page--popout .theme-light .asset-thumb-frame {
+  background:#ffffff;
+}
+.library-page--popout .theme-light .search-mode-menu,
+.library-page--popout .theme-light .search-suggest-menu,
+.library-page--popout .theme-light .dropdown-menu-type,
+.library-page--popout .theme-light .dropdown-menu-tags,
+.library-page--popout .theme-light .dropdown-menu-release,
+.library-page--popout .theme-light .asset-compact-actions-menu {
+  border:1px solid #a0a0a0;
+  box-shadow:2px 2px 3px rgba(0,0,0,.35);
 }
