@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=library-csse-popout-20260710a">
+<link rel="stylesheet" href="../style.css?v=library-csse-popout-20260710c">
 <script src="../theme.js"></script>
 </helmet>
 
@@ -82,7 +82,11 @@
 <div class="library-popout-titlebar">
   <span aria-hidden="true" class="library-popout-mark"></span>
   <span class="library-popout-title">OAAB Library</span>
-  <span class="library-popout-context">Object Window</span>
+  <span class="library-popout-context">Asset Browser</span>
+  <button type="button" onClick="{{ toggleAlwaysOnTop }}" title="{{ aotTitle }}" aria-pressed="{{ aotOn }}" class="library-popout-aot">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="library-popout-aot-icon"><path d="M12 3v10"></path><polyline points="8 7 12 3 16 7"></polyline><line x1="5" y1="18" x2="19" y2="18"></line></svg>
+    <span>On top</span>
+  </button>
 </div>
 </sc-if>
 
@@ -765,6 +769,7 @@ class Component extends DCLogic {
     narrow: (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(max-width: 820px)').matches : false,
     renderPreview: null,
     renderPreviewLoaded: false,
+    aot: false,
     enchantmentPreview: null,
     contentsPreview: null,
     bookPreview: null,
@@ -784,7 +789,7 @@ class Component extends DCLogic {
       document.body.classList.toggle('library-page--popout', this._isPopout);
       if (this._isPopout) {
         this._documentTitle = document.title;
-        document.title = 'OAAB Library — Object Window';
+        document.title = 'OAAB Library — Asset Browser';
       }
     } catch (e) {}
     // Track the mobile breakpoint so the Type filter can collapse from the full
@@ -1263,6 +1268,52 @@ class Component extends DCLogic {
   }
 
   applyTheme() { if (window.OAAB_THEME) window.OAAB_THEME.apply(this.state.theme); }
+
+  // Always-on-top via the Document Picture-in-Picture API — the only web
+  // mechanism that yields an OS-level always-on-top window. The whole app is
+  // relocated into the PiP window (same live nodes, so React keeps rendering
+  // into them) with the page's stylesheets/fonts mirrored across. Closing the
+  // PiP window (button or OS) moves everything back and clears the flag.
+  toggleAlwaysOnTop() {
+    if (this.state.aot) {
+      if (this._pipWin) { try { this._pipWin.close(); } catch (e) {} }
+      return;
+    }
+    if (!('documentPictureInPicture' in window)) {
+      alert('Always-on-top needs a Chromium-based browser (Chrome, Edge). It is not available here.');
+      return;
+    }
+    const w = Math.min(1180, Math.round(window.innerWidth || 1180));
+    const h = Math.min(820, Math.round(window.innerHeight || 820));
+    window.documentPictureInPicture.requestWindow({ width: w, height: h }).then((pip) => {
+      // Mirror stylesheets + font links so the moved DOM stays styled.
+      document.querySelectorAll('link[rel="stylesheet"], link[rel="preconnect"], style').forEach((node) => {
+        pip.document.head.appendChild(node.cloneNode(true));
+      });
+      pip.document.documentElement.className = document.documentElement.className;
+      pip.document.body.className = document.body.className;
+      // Relocate every body child into the PiP window.
+      this._pipParked = [];
+      Array.prototype.slice.call(document.body.childNodes).forEach((n) => {
+        this._pipParked.push(n);
+        pip.document.body.appendChild(n);
+      });
+      this._pipWin = pip;
+      this.setState({ aot: true });
+      const restore = () => {
+        try {
+          (this._pipParked || []).forEach((n) => document.body.appendChild(n));
+        } catch (e) {}
+        this._pipParked = null;
+        this._pipWin = null;
+        this.setState({ aot: false });
+      };
+      pip.addEventListener('pagehide', restore, { once: true });
+    }).catch((e) => {
+      console.warn('always-on-top failed', e);
+    });
+  }
+
   scrollContentsList(deltaY) {
     const list = document.querySelector('.library-contents-list') || document.querySelector('.library-book-body');
     if (!list || !deltaY) return;
@@ -4527,13 +4578,20 @@ class Component extends DCLogic {
         const sy = window.screenTop != null ? window.screenTop : 0;
         const left = Math.max(0, Math.round(sx + (window.outerWidth - w) / 2));
         const top = Math.max(0, Math.round(sy + (window.outerHeight - h) / 2));
+        // popup + location/toolbar/menubar=no requests a chromeless window so
+        // the browser's address bar auto-hides where the platform allows it.
         const win = window.open(
           location.pathname + '?popout=1',
           'oaab_library_popout',
-          'popup=yes,width=' + w + ',height=' + h + ',left=' + left + ',top=' + top
+          'popup=yes,location=no,toolbar=no,menubar=no,status=no,width=' + w + ',height=' + h + ',left=' + left + ',top=' + top
         );
         if (win) win.focus();
       },
+      aotOn: !!this.state.aot,
+      aotTitle: this.state.aot
+        ? 'Window is pinned on top — click to unpin'
+        : 'Keep this window always on top of others',
+      toggleAlwaysOnTop: () => this.toggleAlwaysOnTop(),
       imgLoad: (e) => {
         const img = e && e.target;
         if (!img) return;

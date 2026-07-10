@@ -6157,6 +6157,47 @@ button {
   border-left:1px solid var(--csse-line);
   color:var(--csse-muted);
 }
+.library-page--popout .library-popout-aot {
+  margin-left:auto;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  height:20px;
+  padding:0 7px;
+  border:1px solid var(--csse-border);
+  border-radius:0;
+  background:var(--csse-control);
+  color:var(--csse-text);
+  font-family:"MS Sans Serif","Microsoft Sans Serif",Tahoma,"Segoe UI",sans-serif;
+  font-size:10px;
+  line-height:1;
+  cursor:pointer;
+}
+.library-page--popout .library-popout-aot:hover {
+  background:var(--csse-control-hover);
+  border-color:var(--csse-selection-border);
+  color:var(--csse-text-strong);
+}
+.library-page--popout .library-popout-aot[aria-pressed="true"] {
+  background:var(--csse-selection);
+  border-color:var(--csse-selection);
+  color:#ffffff;
+}
+.library-page--popout .library-popout-aot-icon {
+  width:12px;
+  height:12px;
+}
+.library-page--popout .theme-light .library-popout-aot {
+  border:1px solid;
+  border-color:#ffffff #696969 #696969 #ffffff;
+  box-shadow:inset 1px 1px 0 #e3e3e3, inset -1px -1px 0 #a0a0a0;
+}
+.library-page--popout .theme-light .library-popout-aot[aria-pressed="true"] {
+  background:#0078d7;
+  border-color:#0078d7;
+  box-shadow:none;
+  color:#ffffff;
+}
 .library-page--popout .library-toolbar {
   background:var(--csse-panel);
   border-bottom:1px solid var(--csse-border);
@@ -6190,8 +6231,8 @@ button {
   box-shadow:none;
 }
 .library-page--popout .search-box:focus-within {
-  border-color:var(--csse-selection-border);
-  box-shadow:inset 0 0 0 1px var(--csse-selection-border);
+  border-color:var(--csse-border) !important;
+  box-shadow:none !important;
 }
 .library-page--popout .search-icon {
   left:7px;
@@ -6277,9 +6318,21 @@ button {
   outline:1px solid var(--csse-selection-border);
   outline-offset:-2px;
 }
+.library-page--popout .dropdown-button,
+.library-page--popout .dropdown-button-type,
+.library-page--popout .dropdown-button-release {
+  justify-content:space-between;
+  padding:0 0 0 6px;
+}
 .library-page--popout .dropdown-chevron {
-  width:11px;
-  height:11px;
+  flex:0 0 auto;
+  width:17px;
+  height:26px;
+  padding:0 2px;
+  margin:0;
+  box-sizing:border-box;
+  border-left:1px solid var(--csse-line);
+  stroke-width:2.4;
 }
 .library-page--popout .filter-dot {
   width:6px;
@@ -6403,11 +6456,15 @@ button {
 .library-page--popout .menu-check {
   width:13px;
   height:13px;
-  border:1px solid var(--csse-border) !important;
+  border:1px solid var(--csse-selection) !important;
   border-radius:0;
   background:var(--csse-selection) !important;
-  color:var(--csse-text-strong);
+  color:#ffffff;
   font-size:9px;
+}
+.library-page--popout .menu-check[style*="background: transparent"] {
+  background:var(--csse-field) !important;
+  border-color:var(--csse-border) !important;
 }
 .library-page--popout .dropdown-row .menu-label,
 .library-page--popout .dropdown-row-all .menu-label,
@@ -6450,7 +6507,7 @@ button {
   transform:none !important;
 }
 .library-page--popout .asset-thumb-frame {
-  background:linear-gradient(180deg,var(--csse-panel-raised),var(--csse-field));
+  background:#141414;
   border-radius:0;
 }
 .library-page--popout .asset-type-label,
@@ -6762,4 +6819,59 @@ button {
 .library-page--popout .theme-light .asset-compact-actions-menu {
   border:1px solid #a0a0a0;
   box-shadow:2px 2px 3px rgba(0,0,0,.35);
+}
+
+/* --- OAAB popout follow-ups --------------------------------------------- */
+/* (2) Thumbnail backgrounds */
+.library-page--popout .theme-light .asset-thumb-frame { background:#ababab; }
+.library-page--popout .library-detail-thumb { background:#141414; }
+.library-page--popout .theme-light .library-detail-thumb { background:#ababab; }
+
+/* (1) Compact-card ID overlay: light gradient in light mode (was a dark fade) */
+.library-page--popout .theme-light .asset-id-overlay {
+  background:linear-gradient(180deg,rgba(240,240,240,0) 0%,rgba(240,240,240,.86) 46%,rgba(240,240,240,.96) 100%);
+  color:#000000 !important;
+}
+
+/* (3) Vanilla toggle switch uses the selection blue (like the size slider),
+   not orange. Track neutral when off, blue when on; white knob. */
+.library-page--popout .vanilla-toggle .vanilla-switch {
+  background:var(--csse-control-hover) !important;
+}
+.library-page--popout .vanilla-toggle[aria-pressed="true"] .vanilla-switch {
+  background:var(--csse-selection) !important;
+}
+.library-page--popout .vanilla-toggle .vanilla-knob {
+  background:#f0f0f0 !important;
+  box-shadow:none !important;
+}
+.library-page--popout .theme-light .vanilla-toggle[aria-pressed="true"] .vanilla-switch {
+  background:#0078d7 !important;
+}
+.library-page--popout .theme-light .vanilla-toggle .vanilla-knob {
+  background:#ffffff !important;
+}
+
+/* (4) Checkboxes in light mode: always white, no blue — just a checkmark */
+.library-page--popout .theme-light .menu-check,
+.library-page--popout .theme-light .menu-check[style*="background: transparent"] {
+  background:#ffffff !important;
+  border-color:#7a7a7a !important;
+  color:#000000 !important;
+}
+
+/* (9) Combobox drop-arrow: classic raised button segment in light mode */
+.library-page--popout .theme-light .dropdown-chevron {
+  width:18px;
+  border:1px solid;
+  border-color:#ffffff #696969 #696969 #ffffff;
+  background:#f0f0f0;
+  box-shadow:inset 1px 1px 0 #e3e3e3, inset -1px -1px 0 #a0a0a0;
+  stroke:#000000;
+}
+.library-page--popout .theme-light .dropdown-button:active .dropdown-chevron,
+.library-page--popout .theme-light .dropdown-button-type:active .dropdown-chevron,
+.library-page--popout .theme-light .dropdown-button-release:active .dropdown-chevron {
+  border-color:#696969 #ffffff #ffffff #696969;
+  box-shadow:inset 1px 1px 0 #a0a0a0, inset -1px -1px 0 #e3e3e3;
 }
