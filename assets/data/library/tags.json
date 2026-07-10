@@ -36,7 +36,7 @@
     { "label": "Red Mountain", "include": ["_rm_", "terr_rm"], "exclude": ["com_rm", "de_rm"] },
     { "label": "Redoran", "include": ["redoran", "in_red", "ex_red"], "exclude": ["redmtn", "key_"] },
     { "label": "Sixth House", "include": ["6th", "sixth", "corprus"], "exclude": ["sixth*barrier"] },
-    { "label": "Stronghold", "include": ["strong", "strruin"], "exclude": ["bk_stronghold"], "exclude_types": ["spell"] },
+    { "label": "Stronghold", "include": ["strong", "strruin"], "exclude": ["bk_stronghold", "key_"], "exclude_types": ["spell"] },
     { "label": "Telvanni", "include": ["_t_", "_tel", "telvanni", "parasol", "furn_de_overhang_02"], "exclude": ["tele", "tela", "ex_t_door_sphere_01", "ex_t_doorway_sphere_01", "vivec", "furn_c_t_", "furn_com", "in_bm_", "key_", "telvin"] },
     { "label": "Underwater", "include": ["_kelp", "kelp"], "exclude": ["furn_bone"] },
     { "label": "Velothi", "include": ["_v_", "_vel", "velothi", "in_sewer"], "exclude": ["b_v_", "bk_*v_", "chest_*_v", "velas", "furn_banner_*v_"] },
