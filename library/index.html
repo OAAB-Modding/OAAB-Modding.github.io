@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=library-detail-virtual-20260707b">
+<link rel="stylesheet" href="../style.css?v=library-csse-popout-20260709a">
 <script src="../theme.js"></script>
 </helmet>
 
@@ -76,6 +76,14 @@
     <p class="library-hero-copy">A browsable index of OAAB_Data's in-game objects — tilesets, creatures, armor, books, clutter, and more!<br><br>Drag and drop thumbnails directly into the CSSE render window.</p>
   </div>
 </header>
+</sc-if>
+
+<sc-if value="{{ isPopout }}" hint-placeholder-val="{{ false }}">
+<div class="library-popout-titlebar">
+  <span aria-hidden="true" class="library-popout-mark"></span>
+  <span class="library-popout-title">OAAB Library</span>
+  <span class="library-popout-context">Object Window</span>
+</div>
 </sc-if>
 
 <div data-tabbar="" style="top:{{ tabbarTop }}px;" class="library-toolbar">
@@ -764,6 +772,21 @@ class Component extends DCLogic {
 
   componentDidMount() {
     this.initTheme(0);
+    // Popout-only class hooks keep the CSSE-inspired window treatment from
+    // affecting the full Library page. The document title also carries into
+    // the operating system's native popup title bar.
+    try {
+      const popoutWindow = this._isPopout != null
+        ? this._isPopout
+        : ((typeof sessionStorage !== 'undefined' && sessionStorage.getItem('oaab_popout') === '1') || /[?&]popout=1/.test(location.search || ''));
+      this._isPopout = !!popoutWindow;
+      document.documentElement.classList.toggle('library-popout-html', this._isPopout);
+      document.body.classList.toggle('library-page--popout', this._isPopout);
+      if (this._isPopout) {
+        this._documentTitle = document.title;
+        document.title = 'OAAB Library — Object Window';
+      }
+    } catch (e) {}
     // Track the mobile breakpoint so the Type filter can collapse from the full
     // tab row into the compact dropdown (matches style.css's 820px breakpoint).
     try {
@@ -1210,6 +1233,11 @@ class Component extends DCLogic {
   }
 
   componentWillUnmount() {
+    try {
+      document.documentElement.classList.remove('library-popout-html');
+      document.body.classList.remove('library-page--popout');
+      if (this._documentTitle) document.title = this._documentTitle;
+    } catch (e) {}
     if (this._mql && this._onMql) {
       if (this._mql.removeEventListener) this._mql.removeEventListener('change', this._onMql);
       else if (this._mql.removeListener) this._mql.removeListener(this._onMql);
@@ -4490,7 +4518,7 @@ class Component extends DCLogic {
       filterToggleFg: P.tagText,
       filterToggleBg: P.surface,
       filterToggleBd: P.border,
-      tabbarTop: isPopout ? 0 : (this.state.navHeight || (narrow ? 65 : 73)),
+      tabbarTop: isPopout ? 28 : (this.state.navHeight || (narrow ? 65 : 73)),
       barPadX: isPopout ? 12 : (narrow ? 14 : 32),
       secPadX: isPopout ? 12 : (narrow ? 14 : 32),
       openPopout: () => {
