@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "description": "Tileset piece taxonomy and explicit object ID mappings. Subset keys must match a tileset's subsets; multiple IDs under one piece/subset are variants.",
+  "pieces": [
+    { "key": "hall_corner", "label": "Hall Corner", "group": "hall", "order": 1 },
+    { "key": "hall_straight", "label": "Hall Straight", "group": "hall", "order": 2 },
+    { "key": "hall_3way", "label": "Hall 3-Way", "group": "hall", "order": 3 },
+    { "key": "hall_4way", "label": "Hall 4-Way", "group": "hall", "order": 4 },
+    { "key": "hall_cap", "label": "Hall Cap", "group": "hall", "order": 5 },
+    { "key": "room_corner", "label": "Room Corner", "group": "room", "order": 1 },
+    { "key": "room_wall", "label": "Room Wall", "group": "room", "order": 2 },
+    { "key": "room_entry", "label": "Room Entry", "group": "room", "order": 3 },
+    { "key": "room_wall_entry_r", "label": "Room Wall Entry, Right", "group": "room", "order": 4 },
+    { "key": "room_wall_entry_l", "label": "Room Wall Entry, Left", "group": "room", "order": 5 },
+    { "key": "room_corner_outer_double", "label": "Room Double Outer Corner", "group": "room", "order": 6 },
+    { "key": "room_corner_double_entry", "label": "Room Corner, Double Entry", "group": "room", "order": 7 },
+    { "key": "room_center", "label": "Room Center", "group": "room", "order": 8 },
+    { "key": "room_corner_outer", "label": "Room Outer Corner", "group": "room", "order": 9 },
+    { "key": "door_jamb", "label": "Door Jamb", "group": "additional", "order": 1 },
+    { "key": "hall_transition", "label": "Large / Small Transition", "group": "additional", "order": 2 },
+    { "key": "hall_stair", "label": "Hall Stair / Ramp", "group": "additional", "order": 3 },
+    { "key": "room_column", "label": "Room Column", "group": "additional", "order": 4 },
+    { "key": "room_corner_entry", "label": "Room Corner Entry", "group": "additional", "order": 5 },
+    { "key": "room_partition", "label": "Standalone Wall / Partition", "group": "additional", "order": 6 },
+    { "key": "room_prefab", "label": "Prefab Room", "group": "additional", "order": 7 }
+  ],
+  "tilesets": [
+    {
+      "key": "redoran",
+      "label": "Redoran",
+      "source": "Morrowind",
+      "subsets": [
+        { "key": "large", "label": "Large" },
+        { "key": "large_tall", "label": "Large Tall" },
+        { "key": "small", "label": "Small" },
+        { "key": "small_tall", "label": "Small Tall" }
+      ],
+      "pieces": {
+        "hall_corner": {
+          "large": ["in_redoran_l_corner_01"],
+          "small": ["in_redoran_s_corner_01"]
+        },
+        "room_corner": {
+          "large": ["in_r_l_int_corner_01"],
+          "large_tall": ["in_r_l_int_lcorner_01"],
+          "small": ["in_r_s_int_corner_01"],
+          "small_tall": ["in_r_s_int_lcorner_01"]
+        },
+        "hall_straight": {
+          "large": ["in_redoran_l_hall_01"],
+          "small": ["in_redoran_s_hall_01", "in_redoran_s_hall_02"]
+        },
+        "hall_3way": {
+          "large": ["in_redoran_l_3way_01"],
+          "small": ["in_redoran_s_3way_01"]
+        },
+        "hall_4way": {
+          "large": ["in_redoran_l_4way_01"],
+          "small": ["in_redoran_s_4way_01"]
+        },
+        "room_wall": {
+          "large": ["in_r_l_int_wall_01", "in_r_l_int_wall_02"],
+          "large_tall": ["in_r_l_int_lwall_01", "in_r_l_int_lwall_02"],
+          "small": ["in_r_s_int_wall_01", "in_r_s_int_wall_02"],
+          "small_tall": ["in_r_s_int_lwall_01", "in_r_s_int_lwall_02"]
+        },
+        "room_entry": {
+          "large": ["in_r_l_int_entrance_01", "in_r_l_int_entrance_02"],
+          "large_tall": ["in_r_l_int_lentrance_01", "in_r_l_int_lentrance_02", "in_r_l_int_arches_01"],
+          "small": ["in_r_s_int_entrance_01", "in_r_s_int_entrance_02"],
+          "small_tall": ["in_r_s_int_larches_01", "in_r_s_int_lentrance_01", "in_r_s_int_lentrance_02", "in_r_s_int_lentrance_03", "in_r_s_int_lentrance_04", "in_r_s_int_lentrance_05", "in_r_s_int_lentrance_06"]
+        },
+        "hall_cap": {
+          "large": ["in_redoran_l_cap_01"],
+          "small": ["in_redoran_s_cap_01"]
+        },
+        "room_corner_outer_double": {
+          "large": ["in_r_l_int_corner_03"],
+          "large_tall": ["in_r_l_int_lcorner_03"],
+          "small": ["in_r_s_int_corner_03"],
+          "small_tall": ["in_r_s_int_lcorner_03"]
+        },
+        "room_center": {
+          "large": ["in_r_l_int_center_01", "in_r_l_int_center_02"],
+          "large_tall": ["in_r_l_int_lcenter_01", "in_r_l_int_lcenter_02", "in_r_l_int_lcenter_03", "in_r_l_int_lcenter_04"],
+          "small": ["in_r_s_int_center_01", "in_r_s_int_center_02", "in_r_s_int_center_03", "in_r_s_int_center_04", "in_r_s_int_center_05"],
+          "small_tall": ["in_r_s_int_lcenter_01", "in_r_s_int_lcenter_02", "in_r_s_int_lcenter_03", "in_r_s_int_lcenter_04", "in_r_s_int_lcenter_05", "in_r_s_int_lcenter_06"]
+        },
+        "room_corner_outer": {
+          "large": ["in_r_l_int_corner_02"],
+          "large_tall": ["in_r_l_int_lcorner_02"],
+          "small": ["in_r_s_int_corner_02"],
+          "small_tall": ["in_r_s_int_lcorner_02"]
+        },
+        "door_jamb": {
+          "large": ["in_redoran_l_doorjamb_01"],
+          "small": ["in_r_s_doorjamb_01"]
+        },
+        "hall_transition": {
+          "large": ["in_redoran_l_join_01"],
+          "small": ["in_redoran_l_join_01"]
+        },
+        "hall_stair": {
+          "large": ["in_r_l_long_ramp_01", "in_r_l_short_ramp_01"],
+          "small": ["in_r_s_long_ramp_01", "in_redoran_s_short_ramp_01"]
+        },
+        "room_column": {
+          "large": ["in_r_l_int_column_01"],
+          "large_tall": ["in_r_l_int_lcolumn_01"],
+          "small": ["in_r_s_int_column_01"],
+          "small_tall": ["in_r_s_int_lcolumn_01"]
+        },
+        "room_corner_entry": {
+          "large": ["in_r_l_int_entrance_03"]
+        },
+        "room_partition": {
+          "large": ["in_r_l_int_partition_01"],
+          "large_tall": ["in_r_l_int_lpartition_01"],
+          "small": ["in_r_s_int_partition_01"],
+          "small_tall": ["in_r_s_int_lpartition_01"]
+        },
+        "room_prefab": {
+          "small": ["in_r_s_room_01", "in_r_s_room_02", "in_r_s_room_03", "in_r_building_01", "in_r_guild_mage_01"]
+        }
+      }
+    }
+  ]
+}

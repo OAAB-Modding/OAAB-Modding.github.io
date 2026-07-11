@@ -258,6 +258,10 @@
         </span>
         <span>Vanilla</span>
       </button>
+      <button onClick="{{ toggleTilesets }}" title="Browse architectural tilesets" aria-pressed="{{ tilesetActive }}" aria-expanded="{{ showTilesetBrowser }}" disabled="{{ tilesetsUnavailable }}" style="order:{{ dropOrder }};background:{{ tilesetToggleBg }};color:{{ tilesetToggleFg }};border:1px solid {{ tilesetToggleBd }};" class="tileset-toggle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M3 4h18v16H3z"></path><path d="M9 4v5H3m12-5v5h6M9 20v-5H3m12 5v-5h6M9 9h6v6H9z"></path></svg>
+        <span>Tilesets</span>
+      </button>
       <sc-if value="{{ controlsInFilterRow }}" hint-placeholder-val="{{ false }}">
       <sc-if value="{{ showThumbScale }}" hint-placeholder-val="{{ true }}">
       <div style="order:{{ ctrlBtnOrder }};margin-left:{{ ctrlBtnMargin }};" class="thumb-scale-control">
@@ -299,6 +303,83 @@
 
 <section style="padding:34px {{ secPadX }}px 110px;" class="library-body-section">
   <div class="container-wide">
+    <sc-if value="{{ showTilesetBrowser }}" hint-placeholder-val="{{ false }}">
+    <section class="tileset-browser" aria-label="Tileset browser">
+      <div class="tileset-browser-head">
+        <div>
+          <div class="tileset-browser-eyebrow">Architectural set</div>
+          <h2 class="tileset-browser-title">{{ tilesetBrowserTitle }}</h2>
+          <p class="tileset-browser-copy">Choose a subset, then select a piece. Every matching variant stays visible in the library below.</p>
+        </div>
+        <button type="button" onClick="{{ closeTilesets }}" class="tileset-browser-close" aria-label="Close tileset browser" title="Close tileset browser">&times;</button>
+      </div>
+
+      <div class="tileset-browser-body">
+        <div class="tileset-browser-selectors">
+          <label class="tileset-select-label">
+            <span>Tileset</span>
+            <select value="{{ activeTilesetKey }}" onChange="{{ pickTileset }}" class="tileset-select">
+              <sc-for list="{{ tilesetOptions }}" as="set" hint-placeholder-count="3">
+                <option value="{{ set.key }}">{{ set.label }}</option>
+              </sc-for>
+            </select>
+          </label>
+          <label class="tileset-select-label">
+            <span>Subset</span>
+            <select value="{{ activeTilesetSubset }}" onChange="{{ pickTilesetSubset }}" class="tileset-select">
+              <sc-for list="{{ tilesetSubsetOptions }}" as="subset" hint-placeholder-count="5">
+                <option value="{{ subset.key }}">{{ subset.label }}</option>
+              </sc-for>
+            </select>
+          </label>
+          <button type="button" data-tileset-piece="" onClick="{{ pickTilesetPiece }}" aria-pressed="{{ tilesetAllPiecesActive }}" class="tileset-all-pieces">All pieces <span>{{ tilesetAllCount }}</span></button>
+          <div class="tileset-selection-summary" aria-live="polite">{{ tilesetSelectionSummary }}</div>
+        </div>
+
+        <div class="tileset-piece-picker">
+          <div class="tileset-core-groups">
+            <section class="tileset-core-group" aria-label="Hall pieces">
+              <div class="tileset-picker-label">Hall pieces</div>
+              <div class="tileset-core-grid tileset-core-grid-hall">
+                <sc-for list="{{ tilesetHallPieces }}" as="piece" hint-placeholder-count="5">
+                  <button type="button" data-tileset-piece="{{ piece.key }}" onClick="{{ pickTilesetPiece }}" title="{{ piece.title }}" aria-label="{{ piece.title }}" aria-pressed="{{ piece.active }}" disabled="{{ piece.disabled }}" class="tileset-core-piece">
+                    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" class="tileset-core-icon">
+                      <path d="{{ piece.floorPath }}" class="tileset-core-floor"></path>
+                      <path d="{{ piece.wallPath }}" class="tileset-core-wall"></path>
+                    </svg>
+                    <span class="tileset-core-piece-label">{{ piece.displayLabel }}</span>
+                    <span class="tileset-core-piece-count">&times;{{ piece.count }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </section>
+            <section class="tileset-core-group" aria-label="Room pieces">
+              <div class="tileset-picker-label">Room pieces</div>
+              <div class="tileset-core-grid tileset-core-grid-room">
+                <sc-for list="{{ tilesetRoomPieces }}" as="piece" hint-placeholder-count="9">
+                  <button type="button" data-tileset-piece="{{ piece.key }}" onClick="{{ pickTilesetPiece }}" title="{{ piece.title }}" aria-label="{{ piece.title }}" aria-pressed="{{ piece.active }}" disabled="{{ piece.disabled }}" class="tileset-core-piece">
+                    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" class="tileset-core-icon">
+                      <path d="{{ piece.floorPath }}" class="tileset-core-floor"></path>
+                      <path d="{{ piece.wallPath }}" class="tileset-core-wall"></path>
+                    </svg>
+                    <span class="tileset-core-piece-label">{{ piece.displayLabel }}</span>
+                    <span class="tileset-core-piece-count">&times;{{ piece.count }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </section>
+          </div>
+          <div class="tileset-picker-label tileset-picker-label-additional">Additional pieces</div>
+          <div class="tileset-additional-grid">
+            <sc-for list="{{ tilesetAdditionalPieces }}" as="piece" hint-placeholder-count="7">
+              <button type="button" data-tileset-piece="{{ piece.key }}" onClick="{{ pickTilesetPiece }}" title="{{ piece.title }}" aria-pressed="{{ piece.active }}" disabled="{{ piece.disabled }}" class="tileset-additional-piece"><span>{{ piece.label }}</span><span class="tileset-piece-count">&times;{{ piece.count }}</span></button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+
     <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
     <div class="library-results-header">
       <div class="library-results-title-row">
@@ -750,6 +831,7 @@
 class Component extends DCLogic {
   state = {
     data: null, active: 'All', tags: [], query: '', tagOpen: false, typeOpen: false,
+    tileset: '', tilesetSubset: 'all', tilesetPiece: '',
     searchMode: '', searchModeOpen: false, searchSuggestOpen: false,
     relData: [], releases: [], relKinds: ['added', 'modified'], relOpen: false,
     filtersOpen: false,
@@ -1065,6 +1147,10 @@ class Component extends DCLogic {
       .then(r => r.json())
       .then(data => this.tagDefinitions(data))
       .catch(e => { console.warn('tag definitions load failed', e); return []; });
+    const loadTilesets = fetchData('tilesets.json')
+      .then(r => r.json())
+      .then(data => this.tilesetDefinitions(data))
+      .catch(e => { console.warn('tileset definitions load failed', e); return { pieces: [], tilesets: [] }; });
 
     // Deprecated IDs come straight from OAAB_Data's own metadata file
     // ([tools.csse] deprecated = [ ... ]), so the list stays current as the
@@ -1139,9 +1225,11 @@ class Component extends DCLogic {
       loadDeprecated,
       loadWikiBooks,
       loadTags,
+      loadTilesets,
     ])
-      .then(([records, deprecated, wikiBooks, tagDefs]) => {
+      .then(([records, deprecated, wikiBooks, tagDefs, tilesetDefs]) => {
         this._tagDefs = tagDefs;
+        this._tilesetDefs = tilesetDefs;
         const enchantmentsByKey = this.enchantmentMap(records);
         const labelType = (t) => this.displayType(t);
         const thumbnailPath = (mesh) => {
@@ -1476,6 +1564,9 @@ class Component extends DCLogic {
       relKinds: (s.relKinds || ['added', 'modified']).slice(),
       vanilla: !!s.vanilla,
       detailFilters: Object.assign({}, filters),
+      tileset: s.tileset || '',
+      tilesetSubset: s.tilesetSubset || 'all',
+      tilesetPiece: s.tilesetPiece || '',
     };
   }
 
@@ -1495,6 +1586,9 @@ class Component extends DCLogic {
       relKinds: (snap.relKinds || ['added', 'modified']).slice(),
       vanilla: !!snap.vanilla,
       detailFilters: Object.assign({}, snap.detailFilters || {}),
+      tileset: snap.tileset || '',
+      tilesetSubset: snap.tilesetSubset || 'all',
+      tilesetPiece: snap.tilesetPiece || '',
       tagOpen: false,
       typeOpen: false,
       relOpen: false,
@@ -1757,6 +1851,161 @@ class Component extends DCLogic {
       offset = found + parts[i].length;
     }
     return true;
+  }
+
+  tilesetDefinitions(payload) {
+    const rawPieces = payload && Array.isArray(payload.pieces) ? payload.pieces : [];
+    const pieceKeys = Object.create(null);
+    const pieces = [];
+    rawPieces.forEach((row, index) => {
+      const key = String((row && row.key) || '').trim().toLowerCase();
+      const label = String((row && row.label) || '').trim();
+      if (!key || !label || pieceKeys[key]) {
+        console.warn('tileset piece skipped at index ' + index + ': key and unique label are required');
+        return;
+      }
+      const rawGroup = String((row && row.group) || '').trim().toLowerCase();
+      const group = rawGroup === 'hall' || rawGroup === 'room' ? rawGroup : 'additional';
+      const rawOrder = Number(row && row.order);
+      const order = Number.isFinite(rawOrder) && rawOrder > 0 ? rawOrder : index + 1;
+      pieces.push({ key, label, group, order });
+      pieceKeys[key] = 1;
+    });
+
+    const seenSets = Object.create(null);
+    const tilesets = [];
+    const rows = payload && Array.isArray(payload.tilesets) ? payload.tilesets : [];
+    rows.forEach((row, index) => {
+      const key = String((row && row.key) || '').trim().toLowerCase();
+      const label = String((row && row.label) || '').trim();
+      if (!key || !label || seenSets[key]) {
+        console.warn('tileset skipped at index ' + index + ': key and unique label are required');
+        return;
+      }
+      const subsetSeen = Object.create(null);
+      const subsets = [];
+      (Array.isArray(row.subsets) ? row.subsets : []).forEach(subset => {
+        const subsetKey = String((subset && subset.key) || '').trim().toLowerCase();
+        const subsetLabel = String((subset && subset.label) || '').trim();
+        if (!subsetKey || !subsetLabel || subsetSeen[subsetKey]) return;
+        subsetSeen[subsetKey] = 1;
+        subsets.push({ key: subsetKey, label: subsetLabel });
+      });
+      if (!subsets.length) return;
+
+      const mappings = Object.create(null);
+      const rawMappings = row && row.pieces && typeof row.pieces === 'object' ? row.pieces : {};
+      Object.keys(rawMappings).forEach(rawPieceKey => {
+        const pieceKey = String(rawPieceKey || '').trim().toLowerCase();
+        if (!pieceKeys[pieceKey]) return;
+        const bySubset = Object.create(null);
+        const rawBySubset = rawMappings[rawPieceKey] || {};
+        Object.keys(rawBySubset).forEach(rawSubsetKey => {
+          const subsetKey = String(rawSubsetKey || '').trim().toLowerCase();
+          if (!subsetSeen[subsetKey]) return;
+          const ids = [];
+          const idSeen = Object.create(null);
+          (Array.isArray(rawBySubset[rawSubsetKey]) ? rawBySubset[rawSubsetKey] : []).forEach(value => {
+            const id = String(value || '').trim();
+            const idKey = id.toLowerCase();
+            if (id && !idSeen[idKey]) { ids.push(id); idSeen[idKey] = 1; }
+          });
+          if (ids.length) bySubset[subsetKey] = ids;
+        });
+        if (Object.keys(bySubset).length) mappings[pieceKey] = bySubset;
+      });
+      tilesets.push({
+        key,
+        label,
+        source: String(row.source || '').trim(),
+        subsets,
+        pieces: mappings,
+      });
+      seenSets[key] = 1;
+    });
+    return { pieces, tilesets };
+  }
+
+  tilesetIds(tileset, subsetKey, pieceKey) {
+    if (!tileset) return [];
+    const mappings = tileset.pieces || {};
+    if (pieceKey && !mappings[pieceKey]) return [];
+    const keys = pieceKey ? [pieceKey] : Object.keys(mappings);
+    const result = [];
+    const seen = Object.create(null);
+    keys.forEach(key => {
+      const bySubset = mappings[key] || {};
+      const subsetKeys = subsetKey && subsetKey !== 'all' ? [subsetKey] : Object.keys(bySubset);
+      subsetKeys.forEach(subset => (bySubset[subset] || []).forEach(id => {
+        const idKey = String(id || '').trim().toLowerCase();
+        if (idKey && !seen[idKey]) { seen[idKey] = 1; result.push(id); }
+      }));
+    });
+    return result;
+  }
+
+  tilesetPieceArt(key) {
+    if (!this._tilesetPieceArt) {
+      this._tilesetPieceArt = {
+        hall_corner: {
+          floor: 'M14 8H28V20H40V34H14Z',
+          wall: 'M19 12V29H36',
+        },
+        hall_straight: {
+          floor: 'M17 6H31V42H17Z',
+          wall: 'M21 10V38M27 10V38',
+        },
+        hall_3way: {
+          floor: 'M17 6H31V18H42V32H6V18H17Z',
+          wall: 'M24 10V25M10 25H38',
+        },
+        hall_4way: {
+          floor: 'M17 6H31V17H42V31H31V42H17V31H6V17H17Z',
+          wall: 'M24 9V39M9 24H39',
+        },
+        hall_cap: {
+          floor: 'M17 6H31V42H17Z',
+          wall: 'M21 10V35H27V10',
+        },
+        room_corner: {
+          floor: 'M8 8H40V40H8Z',
+          wall: 'M13 35V13H35',
+        },
+        room_wall: {
+          floor: 'M8 8H40V40H8Z',
+          wall: 'M13 13H35',
+        },
+        room_entry: {
+          floor: 'M8 8H40V40H8Z',
+          wall: 'M13 13H20M28 13H35',
+        },
+        room_wall_entry_r: {
+          floor: 'M8 8H40V40H8Z',
+          wall: 'M13 13H27M34 13H35',
+        },
+        room_wall_entry_l: {
+          floor: 'M8 8H40V40H8Z',
+          wall: 'M13 13H14M21 13H35',
+        },
+        room_corner_outer_double: {
+          floor: 'M8 8H40V40H8Z',
+          wall: 'M13 13V35H35M20 20V28H28',
+        },
+        room_corner_double_entry: {
+          floor: 'M8 8H40V40H8Z',
+          wall: 'M13 35V28M13 20V13H20M28 13H35',
+        },
+        room_center: {
+          floor: 'M8 8H40V40H8Z',
+          wall: 'M16 16H32V32H16Z',
+        },
+        room_corner_outer: {
+          floor: 'M8 8H40V40H8Z',
+          wall: 'M13 13V35H35',
+        },
+      };
+    }
+    return this._tilesetPieceArt[key] || { floor: '', wall: '' };
   }
 
   detailTypeKey(type) {
@@ -4041,6 +4290,21 @@ class Component extends DCLogic {
     const compact = !!this.state.compact;
     const comfortable = !compact;
     const vanillaOn = !!this.state.vanilla;
+    const tilesetDefs = this._tilesetDefs || { pieces: [], tilesets: [] };
+    const tilesets = tilesetDefs.tilesets || [];
+    const activeTileset = tilesets.find(set => set.key === this.state.tileset) || null;
+    const tilesetActive = !!activeTileset;
+    const validSubset = activeTileset && activeTileset.subsets.some(subset => subset.key === this.state.tilesetSubset)
+      ? this.state.tilesetSubset
+      : 'all';
+    const activeTilesetPiece = tilesetActive && (tilesetDefs.pieces || []).some(piece => piece.key === this.state.tilesetPiece)
+      ? this.state.tilesetPiece
+      : '';
+    const activeTilesetIds = tilesetActive ? this.tilesetIds(activeTileset, validSubset, activeTilesetPiece) : [];
+    const activeTilesetIdSet = new Set(activeTilesetIds.map(id => String(id || '').toLowerCase()));
+    const tilesetFilterKey = tilesetActive
+      ? activeTileset.key + '\u0000' + validSubset + '\u0000' + activeTilesetPiece
+      : '';
 
     // Theme-aware neutral palette for the toolbar's inline-coloured controls.
     // Accent (ember/azura) selected states stay the same in both themes.
@@ -4071,15 +4335,18 @@ class Component extends DCLogic {
     // moves, so retain them until either the records or active type changes.
     let typeFiltered, tagCounts;
     const typeCache = this._typeCache;
-    if (typeCache && typeCache.data === d && typeCache.active === active) {
+    if (typeCache && typeCache.data === d && typeCache.active === active && typeCache.tilesetKey === tilesetFilterKey) {
       typeFiltered = typeCache.items;
       tagCounts = typeCache.tagCounts;
     } else {
       typeFiltered = active === 'All' ? all : all.filter(x => x.type === active);
+      if (tilesetActive) {
+        typeFiltered = typeFiltered.filter(x => activeTilesetIdSet.has(String(x.id || '').toLowerCase()));
+      }
       tagCounts = {};
       TAG_DEFS.forEach(t => { tagCounts[t.label] = 0; });
       typeFiltered.forEach(x => tagsFor(x).forEach(l => { tagCounts[l]++; }));
-      this._typeCache = { data: d, active, items: typeFiltered, tagCounts };
+      this._typeCache = { data: d, active, tilesetKey: tilesetFilterKey, items: typeFiltered, tagCounts };
     }
 
     const mkType = (label, count) => {
@@ -4448,7 +4715,7 @@ class Component extends DCLogic {
     // shorter mobile nav.
     const narrow = !isPopout && !!this.state.narrow;
 
-    const hasFilterWithoutSearch = active !== 'All' || selTags.length > 0 || relSels.length > 0;
+    const hasFilterWithoutSearch = active !== 'All' || selTags.length > 0 || relSels.length > 0 || tilesetActive;
     let emptyTitle = 'No thumbnails in this category yet.';
     let emptyCopy = "These records exist in the library data but aren't part of the current thumbnail render set.";
     if (detailView && filtered.length > 0 && detailItems.length === 0) {
@@ -4469,13 +4736,13 @@ class Component extends DCLogic {
                 : 'No object ID, name, mesh, or light color matches "' + rawQuery + '".'))));
     } else if (hasFilterWithoutSearch) {
       emptyTitle = 'No matching thumbnails.';
-      emptyCopy = 'Try clearing a type, tag, or release filter.';
+      emptyCopy = 'Try clearing a type, tag, release, or tileset filter.';
     }
 
     // Active-filter count powers the mobile "Filters" toggle badge.
     const filterCount =
       (active !== 'All' ? 1 : 0) + selTags.length + (rawQuery || selectedSearchMode ? 1 : 0) + relSels.length +
-      (vanillaOn ? 1 : 0) + detailFilterCount;
+      (vanillaOn ? 1 : 0) + (tilesetActive ? 1 : 0) + detailFilterCount;
     const filtersOpen = !!this.state.filtersOpen;
     const filterHistory = Array.isArray(this.state.filterHistory) ? this.state.filterHistory : [];
     const filterHistoryIndex = typeof this.state.filterHistoryIndex === 'number' ? this.state.filterHistoryIndex : -1;
@@ -4503,6 +4770,51 @@ class Component extends DCLogic {
       color: 'Search light colors by hex',
     };
     const searchPlaceholder = searchPlaceholderMap[selectedSearchMode] || 'Search ID, name, mesh, or light color';
+
+    const tilesetOptions = tilesets.map(set => ({ key: set.key, label: set.label }));
+    const activeSubsetDef = activeTileset && validSubset !== 'all'
+      ? activeTileset.subsets.find(subset => subset.key === validSubset)
+      : null;
+    const tilesetSubsetOptions = activeTileset
+      ? [{ key: 'all', label: 'All subsets' }].concat(activeTileset.subsets)
+      : [];
+    const tilesetAllIds = activeTileset ? this.tilesetIds(activeTileset, validSubset, '') : [];
+    const pieceDefinition = activeTilesetPiece
+      ? (tilesetDefs.pieces || []).find(piece => piece.key === activeTilesetPiece)
+      : null;
+    const pieceRows = (tilesetDefs.pieces || []).map(piece => {
+      const count = activeTileset ? this.tilesetIds(activeTileset, validSubset, piece.key).length : 0;
+      const subsetLabel = activeSubsetDef ? activeSubsetDef.label : 'this tileset';
+      const art = this.tilesetPieceArt(piece.key);
+      return {
+        key: piece.key,
+        label: piece.label,
+        displayLabel: piece.group === 'hall'
+          ? piece.label.replace(/^Hall\s+/i, '')
+          : (piece.group === 'room' ? piece.label.replace(/^Room\s+/i, '') : piece.label),
+        group: piece.group,
+        order: piece.order,
+        floorPath: art.floor,
+        wallPath: art.wall,
+        count,
+        active: piece.key === activeTilesetPiece,
+        disabled: count === 0,
+        title: count
+          ? piece.label + ' \u00b7 ' + count + ' variant' + (count === 1 ? '' : 's')
+          : piece.label + ' \u00b7 unavailable in ' + subsetLabel,
+      };
+    });
+    const tilesetHallPieces = pieceRows.filter(piece => piece.group === 'hall').sort((a, b) => a.order - b.order);
+    const tilesetRoomPieces = pieceRows.filter(piece => piece.group === 'room').sort((a, b) => a.order - b.order);
+    const tilesetAdditionalPieces = pieceRows.filter(piece => piece.group === 'additional').sort((a, b) => a.order - b.order);
+    const mappedPieceCount = pieceRows.filter(piece => piece.count > 0).length;
+    const selectionCount = activeTilesetPiece ? activeTilesetIds.length : tilesetAllIds.length;
+    const tilesetSelectionSummary = activeTilesetPiece && pieceDefinition
+      ? pieceDefinition.label + ' \u00b7 ' + selectionCount + ' variant' + (selectionCount === 1 ? '' : 's')
+      : tilesetAllIds.length + ' assets across ' + mappedPieceCount + ' piece types';
+    const tilesetResultLabel = activeTileset
+      ? [activeTileset.label, activeSubsetDef ? activeSubsetDef.label : '', pieceDefinition ? pieceDefinition.label : ''].filter(Boolean).join(' \u00b7 ')
+      : '';
 
     return {
       yes: true,
@@ -4638,7 +4950,77 @@ class Component extends DCLogic {
       toggleVanilla: () => {
         const next = !this.state.vanilla;
         try { localStorage.setItem('oaab_vanilla', next ? '1' : '0'); } catch (e) {}
-        this.setFilterState({ vanilla: next });
+        this.setFilterState(next
+          ? { vanilla: true }
+          : { vanilla: false, tileset: '', tilesetSubset: 'all', tilesetPiece: '' });
+      },
+      tilesetActive,
+      tilesetsUnavailable: tilesets.length === 0,
+      showTilesetBrowser: tilesetActive,
+      tilesetToggleBg: tilesetActive ? 'rgba(154,146,214,0.15)' : P.surface,
+      tilesetToggleBd: tilesetActive ? '#5a5380' : P.border,
+      tilesetToggleFg: tilesetActive ? (light ? '#4a4173' : '#efe9f6') : P.soft,
+      tilesetBrowserTitle: activeTileset ? activeTileset.label + ' tileset' : 'Tilesets',
+      activeTilesetKey: activeTileset ? activeTileset.key : '',
+      activeTilesetSubset: validSubset,
+      tilesetOptions,
+      tilesetSubsetOptions,
+      tilesetHallPieces,
+      tilesetRoomPieces,
+      tilesetAdditionalPieces,
+      tilesetAllPiecesActive: !activeTilesetPiece,
+      tilesetAllCount: tilesetAllIds.length,
+      tilesetSelectionSummary,
+      toggleTilesets: () => {
+        if (tilesetActive) {
+          this.setFilterState({ tileset: '', tilesetSubset: 'all', tilesetPiece: '', virtualStartRow: 0, virtualEndRow: 8 });
+          return;
+        }
+        if (!tilesets.length) return;
+        this.loadVanilla();
+        this.setFilterState({
+          tileset: tilesets[0].key,
+          tilesetSubset: 'all',
+          tilesetPiece: '',
+          vanilla: true,
+          active: 'All',
+          detailFilters: {},
+          detailSort: null,
+          virtualStartRow: 0,
+          virtualEndRow: 8,
+        });
+      },
+      closeTilesets: () => this.setFilterState({ tileset: '', tilesetSubset: 'all', tilesetPiece: '', virtualStartRow: 0, virtualEndRow: 8 }),
+      pickTileset: (e) => {
+        const key = e.currentTarget && e.currentTarget.value ? e.currentTarget.value : '';
+        const nextSet = tilesets.find(set => set.key === key);
+        if (!nextSet) return;
+        this.loadVanilla();
+        this.setFilterState({
+          tileset: nextSet.key,
+          tilesetSubset: 'all',
+          tilesetPiece: '',
+          vanilla: true,
+          virtualStartRow: 0,
+          virtualEndRow: 8,
+        });
+      },
+      pickTilesetSubset: (e) => {
+        if (!activeTileset) return;
+        const key = e.currentTarget && e.currentTarget.value ? e.currentTarget.value : 'all';
+        const allowed = key === 'all' || activeTileset.subsets.some(subset => subset.key === key);
+        if (!allowed) return;
+        const keepPiece = activeTilesetPiece && this.tilesetIds(activeTileset, key, activeTilesetPiece).length
+          ? activeTilesetPiece
+          : '';
+        this.setFilterState({ tilesetSubset: key, tilesetPiece: keepPiece, virtualStartRow: 0, virtualEndRow: 8 });
+      },
+      pickTilesetPiece: (e) => {
+        if (!activeTileset) return;
+        const key = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.tilesetPiece || '') : '';
+        const next = key && key === activeTilesetPiece ? '' : key;
+        if (next && !this.tilesetIds(activeTileset, validSubset, next).length) return;
+        this.setFilterState({ tilesetPiece: next, virtualStartRow: 0, virtualEndRow: 8 });
       },
       isPopout,
       showChrome: !isPopout,
@@ -5092,7 +5474,7 @@ class Component extends DCLogic {
       showGalleryView: !detailView,
       gridPadTop: startRow * metrics.rowPitch,
       gridPadBottom: (rowCount - endRow) * metrics.rowPitch,
-      activeLabel: active === 'All' ? 'All objects' : active,
+      activeLabel: tilesetActive ? tilesetResultLabel : (active === 'All' ? 'All objects' : active),
       tagLabel,
       hasTagFilter: !noTags,
       // ---- release facet ----
@@ -5123,11 +5505,11 @@ class Component extends DCLogic {
         if (next.length === 0) return; // keep at least one kind selected
         this.setFilterState({ relKinds: next });
       },
-      anyFilter: active !== 'All' || selTags.length > 0 || !!rawQuery || !!selectedSearchMode || relSels.length > 0 || detailFilterCount > 0,
+      anyFilter: active !== 'All' || selTags.length > 0 || !!rawQuery || !!selectedSearchMode || relSels.length > 0 || tilesetActive || detailFilterCount > 0,
       clearAll: () => this.setFilterState({
         active: 'All', tags: [], query: '', releases: [], relKinds: ['added', 'modified'],
         tagOpen: false, typeOpen: false, relOpen: false, searchMode: '', searchModeOpen: false, searchSuggestOpen: false,
-        detailFilters: {}, detailSort: null,
+        tileset: '', tilesetSubset: 'all', tilesetPiece: '', detailFilters: {}, detailSort: null,
       }),
       shownCount: detailView ? detailItems.length : filtered.length,
       shownNoun: detailView ? 'rows' : 'thumbnails',
