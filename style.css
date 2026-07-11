@@ -6150,14 +6150,19 @@ button {
   transform:skew(-22deg) rotate(-8deg);
 }
 .library-page--popout .library-popout-title {
+  flex:0 0 auto;
   color:var(--csse-text-strong);
+  white-space:nowrap;
 }
 .library-page--popout .library-popout-context {
+  flex:0 0 auto;
   padding-left:8px;
   border-left:1px solid var(--csse-line);
   color:var(--csse-muted);
+  white-space:nowrap;
 }
 .library-page--popout .library-popout-aot {
+  flex:0 0 auto;
   margin-left:auto;
   display:inline-flex;
   align-items:center;
@@ -6705,14 +6710,17 @@ button {
 }
 
 @media (max-width:760px) {
-  .library-page--popout .library-popout-context {
-    display:none;
-  }
   .library-page--popout .thumb-scale-control {
     flex:1 1 150px;
   }
   .library-page--popout .filter-collapse {
     gap:4px !important;
+  }
+}
+
+@media (max-width:340px) {
+  .library-page--popout .library-popout-context {
+    display:none;
   }
 }
 

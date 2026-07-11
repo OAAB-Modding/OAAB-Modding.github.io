@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=library-csse-popout-20260710c">
+<link rel="stylesheet" href="../style.css?v=library-csse-popout-20260710d">
 <script src="../theme.js"></script>
 </helmet>
 
@@ -1304,7 +1304,9 @@ class Component extends DCLogic {
       return;
     }
     const w = Math.min(1180, Math.round(window.innerWidth || 1180));
-    const h = Math.min(820, Math.round(this.activeWin().innerHeight || 820));
+    // Ask for the full available screen height. Chromium may still trim the
+    // result to fit its PiP window chrome, but do not impose our own 820px cap.
+    const h = Math.round((window.screen && window.screen.availHeight) || window.innerHeight || 820);
     window.documentPictureInPicture.requestWindow({ width: w, height: h }).then((pip) => {
       // Mirror stylesheets + font links so the moved DOM stays styled.
       document.querySelectorAll('link[rel="stylesheet"], link[rel="preconnect"], style').forEach((node) => {
