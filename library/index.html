@@ -3733,7 +3733,14 @@ class Component extends DCLogic {
   gridMetrics(width) {
     const compact = !!this.state.compact;
     const scale = this.state.scale || 1;
-    const gap = Math.round((compact ? 10 : 14) * scale);
+    // The popout deliberately tightens the compact grid to a fixed 4px gap
+    // (see its .asset-grid override in style.css). Virtual row spacers must use
+    // that rendered gap too, or their accumulated height changes whenever the
+    // mounted row window advances and makes the thumbnails jump while scrolling.
+    const isPopout = this._isPopout != null
+      ? this._isPopout
+      : ((typeof sessionStorage !== 'undefined' && sessionStorage.getItem('oaab_popout') === '1') || /[?&]popout=1/.test(location.search || ''));
+    const gap = isPopout && compact ? 4 : Math.round((compact ? 10 : 14) * scale);
     const minCardWidth = Math.round((compact ? 112 : 176) * scale);
     const captionHeight = compact ? 0 : 78;
     const columns = Math.max(1, Math.floor((Math.max(0, width) + gap) / (minCardWidth + gap)));
