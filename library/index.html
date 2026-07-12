@@ -345,6 +345,7 @@
                   <button type="button" data-tileset-piece="{{ piece.key }}" onClick="{{ pickTilesetPiece }}" title="{{ piece.title }}" aria-label="{{ piece.title }}" aria-pressed="{{ piece.active }}" disabled="{{ piece.disabled }}" class="tileset-core-piece">
                     <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" class="tileset-core-icon">
                       <path d="{{ piece.floorPath }}" class="tileset-core-floor"></path>
+                      <path d="{{ piece.cornerPath }}" class="tileset-core-corner"></path>
                       <path d="{{ piece.wallPath }}" class="tileset-core-wall"></path>
                     </svg>
                     <span class="tileset-core-piece-label">{{ piece.displayLabel }}</span>
@@ -360,6 +361,7 @@
                   <button type="button" data-tileset-piece="{{ piece.key }}" onClick="{{ pickTilesetPiece }}" title="{{ piece.title }}" aria-label="{{ piece.title }}" aria-pressed="{{ piece.active }}" disabled="{{ piece.disabled }}" class="tileset-core-piece">
                     <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" class="tileset-core-icon">
                       <path d="{{ piece.floorPath }}" class="tileset-core-floor"></path>
+                      <path d="{{ piece.cornerPath }}" class="tileset-core-corner"></path>
                       <path d="{{ piece.wallPath }}" class="tileset-core-wall"></path>
                     </svg>
                     <span class="tileset-core-piece-label">{{ piece.displayLabel }}</span>
@@ -1946,66 +1948,56 @@ class Component extends DCLogic {
 
   tilesetPieceArt(key) {
     if (!this._tilesetPieceArt) {
+      // Every core icon starts as one square floor with four corner blocks and
+      // four inset side walls. Individual pieces are made only by removing
+      // components, mirroring the modular tileset grammar used in-game.
+      const floor = 'M4 4H44V44H4Z';
+      const corners = {
+        topLeft: 'M4 4H14V14H4Z',
+        topRight: 'M34 4H44V14H34Z',
+        bottomRight: 'M34 34H44V44H34Z',
+        bottomLeft: 'M4 34H14V44H4Z',
+      };
+      const walls = {
+        top: 'M14 4H34V9H14Z',
+        right: 'M39 14H44V34H39Z',
+        bottom: 'M14 39H34V44H14Z',
+        left: 'M4 14H9V34H4Z',
+      };
+      const framework = (removedCorners, removedWalls) => {
+        const cornerRemovals = new Set(removedCorners || []);
+        const wallRemovals = new Set(removedWalls || []);
+        return {
+          floor,
+          corners: Object.keys(corners)
+            .filter(name => !cornerRemovals.has(name))
+            .map(name => corners[name])
+            .join(''),
+          walls: Object.keys(walls)
+            .filter(name => !wallRemovals.has(name))
+            .map(name => walls[name])
+            .join(''),
+        };
+      };
+
       this._tilesetPieceArt = {
-        hall_corner: {
-          floor: 'M14 8H28V20H40V34H14Z',
-          wall: 'M19 12V29H36',
-        },
-        hall_straight: {
-          floor: 'M17 6H31V42H17Z',
-          wall: 'M21 10V38M27 10V38',
-        },
-        hall_3way: {
-          floor: 'M17 6H31V18H42V32H6V18H17Z',
-          wall: 'M24 10V25M10 25H38',
-        },
-        hall_4way: {
-          floor: 'M17 6H31V17H42V31H31V42H17V31H6V17H17Z',
-          wall: 'M24 9V39M9 24H39',
-        },
-        hall_cap: {
-          floor: 'M17 6H31V42H17Z',
-          wall: 'M21 10V35H27V10',
-        },
-        room_corner: {
-          floor: 'M8 8H40V40H8Z',
-          wall: 'M13 35V13H35',
-        },
-        room_wall: {
-          floor: 'M8 8H40V40H8Z',
-          wall: 'M13 13H35',
-        },
-        room_entry: {
-          floor: 'M8 8H40V40H8Z',
-          wall: 'M13 13H20M28 13H35',
-        },
-        room_wall_entry_r: {
-          floor: 'M8 8H40V40H8Z',
-          wall: 'M13 13H27M34 13H35',
-        },
-        room_wall_entry_l: {
-          floor: 'M8 8H40V40H8Z',
-          wall: 'M13 13H14M21 13H35',
-        },
-        room_corner_outer_double: {
-          floor: 'M8 8H40V40H8Z',
-          wall: 'M13 13V35H35M20 20V28H28',
-        },
-        room_corner_double_entry: {
-          floor: 'M8 8H40V40H8Z',
-          wall: 'M13 35V28M13 20V13H20M28 13H35',
-        },
-        room_center: {
-          floor: 'M8 8H40V40H8Z',
-          wall: 'M16 16H32V32H16Z',
-        },
-        room_corner_outer: {
-          floor: 'M8 8H40V40H8Z',
-          wall: 'M13 13V35H35',
-        },
+        hall_corner: framework([], ['right', 'bottom']),
+        room_corner: framework(['bottomRight'], ['right', 'bottom']),
+        hall_straight: framework([], ['top', 'bottom']),
+        hall_3way: framework([], ['right', 'bottom', 'left']),
+        hall_4way: framework([], ['top', 'right', 'bottom', 'left']),
+        room_wall: framework(['bottomRight', 'bottomLeft'], ['right', 'bottom', 'left']),
+        room_entry: framework(['bottomRight', 'bottomLeft'], ['top', 'right', 'bottom', 'left']),
+        hall_cap: framework([], ['bottom']),
+        room_wall_entry_r: framework(['bottomLeft'], ['right', 'bottom', 'left']),
+        room_wall_entry_l: framework(['bottomRight'], ['right', 'bottom', 'left']),
+        room_corner_outer_double: framework(['topRight', 'bottomLeft'], ['top', 'right', 'bottom', 'left']),
+        room_corner_double_entry: framework(['bottomRight'], ['top', 'right', 'bottom', 'left']),
+        room_center: framework(['topLeft', 'topRight', 'bottomRight', 'bottomLeft'], ['top', 'right', 'bottom', 'left']),
+        room_corner_outer: framework(['topRight', 'bottomRight', 'bottomLeft'], ['top', 'right', 'bottom', 'left']),
       };
     }
-    return this._tilesetPieceArt[key] || { floor: '', wall: '' };
+    return this._tilesetPieceArt[key] || { floor: '', corners: '', walls: '' };
   }
 
   detailTypeKey(type) {
@@ -4795,7 +4787,8 @@ class Component extends DCLogic {
         group: piece.group,
         order: piece.order,
         floorPath: art.floor,
-        wallPath: art.wall,
+        cornerPath: art.corners,
+        wallPath: art.walls,
         count,
         active: piece.key === activeTilesetPiece,
         disabled: count === 0,

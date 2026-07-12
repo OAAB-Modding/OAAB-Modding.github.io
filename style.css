@@ -2828,13 +2828,10 @@ button {
   fill:rgba(154,146,214,.14);
   stroke:none;
 }
+.tileset-core-corner,
 .tileset-core-wall {
-  fill:none;
-  stroke:#d8cebc;
-  stroke-width:2.8;
-  stroke-linecap:square;
-  stroke-linejoin:miter;
-  vector-effect:non-scaling-stroke;
+  fill:#d8cebc;
+  stroke:none;
 }
 .tileset-core-piece-label {
   align-self:start;
@@ -2880,6 +2877,10 @@ button {
 .tileset-core-piece[aria-pressed="true"] .tileset-core-floor {
   fill:rgba(210,130,63,.16);
   stroke:rgba(210,130,63,.42);
+}
+.tileset-core-piece[aria-pressed="true"] .tileset-core-corner,
+.tileset-core-piece[aria-pressed="true"] .tileset-core-wall {
+  fill:#f0c89c;
 }
 .tileset-core-piece:disabled {
   cursor:not-allowed;
@@ -5417,7 +5418,8 @@ button {
 .theme-light .tileset-core-floor {
   fill:rgba(129,120,181,.12);
 }
-.theme-light .tileset-core-wall { stroke:#514536; }
+.theme-light .tileset-core-corner,
+.theme-light .tileset-core-wall { fill:#514536; }
 .theme-light .tileset-core-piece-count {
   border-color:#c8bca9;
   background:rgba(255,250,242,.92);
@@ -6976,7 +6978,8 @@ button {
   color:var(--csse-text);
 }
 .library-page--popout .tileset-core-icon { width:32px;height:32px; }
-.library-page--popout .tileset-core-wall { stroke:var(--csse-text-strong);stroke-width:2; }
+.library-page--popout .tileset-core-corner,
+.library-page--popout .tileset-core-wall { fill:var(--csse-text-strong); }
 .library-page--popout .tileset-core-floor { fill:rgba(0,120,215,.08); }
 .library-page--popout .tileset-core-piece-label {
   min-height:15px;
@@ -7004,7 +7007,8 @@ button {
   color:#fff;
   box-shadow:0 0 0 1px var(--csse-selection-border);
 }
-.library-page--popout .tileset-core-piece[aria-pressed="true"] .tileset-core-wall { stroke:#fff; }
+.library-page--popout .tileset-core-piece[aria-pressed="true"] .tileset-core-corner,
+.library-page--popout .tileset-core-piece[aria-pressed="true"] .tileset-core-wall { fill:#fff; }
 .library-page--popout .tileset-core-piece:hover:not(:disabled) {
   transform:none;
   box-shadow:0 0 0 1px var(--csse-selection-border);
