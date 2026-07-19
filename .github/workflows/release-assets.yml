@@ -1,15 +1,11 @@
-# Regenerates release-assets.json whenever a new OAAB_Data release is published,
-# or on manual dispatch. Diffs only X.Y.0 tags, each against the previous X.Y.0.
+# Regenerates release-assets.json when OAAB_Data announces a new major release.
+# Diffs only X.Y.0 tags, each against the previous X.Y.0.
 name: Build release-assets manifest
 
 on:
-  # Fire when a release is published in the Data repo (requires a repository_dispatch
-  # sender in that repo, or run on this repo's own release events / a schedule).
-  release:
-    types: [published]
-  workflow_dispatch: {}
-  schedule:
-    - cron: '0 6 * * 1'   # weekly safety net, Mondays 06:00 UTC
+  # OAAB-Modding/Data sends this event when an X.Y or X.Y.0 tag is pushed.
+  repository_dispatch:
+    types: [sync-mesh-diffs]
 
 permissions:
   contents: write
