@@ -1,5 +1,8 @@
 # OAAB Library WASM parser
 
+The project-wide implementation status and remaining phases are tracked in
+[`../library/MILESTONES.md`](../library/MILESTONES.md).
+
 This crate is the deliberately small browser-facing boundary around
 [Greatness7/tes3](https://github.com/Greatness7/tes3). It is pinned to commit
 `44ea38ca389f5361229eef4800373b3df13f7063` because the upstream API is
