@@ -1,6 +1,7 @@
 import { Catalog } from './catalog/catalog.js';
 import { OAABCatalog } from './catalog/oaab-catalog.js';
 import { VanillaCatalog } from './catalog/vanilla-catalog.js';
+import { createLibraryComponent } from './component.js';
 import { AssetResolver } from './resolver/asset-resolver.js';
 import { meshKey, normalizeAssetPath } from './resolver/path-utils.js';
 import { OAABSource } from './sources/oaab-source.js';
@@ -23,26 +24,33 @@ export function createLibraryServices({ fetchImpl = globalThis.fetch?.bind(globa
   resolver.addSource(new OAABSource({ fetchImpl }), 100);
 
   const fetchData = (file) => fetchLibraryData(file, fetchImpl);
+  const providers = Object.freeze({
+    oaab: new OAABCatalog({ fetchData }),
+    vanilla: new VanillaCatalog({ fetchData }),
+  });
   const catalog = new Catalog()
-    .addProvider(new OAABCatalog({ fetchData }), 100)
-    .addProvider(new VanillaCatalog({ fetchData }), 10);
+    .addProvider(providers.oaab, 100)
+    .addProvider(providers.vanilla, 10);
 
   return {
     state: createLibraryState(),
     resolver,
     catalog,
+    providers,
   };
 }
 
-// The production Library's declarative runtime cannot import ES modules from
-// inside its component body. This narrow bridge lets it consume the shared
-// path/data utilities while the remainder of that page is migrated gradually.
+// The declarative runtime evaluates a classic-script component body. Keep its
+// inline class to a compatibility shim and expose the module-backed component
+// factory and shared utilities through one frozen bridge.
 if (typeof window !== 'undefined') {
   window.OAAB_LIBRARY = Object.freeze({
+    createLibraryComponent,
+    createLibraryServices,
     fetchLibraryData,
     meshKey,
     normalizeAssetPath,
   });
 }
 
-export { AssetResolver, OAABSource, meshKey, normalizeAssetPath };
+export { AssetResolver, createLibraryComponent, OAABSource, meshKey, normalizeAssetPath };

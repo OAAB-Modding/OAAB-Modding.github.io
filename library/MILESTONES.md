@@ -19,7 +19,7 @@ uploading users' ESP, ESM, BSA, or loose asset files.
 | Milestone | Status | Summary |
 | --- | --- | --- |
 | Proof of concept | **Complete** | A real OAAB NIF travels through OAAB source -> resolver -> worker/WASM -> Three.js, including textures. |
-| Phase 1 — Modularize Library | **In progress** | Shared modules and a compatibility bridge exist; most production UI logic remains in `library/index.html`. |
+| Phase 1 — Modularize Library | **Complete** | Production logic is composed from focused modules; `library/index.html` retains only the declarative template and a one-line compatibility class. |
 | Phase 2 — Asset sources | **Complete for OAAB** | Canonical paths, ordered resolver, and public OAAB source are working. |
 | Phase 3 — NIF renderer lab | **Complete for static models** | The isolated lab renders supported NetImmerse 4.0.0.2 geometry. |
 | Phase 4 — TES3 WASM | **In progress** | NIF parsing and worker transfer are complete; plugin parsing is not implemented. |
@@ -80,13 +80,22 @@ These apply to every remaining milestone:
 
 ### Phase 1 — Refactor the Library into modules
 
-**Status: In progress.**
+**Status: Complete.**
 
-Move the production Library's state, data loading, catalog adapters, record
-normalization, filtering, previews, and UI coordination out of
-`library/index.html`. The page currently imports `src/library/app.js` as a
-compatibility bridge and uses shared `fetchLibraryData` and `meshKey` helpers,
-but the majority of its application logic is still inline.
+The production Library's state, lifecycle, data loading, catalog adapters,
+record normalization/details, filters/search, previews, magic-effect handling,
+and render-value coordination now live under `src/library/`. The declarative
+runtime component in `library/index.html` is a one-line subclass of the
+module-backed component factory. `src/library/bootstrap.js` installs the module
+bridge before loading the declarative runtime, avoiding a startup race on cold
+module graphs.
+
+The built-in OAAB and vanilla JSON now enter production through `OAABCatalog`
+and `VanillaCatalog`, which emit the generic record shape. The production
+catalog adapter retains each generic record and derives the existing gallery
+view model from `record.raw`, keeping current thumbnails, tooltips, detail data,
+and CSSE behavior intact while giving future imported catalogs the same
+boundary.
 
 Required modules include app/state, catalogs, generic record utilities, asset
 sources, the resolver, renderer, storage/cache, and workers. Use a generic
@@ -113,6 +122,20 @@ Exit criteria:
   drag/drop, popout mode, and existing URLs are intact.
 - OAAB_Data JSON is a catalog provider rather than the core record model.
 - Production logic is divided into focused modules with no new giant JS blob.
+
+Verification on 2026-08-25:
+
+- Eleven Node assertions passed across path utilities, resolver/source,
+  built-in catalog providers, production state, and component composition.
+- The production browser smoke test loaded 17,550 combined records and 826
+  weapons, with 210 weapons when vanilla was disabled.
+- Gallery search returned all six expected Bloodgrass records; compact and
+  826-row Weapon detail views worked.
+- Tag (`Ashlander`, 119), release (`2.6.0`, 282), and tileset-piece (2 variants)
+  filters worked, as did render, container-content, book, enchantment, and
+  alchemy preview paths.
+- The isolated NIF lab still loaded the default textured model and passed the
+  15/15 representative corpus with a clean console.
 
 ### Phase 2 — Create the asset-source abstraction
 
@@ -464,19 +487,18 @@ Exit criteria:
 
 ## Recommended next-agent sequence
 
-The next implementation increment should finish the foundation before adding
-new import UI:
+The next implementation increment should finish the parser boundary before
+adding new import UI:
 
 1. Run the baseline verification below and open both production Library and the
    NIF lab.
-2. Finish Phase 1's production modularization without visible behavior changes.
-3. Add the Phase 4 plugin parser and unit/fixture tests for the initial
+2. Add the Phase 4 plugin parser and unit/fixture tests for the initial
    mesh-bearing record types.
-4. Implement Phase 7 plugin loading and the source-filter/catalog adapter.
-5. Verify Phase 8 OAAB auto-resolution, then add Phase 9 loose local files.
-6. Add BSA support and dependency diagnostics before production viewer
+3. Implement Phase 7 plugin loading and the source-filter/catalog adapter.
+4. Verify Phase 8 OAAB auto-resolution, then add Phase 9 loose local files.
+5. Add BSA support and dependency diagnostics before production viewer
    integration.
-7. Integrate the live viewer, then persistence/caching, built-in unification,
+6. Integrate the live viewer, then persistence/caching, built-in unification,
    load-order/cells, and finally advanced NIF features.
 
 If the next task is specifically about renderer correctness, it is safe to work
@@ -487,6 +509,8 @@ renderer or parser into production.
 
 - Primary lab entry point: `library/lab/index.html`.
 - Browser app entry point: `src/library/lab/app.js`.
+- Production bootstrap: `src/library/bootstrap.js`; production component
+  composition: `src/library/component.js`.
 - Shared renderer: `src/library/renderer/viewer.js`.
 - Resolver ordering: higher numeric priority wins; the first source at a tied
   priority wins.
@@ -516,6 +540,8 @@ Run from the repository root:
 node tests/library/path-utils.test.mjs
 node tests/library/asset-resolver.test.mjs
 node tests/library/oaab-source.test.mjs
+node tests/library/catalog.test.mjs
+node tests/library/component.test.mjs
 cargo fmt --manifest-path wasm/Cargo.toml -- --check
 cargo clippy --manifest-path wasm/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path wasm/Cargo.toml
@@ -534,6 +560,17 @@ At the proof-of-concept checkpoint:
 - The optimized WASM payload was approximately 335,881 bytes.
 - The lab console was clean and the 15-fixture corpus passed 15/15.
 - The production Library catalog and control smoke test passed.
+
+At the Phase 1 completion checkpoint:
+
+- All eleven Node assertions passed, along with JavaScript syntax checks and
+  `git diff --check`.
+- Rust format, clippy with warnings denied, Rust tests, and the optimized
+  `wasm-pack` release build passed.
+- The production catalog/filter/view/preview smoke test passed with the counts
+  recorded under Phase 1 above.
+- The NIF lab loaded the default model and passed 15/15 corpus fixtures with no
+  console warnings or errors.
 
 ## Roadmap maintenance checklist
 
