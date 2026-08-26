@@ -1,0 +1,17 @@
+{
+  "name": "oaab-tes3-wasm",
+  "type": "module",
+  "description": "Browser-facing TES3 parsing boundary for the OAAB Library",
+  "version": "0.1.0",
+  "license": "MIT OR Apache-2.0",
+  "files": [
+    "oaab_tes3_wasm_bg.wasm",
+    "oaab_tes3_wasm.js",
+    "oaab_tes3_wasm.d.ts"
+  ],
+  "main": "oaab_tes3_wasm.js",
+  "types": "oaab_tes3_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

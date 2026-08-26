@@ -20,6 +20,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/OAAB-Modding/OAAB-Modding.github.io@main/assets/images/general/og-image.png">
 <script src="../support.js"></script>
+<script type="module" src="../src/library/app.js"></script>
 </head>
 <body class="library-page">
 <x-dc>
@@ -1144,8 +1145,9 @@ class Component extends DCLogic {
     // not served from the site itself, e.g. a local file open or a preview.
     const DATA_LOCAL = '/assets/data/library/';
     const DATA_RAW = 'https://raw.githubusercontent.com/OAAB-Modding/OAAB-Modding.github.io/main/assets/data/library/';
-    const fetchData = (file) =>
-      fetch(DATA_LOCAL + file)
+    const fetchData = (file) => window.OAAB_LIBRARY
+      ? window.OAAB_LIBRARY.fetchLibraryData(file)
+      : fetch(DATA_LOCAL + file)
         .then(r => { if (!r.ok) throw new Error('http ' + r.status); return r; })
         .catch(() => fetch(DATA_RAW + file));
     this._fetchData = fetchData;
@@ -1709,6 +1711,9 @@ class Component extends DCLogic {
   // paths like "00 Core/meshes/oaab/m/foo.nif" (and patch sub-folders). Both
   // collapse to the same key so a changed file lines up with its catalogue id.
   meshKey(p) {
+    if (window.OAAB_LIBRARY && window.OAAB_LIBRARY.meshKey) {
+      return window.OAAB_LIBRARY.meshKey(p);
+    }
     const fwd = String(p || '').replace(/\\/g, '/').toLowerCase();
     const meshesMarker = '/meshes/';
     const i = fwd.lastIndexOf(meshesMarker);

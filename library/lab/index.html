@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>NIF Lab — OAAB Library</title>
+  <link rel="icon" type="image/png" href="../../assets/images/general/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./lab.css">
+  <script src="../../theme.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <header class="lab-header">
+    <a class="lab-back" href="../">← Library</a>
+    <div>
+      <p class="lab-kicker">Developer proof of concept</p>
+      <h1>OAAB NIF Lab</h1>
+      <p>OAAB source → resolver → Web Worker → Greatness7/tes3 WASM → Three.js</p>
+    </div>
+    <button id="theme-toggle" class="button button--quiet" type="button">Toggle theme</button>
+  </header>
+
+  <main class="lab-shell">
+    <section class="load-panel" aria-label="Load a NIF">
+      <form id="load-form" class="load-form">
+        <label for="asset-path">OAAB mesh path</label>
+        <div class="load-row">
+          <input id="asset-path" name="mesh" value="oaab/f/mv_bloodgrass_01.nif" autocomplete="off" spellcheck="false">
+          <button id="load-button" class="button button--primary" type="submit">Load NIF</button>
+        </div>
+      </form>
+      <div class="fixture-row">
+        <label for="fixture-select">Fixture</label>
+        <select id="fixture-select"></select>
+        <button id="run-fixtures" class="button" type="button">Run 15-fixture corpus</button>
+      </div>
+      <div id="status" class="status" data-stage="idle" role="status">Initializing WebAssembly…</div>
+    </section>
+
+    <section class="workspace">
+      <div class="viewport-panel">
+        <div id="viewport" class="viewport">
+          <canvas id="nif-canvas" aria-label="Interactive 3D NIF preview"></canvas>
+          <div class="viewport-help">Drag rotate · wheel zoom · right drag pan · double-click reset</div>
+        </div>
+        <div class="viewer-controls" aria-label="Viewer controls">
+          <button id="reset-camera" class="button" type="button">Reset camera</button>
+          <label><input id="wireframe" type="checkbox"> Wireframe</label>
+          <label><input id="show-grid" type="checkbox" checked> Grid</label>
+          <label><input id="show-axes" type="checkbox"> Axes</label>
+          <label><input id="show-collision" type="checkbox"> Collision</label>
+          <label class="background-control">Background <input id="background" type="color" value="#17130f"></label>
+        </div>
+      </div>
+
+      <aside class="diagnostics" aria-label="NIF diagnostics">
+        <section class="diagnostic-card">
+          <h2>Asset</h2>
+          <dl id="asset-info" class="stats"><dt>Status</dt><dd>Waiting</dd></dl>
+        </section>
+        <section class="diagnostic-card">
+          <h2>Geometry</h2>
+          <dl id="geometry-info" class="stats"><dt>Meshes</dt><dd>—</dd></dl>
+        </section>
+        <section class="diagnostic-card">
+          <h2>Textures</h2>
+          <div id="texture-summary" class="summary-line">Resolved 0 · Missing 0</div>
+          <ul id="texture-list" class="diagnostic-list"><li>None loaded</li></ul>
+        </section>
+        <section class="diagnostic-card">
+          <h2>Unsupported / ignored blocks</h2>
+          <ul id="unsupported-list" class="diagnostic-list"><li>None reported</li></ul>
+        </section>
+        <section class="diagnostic-card">
+          <h2>Warnings</h2>
+          <ul id="warning-list" class="diagnostic-list"><li>None</li></ul>
+        </section>
+      </aside>
+    </section>
+
+    <section id="fixture-results" class="fixture-results" hidden>
+      <div class="fixture-results-heading">
+        <div>
+          <p class="lab-kicker">Compatibility corpus</p>
+          <h2>Representative OAAB NIFs</h2>
+        </div>
+        <span id="fixture-summary"></span>
+      </div>
+      <ol id="fixture-result-list"></ol>
+    </section>
+  </main>
+
+  <script type="module" src="../../src/library/lab/app.js"></script>
+</body>
+</html>

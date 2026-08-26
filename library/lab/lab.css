@@ -1,0 +1,239 @@
+:root {
+  color-scheme: dark;
+  --bg: #120f0d;
+  --panel: #1c1713;
+  --panel-soft: #241d18;
+  --border: #49382d;
+  --text: #eadfce;
+  --muted: #a99b89;
+  --accent: #d97852;
+  --accent-strong: #f09469;
+  --good: #7fc99a;
+  --bad: #ef7d79;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #eee7da;
+  --panel: #faf6ee;
+  --panel-soft: #e9dfd0;
+  --border: #b9a48d;
+  --text: #302720;
+  --muted: #716353;
+  --accent: #a9482d;
+  --accent-strong: #85341f;
+  --good: #287b49;
+  --bad: #b33030;
+}
+
+* { box-sizing: border-box; }
+
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 30rem),
+    var(--bg);
+  font: 17px/1.45 "EB Garamond", Georgia, serif;
+}
+
+button, input, select { font: inherit; }
+
+.lab-header {
+  display: grid;
+  grid-template-columns: minmax(7rem, 1fr) minmax(20rem, 70rem) minmax(7rem, 1fr);
+  align-items: start;
+  gap: 1.25rem;
+  padding: 1.5rem clamp(1rem, 3vw, 3rem);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+}
+
+.lab-header h1,
+.fixture-results h2 {
+  margin: 0;
+  font-weight: 500;
+  letter-spacing: .02em;
+}
+
+.lab-header p { margin: .3rem 0 0; color: var(--muted); }
+.lab-header .lab-kicker { color: var(--accent-strong); }
+
+.lab-back {
+  color: var(--text);
+  text-decoration: none;
+  padding-top: .45rem;
+}
+
+.lab-kicker {
+  margin: 0 0 .2rem;
+  font: 500 .68rem/1.2 "JetBrains Mono", monospace;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.lab-shell {
+  width: min(1500px, 100%);
+  margin: 0 auto;
+  padding: clamp(1rem, 2.5vw, 2rem);
+}
+
+.load-panel,
+.viewport-panel,
+.diagnostic-card,
+.fixture-results {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  box-shadow: 0 16px 50px rgba(0, 0, 0, .16);
+}
+
+.load-panel { padding: 1rem; margin-bottom: 1rem; }
+.load-form label, .fixture-row > label { color: var(--muted); }
+.load-row { display: flex; gap: .65rem; margin-top: .35rem; }
+
+.load-row input,
+.fixture-row select {
+  min-width: 0;
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: var(--panel-soft);
+  border-radius: 3px;
+}
+
+.load-row input {
+  flex: 1;
+  padding: .65rem .75rem;
+  font: .82rem/1.4 "JetBrains Mono", monospace;
+}
+
+.fixture-row {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  margin-top: .75rem;
+}
+
+.fixture-row select { flex: 1; padding: .48rem .6rem; }
+
+.button {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: .5rem .8rem;
+  color: var(--text);
+  background: var(--panel-soft);
+  cursor: pointer;
+}
+
+.button:hover { border-color: var(--accent); }
+.button:disabled { opacity: .55; cursor: wait; }
+.button--primary { background: var(--accent); border-color: var(--accent); color: #fff8ef; }
+.button--quiet { justify-self: end; }
+
+.status {
+  margin-top: .75rem;
+  min-height: 1.4em;
+  color: var(--muted);
+  font: .72rem/1.4 "JetBrains Mono", monospace;
+}
+
+.status[data-stage="ready"] { color: var(--good); }
+.status[data-stage="error"] { color: var(--bad); }
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  gap: 1rem;
+  align-items: start;
+}
+
+.viewport-panel { min-width: 0; overflow: hidden; }
+
+.viewport {
+  position: relative;
+  min-height: 620px;
+  height: min(72vh, 900px);
+  background: #17130f;
+}
+
+#nif-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+.viewport-help {
+  position: absolute;
+  right: .75rem;
+  bottom: .65rem;
+  padding: .3rem .5rem;
+  border-radius: 2px;
+  color: #d7c5b0;
+  background: rgba(15, 12, 10, .72);
+  font: .62rem/1.35 "JetBrains Mono", monospace;
+  pointer-events: none;
+}
+
+.viewer-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .55rem 1rem;
+  padding: .75rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.viewer-controls label { white-space: nowrap; }
+.background-control { display: inline-flex; align-items: center; gap: .4rem; }
+.background-control input { width: 2.4rem; height: 1.8rem; padding: 0; border: 0; background: transparent; }
+
+.diagnostics { display: grid; gap: 1rem; }
+.diagnostic-card { padding: .85rem 1rem; min-width: 0; }
+.diagnostic-card h2 { margin: 0 0 .65rem; font-size: 1rem; font-weight: 600; }
+
+.stats {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .3rem .75rem;
+  margin: 0;
+  font: .68rem/1.45 "JetBrains Mono", monospace;
+}
+
+.stats dt { color: var(--muted); }
+.stats dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+.summary-line { margin-bottom: .45rem; color: var(--muted); font: .68rem/1.4 "JetBrains Mono", monospace; }
+
+.diagnostic-list {
+  max-height: 11rem;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: .64rem/1.5 "JetBrains Mono", monospace;
+}
+
+.diagnostic-list li { padding: .25rem 0; border-top: 1px solid color-mix(in srgb, var(--border) 65%, transparent); overflow-wrap: anywhere; }
+.diagnostic-list li:first-child { border-top: 0; }
+.diagnostic-list .resolved { color: var(--good); }
+.diagnostic-list .missing { color: var(--bad); }
+
+.fixture-results { margin-top: 1rem; padding: 1rem; }
+.fixture-results-heading { display: flex; justify-content: space-between; align-items: end; gap: 1rem; }
+.fixture-results ol { margin: 1rem 0 0; padding: 0; list-style: none; font: .68rem/1.4 "JetBrains Mono", monospace; }
+.fixture-results li { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr) auto; gap: .6rem; padding: .45rem 0; border-top: 1px solid var(--border); }
+.fixture-results li.pass { color: var(--good); }
+.fixture-results li.fail { color: var(--bad); }
+
+@media (max-width: 900px) {
+  .lab-header { grid-template-columns: 1fr auto; }
+  .lab-header > div { grid-column: 1 / -1; grid-row: 2; }
+  .workspace { grid-template-columns: 1fr; }
+  .diagnostics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .viewport { min-height: 480px; }
+}
+
+@media (max-width: 600px) {
+  .load-row, .fixture-row { align-items: stretch; flex-direction: column; }
+  .diagnostics { grid-template-columns: 1fr; }
+  .viewport { min-height: 390px; height: 60vh; }
+  .button--quiet { font-size: .8rem; }
+}
+

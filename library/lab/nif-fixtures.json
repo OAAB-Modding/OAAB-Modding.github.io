@@ -1,0 +1,78 @@
+[
+  {
+    "label": "Ashlander awning (alpha + collision)",
+    "path": "oaab/x/rem_ash_awning_03.nif",
+    "expect": { "minMeshes": 9, "blocks": ["NiAlphaProperty", "RootCollisionNode"] }
+  },
+  {
+    "label": "Silt strider hovel (large multi-material)",
+    "path": "oaab/x/strider_hovel.nif",
+    "expect": { "minMeshes": 20, "blocks": ["NiTriShapeData", "RootCollisionNode"] }
+  },
+  {
+    "label": "Common forge (multi-shape collision)",
+    "path": "oaab/x/com_forge_01.nif",
+    "expect": { "minMeshes": 8, "blocks": ["NiMaterialProperty", "RootCollisionNode"] }
+  },
+  {
+    "label": "Bloodgrass container (switch node)",
+    "path": "oaab/f/mv_bloodgrass_01.nif",
+    "expect": { "minMeshes": 2, "blocks": ["NiSwitchNode", "NiStringExtraData"] }
+  },
+  {
+    "label": "Keyring clutter (dense small object)",
+    "path": "oaab/m/misc_keyring.nif",
+    "expect": { "minMeshes": 4, "minTriangles": 900 }
+  },
+  {
+    "label": "Information marker (untextured alpha)",
+    "path": "oaab/h/marker_info.nif",
+    "expect": { "minMeshes": 2, "blocks": ["NiAlphaProperty"] }
+  },
+  {
+    "label": "Adamantium rapier (dense weapon)",
+    "path": "oaab/w/w_rapier_adam.nif",
+    "expect": { "minMeshes": 6, "minTriangles": 3000, "blocks": ["NiAlphaProperty"] }
+  },
+  {
+    "label": "Ashlander glass longsword (alpha)",
+    "path": "oaab/w/ashglass_lsword.nif",
+    "expect": { "minMeshes": 5, "blocks": ["NiAlphaProperty"] }
+  },
+  {
+    "label": "Glowbug jar (controllers + LOD)",
+    "path": "oaab/l/glowbugjar01.nif",
+    "expect": { "minMeshes": 10, "blocks": ["NiBillboardNode", "NiKeyframeController", "NiZBufferProperty"] }
+  },
+  {
+    "label": "Blue soul flame (particle-only fallback)",
+    "path": "oaab/l/light_fire_blue_soul.nif",
+    "expect": { "minMeshes": 0, "minTriangles": 0, "blocks": ["NiAutoNormalParticles", "NiParticleSystemController"] }
+  },
+  {
+    "label": "Common bar shelf door (case map + collision)",
+    "path": "oaab/d/combarshelfdoor.nif",
+    "expect": { "minMeshes": 5, "blocks": ["NiStringExtraData", "RootCollisionNode"] }
+  },
+  {
+    "label": "Common crypt load door (case map)",
+    "path": "oaab/d/comcryptdoorload.nif",
+    "expect": { "minMeshes": 6, "blocks": ["RootCollisionNode"] }
+  },
+  {
+    "label": "Animated bookshelf door (keyframes)",
+    "path": "oaab/d/d_com_m_bshlf_01.nif",
+    "expect": { "minMeshes": 8, "blocks": ["NiKeyframeController", "NiTextKeyExtraData"] }
+  },
+  {
+    "label": "Clannfear claw ingredient",
+    "path": "oaab/n/rem_clann_claw.nif",
+    "expect": { "minMeshes": 4, "blocks": ["NiTexturingProperty"] }
+  },
+  {
+    "label": "Dreugh shell ingredient (shape root)",
+    "path": "oaab/n/rem_dreugh_shell.nif",
+    "expect": { "minMeshes": 1, "blocks": ["NiTriShapeData"] }
+  }
+]
+
