@@ -2,10 +2,12 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use serde::Serialize;
 use tes3::nif::{
-    Map as NifTextureMap, NiAVObject, NiAlphaProperty, NiGeometry, NiGeometryData, NiKey,
-    NiMaterialProperty, NiNode, NiObjectNET, NiSourceTexture, NiStencilProperty, NiStream,
-    NiTexturingProperty, NiTriShape, NiTriShapeData, NiTriStrips, NiTriStripsData, NiType,
-    NiVertexColorProperty, NiZBufferProperty, TextureMap, TextureSource,
+    Map as NifTextureMap, NiAVObject, NiAlphaProperty, NiAutoNormalParticles, NiFlipController,
+    NiFloatKey, NiGeometry, NiGeometryData, NiKey, NiKeyframeController, NiMaterialProperty,
+    NiNode, NiObjectNET, NiParticles, NiParticlesData, NiPosKey, NiRotKey, NiRotatingParticles,
+    NiSourceTexture, NiStencilProperty, NiStream, NiTexturingProperty, NiTimeController,
+    NiTriShape, NiTriShapeData, NiTriStrips, NiTriStripsData, NiType, NiUVController,
+    NiVertexColorProperty, NiVisController, NiZBufferProperty, TextureMap, TextureSource,
     glam::{Affine3A, Mat4},
 };
 
@@ -23,6 +25,23 @@ const SUPPORTED_BLOCKS: &[&str] = &[
     "NiStencilProperty",
     "NiZBufferProperty",
     "RootCollisionNode",
+    "NiUVController",
+    "NiUVData",
+    "NiFlipController",
+    "NiVisController",
+    "NiVisData",
+    "NiKeyframeController",
+    "NiKeyframeData",
+    "NiSkinInstance",
+    "NiSkinData",
+    "NiSkinPartition",
+    "NiParticles",
+    "NiParticlesData",
+    "NiAutoNormalParticles",
+    "NiAutoNormalParticlesData",
+    "NiRotatingParticles",
+    "NiRotatingParticlesData",
+    "NiParticleSystemController",
 ];
 
 #[derive(Debug, Serialize)]
@@ -31,6 +50,8 @@ pub struct RenderPacket {
     pub version: String,
     pub nodes: Vec<NodePacket>,
     pub meshes: Vec<MeshPacket>,
+    pub particles: Vec<ParticlePacket>,
+    pub animations: Vec<AnimationPacket>,
     pub textures: Vec<String>,
     pub block_counts: BTreeMap<String, usize>,
     pub unsupported_blocks: Vec<UnsupportedBlock>,
@@ -61,6 +82,92 @@ pub struct MeshPacket {
     pub material: MaterialPacket,
     pub collision: bool,
     pub hidden: bool,
+    pub animation_targets: Vec<String>,
+    pub skinned: bool,
+    pub bone_count: usize,
+    pub skin_partition_count: usize,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParticlePacket {
+    pub name: String,
+    pub block_type: String,
+    pub transform: Vec<f32>,
+    pub positions: Vec<f32>,
+    pub colors: Vec<f32>,
+    pub sizes: Vec<f32>,
+    pub radius: f32,
+    pub material: MaterialPacket,
+    pub hidden: bool,
+    pub animation_targets: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnimationPacket {
+    pub controller_type: String,
+    pub target: String,
+    pub active: bool,
+    pub cycle_type: String,
+    pub frequency: f32,
+    pub phase: f32,
+    pub start_time: f32,
+    pub stop_time: f32,
+    pub data: AnimationData,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+pub enum AnimationData {
+    Uv {
+        u_offset: Vec<ScalarKey>,
+        v_offset: Vec<ScalarKey>,
+        u_tiling: Vec<ScalarKey>,
+        v_tiling: Vec<ScalarKey>,
+    },
+    Flip {
+        affected_map: u32,
+        flip_start_time: f32,
+        secs_per_frame: f32,
+        textures: Vec<String>,
+    },
+    Visibility {
+        keys: Vec<VisibilityKey>,
+    },
+    Keyframe {
+        translations: Vec<VectorKey>,
+        rotations: Vec<QuaternionKey>,
+        scales: Vec<ScalarKey>,
+    },
+}
+
+#[derive(Debug, Serialize)]
+pub struct ScalarKey {
+    pub time: f32,
+    pub value: f32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct VectorKey {
+    pub time: f32,
+    pub value: [f32; 3],
+}
+
+#[derive(Debug, Serialize)]
+pub struct QuaternionKey {
+    pub time: f32,
+    pub value: [f32; 4],
+}
+
+#[derive(Debug, Serialize)]
+pub struct VisibilityKey {
+    pub time: f32,
+    pub value: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -130,12 +237,16 @@ pub struct PacketStats {
     pub meshes: usize,
     pub vertices: usize,
     pub triangles: usize,
+    pub particles: usize,
+    pub animations: usize,
 }
 
 struct ParseContext<'a> {
     stream: &'a NiStream,
     nodes: Vec<NodePacket>,
     meshes: Vec<MeshPacket>,
+    particles: Vec<ParticlePacket>,
+    animations: Vec<AnimationPacket>,
     textures: BTreeSet<String>,
     warnings: Vec<String>,
     visited: HashSet<NiKey>,
@@ -163,14 +274,17 @@ pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
         stream: &stream,
         nodes: Vec::new(),
         meshes: Vec::new(),
+        particles: Vec::new(),
+        animations: Vec::new(),
         textures: BTreeSet::new(),
         warnings: Vec::new(),
         visited: HashSet::new(),
     };
 
     for root in &stream.roots {
-        walk_object(&mut context, root.key, Affine3A::IDENTITY, false, 0);
+        walk_object(&mut context, root.key, Affine3A::IDENTITY, false, 0, &[]);
     }
+    extract_animations(&mut context);
 
     // Include external textures not attached to a rendered base map in the
     // diagnostic dependency list (glow, dark, decal and controller textures).
@@ -203,12 +317,20 @@ pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
             .iter()
             .map(|mesh| mesh.indices.len() / 3)
             .sum(),
+        particles: context
+            .particles
+            .iter()
+            .map(|particle| particle.positions.len() / 3)
+            .sum(),
+        animations: context.animations.len(),
     };
 
     Ok(RenderPacket {
         version: "NetImmerse 4.0.0.2".to_owned(),
         nodes: context.nodes,
         meshes: context.meshes,
+        particles: context.particles,
+        animations: context.animations,
         textures: context.textures.into_iter().collect(),
         block_counts,
         unsupported_blocks,
@@ -223,6 +345,7 @@ fn walk_object(
     parent_transform: Affine3A,
     parent_collision: bool,
     depth: usize,
+    animation_targets: &[String],
 ) {
     if depth > 256 {
         context
@@ -253,21 +376,80 @@ fn walk_object(
             transform: matrix_array(transform),
             collision,
         });
+        let mut child_targets = animation_targets.to_vec();
+        if !node.name.is_empty() {
+            child_targets.push(node.name.clone());
+        }
         for child in &node.children {
-            walk_object(context, child.key, transform, collision, depth + 1);
+            walk_object(
+                context,
+                child.key,
+                transform,
+                collision,
+                depth + 1,
+                &child_targets,
+            );
         }
         context.visited.remove(&key);
         return;
     }
 
     if let Ok(shape) = <&NiTriShape>::try_from(object) {
-        add_tri_shape(context, shape, parent_transform, parent_collision);
+        add_tri_shape(
+            context,
+            shape,
+            parent_transform,
+            parent_collision,
+            animation_targets,
+        );
         context.visited.remove(&key);
         return;
     }
 
     if let Ok(strips) = <&NiTriStrips>::try_from(object) {
-        add_tri_strips(context, strips, parent_transform, parent_collision);
+        add_tri_strips(
+            context,
+            strips,
+            parent_transform,
+            parent_collision,
+            animation_targets,
+        );
+        context.visited.remove(&key);
+        return;
+    }
+
+    if let Ok(particles) = <&NiAutoNormalParticles>::try_from(object) {
+        add_particles(
+            context,
+            particles,
+            "NiAutoNormalParticles",
+            parent_transform,
+            animation_targets,
+        );
+        context.visited.remove(&key);
+        return;
+    }
+
+    if let Ok(particles) = <&NiRotatingParticles>::try_from(object) {
+        add_particles(
+            context,
+            particles,
+            "NiRotatingParticles",
+            parent_transform,
+            animation_targets,
+        );
+        context.visited.remove(&key);
+        return;
+    }
+
+    if let Ok(particles) = <&NiParticles>::try_from(object) {
+        add_particles(
+            context,
+            particles,
+            "NiParticles",
+            parent_transform,
+            animation_targets,
+        );
     }
     context.visited.remove(&key);
 }
@@ -277,6 +459,7 @@ fn add_tri_shape(
     shape: &NiTriShape,
     parent_transform: Affine3A,
     parent_collision: bool,
+    animation_targets: &[String],
 ) {
     let geometry: &NiGeometry = shape.as_ref();
     let Some(data) = context
@@ -302,6 +485,7 @@ fn add_tri_shape(
         "NiTriShape",
         parent_transform,
         parent_collision,
+        animation_targets,
     );
 }
 
@@ -310,6 +494,7 @@ fn add_tri_strips(
     strips: &NiTriStrips,
     parent_transform: Affine3A,
     parent_collision: bool,
+    animation_targets: &[String],
 ) {
     let geometry: &NiGeometry = strips.as_ref();
     let Some(data) = context
@@ -355,9 +540,11 @@ fn add_tri_strips(
         "NiTriStrips",
         parent_transform,
         parent_collision,
+        animation_targets,
     );
 }
 
+#[allow(clippy::too_many_arguments)]
 fn add_mesh<T>(
     context: &mut ParseContext<'_>,
     shape: &T,
@@ -366,6 +553,7 @@ fn add_mesh<T>(
     block_type: &str,
     parent_transform: Affine3A,
     parent_collision: bool,
+    animation_targets: &[String],
 ) where
     T: AsRef<NiAVObject> + AsRef<NiGeometry> + AsRef<NiObjectNET>,
 {
@@ -386,10 +574,15 @@ fn add_mesh<T>(
             object_net.name
         ));
     }
-    if !geometry.skin_instance.is_null() {
-        context
-            .warnings
-            .push(format!("Skinning is ignored for \"{}\"", object_net.name));
+    let skin = context
+        .stream
+        .get_as::<_, tes3::nif::NiSkinInstance>(geometry.skin_instance);
+    let skin_data = skin.and_then(|instance| context.stream.get(instance.data));
+    if skin.is_some() {
+        context.warnings.push(format!(
+            "Skinning for \"{}\" is displayed in its bind pose",
+            object_net.name
+        ));
     }
 
     let collision = parent_collision || looks_like_collision(&object_net.name);
@@ -417,7 +610,256 @@ fn add_mesh<T>(
         material,
         collision,
         hidden: av_object.app_culled(),
+        animation_targets: animation_target_names(animation_targets, &object_net.name),
+        skinned: skin.is_some(),
+        bone_count: skin.map_or(0, |instance| instance.bones.len()),
+        skin_partition_count: skin_data
+            .and_then(|data| context.stream.get(data.skin_partition))
+            .map_or(0, |partition| partition.partitions.len()),
     });
+}
+
+fn add_particles<T>(
+    context: &mut ParseContext<'_>,
+    particles: &T,
+    block_type: &str,
+    parent_transform: Affine3A,
+    animation_targets: &[String],
+) where
+    T: AsRef<NiAVObject> + AsRef<NiGeometry> + AsRef<NiObjectNET>,
+{
+    let geometry: &NiGeometry = particles.as_ref();
+    let av_object: &NiAVObject = particles.as_ref();
+    let object_net: &NiObjectNET = particles.as_ref();
+    let Some(data) = context
+        .stream
+        .get_as::<_, NiParticlesData>(geometry.geometry_data)
+    else {
+        context.warnings.push(format!(
+            "{block_type} \"{}\" has no supported particle data",
+            object_net.name
+        ));
+        return;
+    };
+    let geometry_data: &NiGeometryData = data.as_ref();
+    let active = usize::from(data.num_active).min(geometry_data.vertices.len());
+    let positions = geometry_data.vertices[..active]
+        .iter()
+        .flat_map(|value| value.to_array())
+        .collect();
+    let colors = geometry_data
+        .vertex_colors
+        .iter()
+        .take(active)
+        .flat_map(|value| value.to_array())
+        .collect();
+    let sizes = if data.sizes.is_empty() {
+        vec![1.0; active]
+    } else {
+        data.sizes.iter().take(active).copied().collect()
+    };
+    let material = material_packet(context, av_object);
+    context.particles.push(ParticlePacket {
+        name: object_net.name.clone(),
+        block_type: block_type.to_owned(),
+        transform: matrix_array(parent_transform * av_object.transform()),
+        positions,
+        colors,
+        sizes,
+        radius: data.particle_radius.max(0.001),
+        material,
+        hidden: av_object.app_culled(),
+        animation_targets: animation_target_names(animation_targets, &object_net.name),
+    });
+}
+
+fn extract_animations(context: &mut ParseContext<'_>) {
+    for controller in context.stream.objects_of_type::<NiUVController>() {
+        let Some(data) = context.stream.get(controller.data) else {
+            continue;
+        };
+        context.animations.push(animation_packet(
+            context.stream,
+            &controller.base,
+            "NiUVController",
+            AnimationData::Uv {
+                u_offset: scalar_keys(&data.u_offset_data.keys),
+                v_offset: scalar_keys(&data.v_offset_data.keys),
+                u_tiling: scalar_keys(&data.u_tiling_data.keys),
+                v_tiling: scalar_keys(&data.v_tiling_data.keys),
+            },
+        ));
+    }
+    for controller in context.stream.objects_of_type::<NiFlipController>() {
+        let textures = controller
+            .textures
+            .iter()
+            .filter_map(|link| context.stream.get(*link))
+            .filter_map(|texture| match &texture.source {
+                TextureSource::External(path) if !path.trim().is_empty() => Some(path.clone()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        context.textures.extend(textures.iter().cloned());
+        context.animations.push(animation_packet(
+            context.stream,
+            &controller.base,
+            "NiFlipController",
+            AnimationData::Flip {
+                affected_map: controller.affected_map,
+                flip_start_time: controller.flip_start_time,
+                secs_per_frame: controller.secs_per_frame,
+                textures,
+            },
+        ));
+    }
+    for controller in context.stream.objects_of_type::<NiVisController>() {
+        let Some(data) = context.stream.get(controller.data) else {
+            continue;
+        };
+        context.animations.push(animation_packet(
+            context.stream,
+            &controller.base,
+            "NiVisController",
+            AnimationData::Visibility {
+                keys: data
+                    .keys
+                    .iter()
+                    .map(|key| VisibilityKey {
+                        time: key.time,
+                        value: key.value != 0,
+                    })
+                    .collect(),
+            },
+        ));
+    }
+    for controller in context.stream.objects_of_type::<NiKeyframeController>() {
+        let Some(data) = context.stream.get(controller.data) else {
+            continue;
+        };
+        context.animations.push(animation_packet(
+            context.stream,
+            &controller.base,
+            "NiKeyframeController",
+            AnimationData::Keyframe {
+                translations: vector_keys(&data.translations.keys),
+                rotations: quaternion_keys(&data.rotations.keys),
+                scales: scalar_keys(&data.scales.keys),
+            },
+        ));
+    }
+}
+
+fn animation_packet(
+    stream: &NiStream,
+    controller: &NiTimeController,
+    controller_type: &str,
+    data: AnimationData,
+) -> AnimationPacket {
+    let target = stream
+        .get(controller.target)
+        .map(|target| target.name.clone())
+        .unwrap_or_default();
+    AnimationPacket {
+        controller_type: controller_type.to_owned(),
+        target,
+        active: controller.active(),
+        cycle_type: format!("{:?}", controller.cycle_type()),
+        frequency: controller.frequency,
+        phase: controller.phase,
+        start_time: controller.start_time,
+        stop_time: controller.stop_time,
+        data,
+    }
+}
+
+fn scalar_keys(keys: &NiFloatKey) -> Vec<ScalarKey> {
+    match keys {
+        NiFloatKey::LinKey(keys) => keys
+            .iter()
+            .map(|key| ScalarKey {
+                time: key.time,
+                value: key.value,
+            })
+            .collect(),
+        NiFloatKey::BezKey(keys) => keys
+            .iter()
+            .map(|key| ScalarKey {
+                time: key.time,
+                value: key.value,
+            })
+            .collect(),
+        NiFloatKey::TCBKey(keys) => keys
+            .iter()
+            .map(|key| ScalarKey {
+                time: key.time,
+                value: key.value,
+            })
+            .collect(),
+    }
+}
+
+fn vector_keys(keys: &NiPosKey) -> Vec<VectorKey> {
+    match keys {
+        NiPosKey::LinKey(keys) => keys
+            .iter()
+            .map(|key| VectorKey {
+                time: key.time,
+                value: key.value.to_array(),
+            })
+            .collect(),
+        NiPosKey::BezKey(keys) => keys
+            .iter()
+            .map(|key| VectorKey {
+                time: key.time,
+                value: key.value.to_array(),
+            })
+            .collect(),
+        NiPosKey::TCBKey(keys) => keys
+            .iter()
+            .map(|key| VectorKey {
+                time: key.time,
+                value: key.value.to_array(),
+            })
+            .collect(),
+    }
+}
+
+fn quaternion_keys(keys: &NiRotKey) -> Vec<QuaternionKey> {
+    match keys {
+        NiRotKey::LinKey(keys) => keys
+            .iter()
+            .map(|key| QuaternionKey {
+                time: key.time,
+                value: key.value.to_array(),
+            })
+            .collect(),
+        NiRotKey::BezKey(keys) => keys
+            .iter()
+            .map(|key| QuaternionKey {
+                time: key.time,
+                value: key.value.to_array(),
+            })
+            .collect(),
+        NiRotKey::TCBKey(keys) => keys
+            .iter()
+            .map(|key| QuaternionKey {
+                time: key.time,
+                value: key.value.to_array(),
+            })
+            .collect(),
+        NiRotKey::EulerKey(_) => Vec::new(),
+    }
+}
+
+fn animation_target_names(ancestors: &[String], name: &str) -> Vec<String> {
+    let mut targets = ancestors.to_vec();
+    if !name.is_empty() {
+        targets.push(name.to_owned());
+    }
+    targets.sort();
+    targets.dedup();
+    targets
 }
 
 fn material_packet(context: &mut ParseContext<'_>, object: &NiAVObject) -> MaterialPacket {
@@ -493,4 +935,138 @@ fn type_name(object: &NiType) -> String {
 fn looks_like_collision(name: &str) -> bool {
     let name = name.to_ascii_lowercase();
     name.contains("collision") || name.contains("collider") || name.contains("bounding box")
+}
+
+#[cfg(test)]
+mod advanced_tests {
+    use super::*;
+    use tes3::nif::{
+        BoneData, NiAutoNormalParticlesData, NiFlipController, NiKeyframeData, NiLinFloatKey,
+        NiLinPosKey, NiLinRotKey, NiSkinData, NiSkinInstance, NiSkinPartition, NiSourceTexture,
+        NiTriShape, NiTriShapeData, NiUVData, NiVisData, NiVisKey, TextureSource,
+        glam::{Quat, vec3},
+    };
+
+    #[allow(clippy::field_reassign_with_default)]
+    #[test]
+    fn advanced_packet_covers_controllers_particles_and_bind_pose_skinning() {
+        let mut stream = NiStream::new();
+        let node = stream.insert(NiNode::default());
+        stream.get_mut(node).unwrap().name = "AnimatedRoot".to_owned();
+
+        let mut uv_data = NiUVData::default();
+        uv_data.u_offset_data.keys = NiFloatKey::LinKey(vec![NiLinFloatKey {
+            time: 0.0,
+            value: 0.25,
+        }]);
+        let uv_data = stream.insert(uv_data);
+        let mut visibility_data = NiVisData::default();
+        visibility_data.keys = vec![NiVisKey {
+            time: 0.0,
+            value: 1,
+        }];
+        let visibility_data = stream.insert(visibility_data);
+        let mut keyframe_data = NiKeyframeData::default();
+        keyframe_data.translations.keys = NiPosKey::LinKey(vec![NiLinPosKey {
+            time: 0.0,
+            value: vec3(1.0, 2.0, 3.0),
+        }]);
+        keyframe_data.rotations.keys = NiRotKey::LinKey(vec![NiLinRotKey {
+            time: 0.0,
+            value: Quat::IDENTITY,
+        }]);
+        keyframe_data.scales.keys = NiFloatKey::LinKey(vec![NiLinFloatKey {
+            time: 0.0,
+            value: 1.0,
+        }]);
+        let keyframe_data = stream.insert(keyframe_data);
+        let texture = stream.insert(NiSourceTexture {
+            source: TextureSource::External("textures\\animated.dds".to_owned()),
+            ..Default::default()
+        });
+
+        let mut keyframe = NiKeyframeController::default();
+        keyframe.base.flags |= 0x0008;
+        keyframe.base.target = node.cast();
+        keyframe.data = keyframe_data;
+        let keyframe = stream.insert(keyframe);
+        let mut visibility = NiVisController::default();
+        visibility.base.flags |= 0x0008;
+        visibility.base.target = node.cast();
+        visibility.base.next = keyframe.cast();
+        visibility.data = visibility_data;
+        let visibility = stream.insert(visibility);
+        let mut flip = NiFlipController::default();
+        flip.base.flags |= 0x0008;
+        flip.base.target = node.cast();
+        flip.base.next = visibility.cast();
+        flip.secs_per_frame = 0.1;
+        flip.textures = vec![texture];
+        let flip = stream.insert(flip);
+        let mut uv = NiUVController::default();
+        uv.base.flags |= 0x0008;
+        uv.base.target = node.cast();
+        uv.base.next = flip.cast();
+        uv.data = uv_data;
+        let uv = stream.insert(uv);
+        stream.get_mut(node).unwrap().controller = uv.cast();
+
+        let mut particle_data = NiAutoNormalParticlesData::default();
+        particle_data.vertices = vec![vec3(0.0, 0.0, 0.0)];
+        particle_data.num_particles = 1;
+        particle_data.num_active = 1;
+        particle_data.particle_radius = 0.5;
+        let particle_data = stream.insert(particle_data);
+        let mut particles = NiAutoNormalParticles::default();
+        particles.name = "ParticleFixture".to_owned();
+        particles.geometry_data = particle_data.cast();
+        let particles = stream.insert(particles);
+
+        let partition = stream.insert(NiSkinPartition {
+            partitions: vec![Default::default()],
+            ..Default::default()
+        });
+        let skin_data = stream.insert(NiSkinData {
+            skin_partition: partition,
+            bone_data: vec![BoneData::default()],
+            ..Default::default()
+        });
+        let skin = stream.insert(NiSkinInstance {
+            data: skin_data,
+            root: node.cast(),
+            bones: vec![node.cast()],
+            ..Default::default()
+        });
+        let mut shape_data = NiTriShapeData::default();
+        shape_data.vertices = vec![
+            vec3(0.0, 0.0, 0.0),
+            vec3(1.0, 0.0, 0.0),
+            vec3(0.0, 1.0, 0.0),
+        ];
+        shape_data.triangles = vec![[0, 1, 2]];
+        let shape_data = stream.insert(shape_data);
+        let mut shape = NiTriShape::default();
+        shape.name = "SkinnedFixture".to_owned();
+        shape.geometry_data = shape_data.cast();
+        shape.skin_instance = skin.cast();
+        let shape = stream.insert(shape);
+
+        stream.get_mut(node).unwrap().children = vec![particles.cast(), shape.cast()];
+        stream.roots.push(node.cast());
+        let bytes = stream.save_bytes().expect("serialize advanced fixture");
+        let packet = parse_nif_packet(&bytes).expect("parse advanced fixture");
+
+        assert_eq!(packet.animations.len(), 4);
+        assert_eq!(packet.stats.animations, 4);
+        assert_eq!(packet.stats.particles, 1);
+        assert_eq!(packet.particles.len(), 1);
+        assert!(packet.meshes[0].skinned);
+        assert_eq!(packet.meshes[0].bone_count, 1);
+        assert_eq!(packet.meshes[0].skin_partition_count, 1);
+        assert!(
+            packet
+                .textures
+                .contains(&"textures\\animated.dds".to_owned())
+        );
+    }
 }

@@ -119,11 +119,19 @@ async function runFixtureCorpus() {
 function validateFixture(fixture, packet) {
   const minMeshes = fixture.expect?.minMeshes ?? 1;
   const minTriangles = fixture.expect?.minTriangles ?? 1;
+  const minParticles = fixture.expect?.minParticles ?? 0;
+  const minAnimations = fixture.expect?.minAnimations ?? 0;
   if ((packet.stats?.meshes || 0) < minMeshes) {
     throw new Error(`expected at least ${minMeshes} renderable mesh`);
   }
   if ((packet.stats?.triangles || 0) < minTriangles) {
     throw new Error(`expected at least ${minTriangles} triangle`);
+  }
+  if ((packet.stats?.particles || 0) < minParticles) {
+    throw new Error(`expected at least ${minParticles} particle`);
+  }
+  if ((packet.stats?.animations || 0) < minAnimations) {
+    throw new Error(`expected at least ${minAnimations} animation controller`);
   }
   for (const block of fixture.expect?.blocks || []) {
     if (!packet.blockCounts?.[block]) throw new Error(`expected ${block}`);
@@ -165,6 +173,8 @@ function renderDiagnostics({ path, asset, packet, textureDiagnostics, elapsedMs 
     ['Blocks', formatNumber(stats.blocks)],
     ['Nodes', formatNumber(stats.nodes)],
     ['Meshes', formatNumber(stats.meshes)],
+    ['Particles', formatNumber(stats.particles)],
+    ['Animations', formatNumber(stats.animations)],
     ['Vertices', formatNumber(stats.vertices)],
     ['Triangles', formatNumber(stats.triangles)],
   ]);

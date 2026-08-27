@@ -1,8 +1,8 @@
 # NIF lab compatibility notes
 
-The lab parses NetImmerse 4.0.0.2 with Greatness7/tes3 and renders static
-`NiTriShape` and `NiTriStrips` geometry. The fixture corpus in
-`nif-fixtures.json` covers 15 OAAB_Data models: architecture, clutter,
+The lab parses NetImmerse 4.0.0.2 with Greatness7/tes3 and renders static and
+selected animated `NiTriShape`, `NiTriStrips`, and particle geometry. The fixture
+corpus in `nif-fixtures.json` covers 15 OAAB_Data models: architecture, clutter,
 ingredients, weapons, doors, markers, alpha-tested meshes, collision roots,
 controller-heavy lights and a particle-only model.
 
@@ -18,24 +18,36 @@ controller-heavy lights and a particle-only model.
   pinned Three.js loaders
 - Collision-root detection; collision meshes are hidden by default and can be
   enabled in the lab
+- `NiUVController`, `NiFlipController`, `NiVisController`, and
+  `NiKeyframeController` playback with linear interpolation/fallbacks
+- `NiParticles`, `NiAutoNormalParticles`, and `NiRotatingParticles` rendered as
+  textured point sprites, including active counts, radius, size, and color
+- `NiSkinInstance`, `NiSkinData`, and `NiSkinPartition` recognition with a
+  stable bind-pose fallback and bone/partition diagnostics
 
 ## Encountered but intentionally ignored
 
 These blocks are parsed safely and reported in the diagnostics panel, but the
-first milestone does not evaluate their runtime behavior:
+current implementation does not evaluate their runtime behavior:
 
-- Animation: `NiKeyframeController`, `NiKeyframeData`, `NiTextKeyExtraData`,
-  `NiAlphaController`, `NiFloatData`, `NiBSAnimationNode`
-- Particles: `NiAutoNormalParticles`, `NiAutoNormalParticlesData`,
-  `NiBSParticleNode`, `NiParticleGrowFade`, `NiParticleSystemController`
+- Animation beyond the supported controllers: `NiTextKeyExtraData`,
+  `NiAlphaController`, `NiBSAnimationNode`, TCB tangent evaluation, and Euler
+  rotation keys
+- Particle simulation beyond initial display: `NiBSParticleNode`,
+  `NiParticleGrowFade`, and `NiParticleSystemController`
 - View-dependent or selection nodes: `NiBillboardNode`, `NiLODNode`,
   `NiSwitchNode`, `NiSortAdjustNode`, `NiCollisionSwitch`
 - Miscellaneous: `NiStringExtraData`, `NiAlphaAccumulator`
 
-Skinning, morph controllers, KF animation, embedded pixel data and complex
-texture effects are also deferred. A model containing only deferred geometry
-(for example the blue soul-flame particle fixture) produces a valid packet with
-zero renderable meshes and warnings rather than failing the worker or viewer.
+Deformed skinning, morph controllers, external KF animation, embedded pixel
+data and complex texture effects remain deferred. Skinned meshes render in bind
+pose, and partially supported models continue to display all compatible static
+and particle geometry rather than failing the worker or viewer.
+
+The generated Rust regression fixture in `wasm/src/nif.rs` covers UV, flip,
+visibility, and keyframe controller packets, particle data, and skin
+instance/data/partition bind-pose behavior. Public corpus expectations add live
+checks for representative animation and particle packets.
 
 ## Running the corpus
 

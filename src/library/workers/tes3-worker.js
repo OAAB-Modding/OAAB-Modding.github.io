@@ -1,5 +1,6 @@
 import initWasm, {
   parse_nif as parseNif,
+  parse_plugin as parsePlugin,
   parser_version as parserVersion,
 } from '../../../wasm/pkg/oaab_tes3_wasm.js';
 
@@ -22,6 +23,12 @@ function typedRenderPacket(packet) {
   for (const node of packet.nodes || []) {
     node.transform = transferArray(Float32Array.from(node.transform || []), transfers);
   }
+  for (const particle of packet.particles || []) {
+    particle.positions = transferArray(Float32Array.from(particle.positions || []), transfers);
+    particle.colors = transferArray(Float32Array.from(particle.colors || []), transfers);
+    particle.sizes = transferArray(Float32Array.from(particle.sizes || []), transfers);
+    particle.transform = transferArray(Float32Array.from(particle.transform || []), transfers);
+  }
   return { packet, transfers };
 }
 
@@ -40,6 +47,11 @@ self.addEventListener('message', async (event) => {
       self.postMessage({ id, ok: true, result: parserVersion() });
       return;
     }
+    if (op === 'parsePlugin') {
+      const json = parsePlugin(new Uint8Array(bytes));
+      self.postMessage({ id, ok: true, result: JSON.parse(json) });
+      return;
+    }
     if (op !== 'parseNif') throw new Error(`Unknown TES3 worker operation: ${op}`);
 
     const json = parseNif(new Uint8Array(bytes));
@@ -53,4 +65,3 @@ self.addEventListener('message', async (event) => {
     });
   }
 });
-

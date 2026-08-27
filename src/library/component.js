@@ -6,6 +6,7 @@ import { withLibraryRecordDetails } from './records/detail-controller.js';
 import { withLibraryRenderValues } from './render/render-values.js';
 import { createProductionLibraryState } from './state.js';
 import { withLibraryUi } from './ui/ui-controller.js';
+import { initializeLibraryWorkspace } from './workspace/workspace-controller.js';
 
 export function createLibraryComponent(DCLogic) {
   if (typeof DCLogic !== 'function') throw new TypeError('A DCLogic base class is required');
@@ -264,6 +265,7 @@ export function createLibraryComponent(DCLogic) {
     window.addEventListener('resize', this._onScroll, { passive: true });
 
     this.initializeProductionCatalog();
+    this._workspace = initializeLibraryWorkspace(this);
   }
 
   componentWillUnmount() {
@@ -285,6 +287,7 @@ export function createLibraryComponent(DCLogic) {
     if (this._measureNav) window.removeEventListener('resize', this._measureNav);
     if (this._raf) cancelAnimationFrame(this._raf);
     this.syncContentsScrollLock(true);
+    this._workspace?.dispose();
   }
 
   // Recalculate after data/filter changes because they alter the virtual height.
@@ -295,6 +298,7 @@ export function createLibraryComponent(DCLogic) {
     this.updateDetailStickyTop();
     this.updateDetailScrollWidth();
     if (this._onScroll) this._onScroll();
+    this._workspace?.syncProductionPreview();
   }
   };
 }

@@ -8,6 +8,13 @@
  */
 export function parse_nif(bytes: Uint8Array): string;
 
+/**
+ * Parse a TES3 ESP/ESM into the source-neutral records and cells consumed by
+ * the Library. The worker owns the input buffer so plugin bytes never leave
+ * the browser or cross the main thread more than once.
+ */
+export function parse_plugin(bytes: Uint8Array): string;
+
 export function parser_version(): string;
 
 export function start(): void;
@@ -17,6 +24,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly parse_nif: (a: number, b: number, c: number) => void;
+    readonly parse_plugin: (a: number, b: number, c: number) => void;
     readonly parser_version: (a: number) => void;
     readonly start: () => void;
     readonly __wbindgen_export: (a: number, b: number, c: number) => void;

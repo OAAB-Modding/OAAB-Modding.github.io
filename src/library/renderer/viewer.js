@@ -5,6 +5,7 @@ import { TGALoader } from 'three/addons/loaders/TGALoader.js';
 
 import { normalizeAssetPath } from '../resolver/path-utils.js';
 import { Tes3WorkerClient } from '../workers/tes3-worker-client.js';
+import { fingerprintBytes } from '../storage/thumbnail-cache.js';
 
 const FALLBACK_COLOR = 0xd45a8b;
 
@@ -86,6 +87,7 @@ export class NifViewer {
 
     const startedAt = performance.now();
     const asset = await this.resolver.resolve(normalized);
+    const assetFingerprint = await fingerprintBytes(asset.bytes);
     this.#status('parsing', `Parsing ${normalized} in WebAssembly`);
     const packet = await this.worker.parseNif(asset.bytes);
 
@@ -101,6 +103,7 @@ export class NifViewer {
       asset,
       packet,
       textureDiagnostics,
+      assetFingerprint,
       elapsedMs: performance.now() - startedAt,
     };
 
@@ -151,6 +154,33 @@ export class NifViewer {
     this.controls.update();
   }
 
+  attachTo(host) {
+    if (!host) throw new TypeError('Viewer host is required');
+    if (this.canvas.parentElement !== host) host.prepend(this.canvas);
+    this.resizeObserver.disconnect();
+    this.resizeObserver.observe(host);
+    this.resize();
+    return this;
+  }
+
+  async captureThumbnail({ width = 384, height = 384, type = 'image/webp', quality = 0.86 } = {}) {
+    const oldWidth = this.canvas.width;
+    const oldHeight = this.canvas.height;
+    const oldAspect = this.camera.aspect;
+    this.renderer.setSize(width, height, false);
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    this.renderer.render(this.scene, this.camera);
+    const blob = await new Promise((resolve, reject) => {
+      this.canvas.toBlob(value => value ? resolve(value) : reject(new Error('Unable to encode thumbnail')), type, quality);
+    });
+    this.renderer.setSize(oldWidth, oldHeight, false);
+    this.camera.aspect = oldAspect;
+    this.camera.updateProjectionMatrix();
+    this.resize();
+    return blob;
+  }
+
   frameModel() {
     this.modelRoot.position.set(0, 0, 0);
     this.modelRoot.updateWorldMatrix(true, true);
@@ -198,6 +228,7 @@ export class NifViewer {
 
   animate() {
     this.animationFrame = requestAnimationFrame(this.animate);
+    this.#applyAnimations((performance.now() - (this.animationEpoch || performance.now())) / 1000);
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
@@ -273,6 +304,10 @@ export class NifViewer {
         .map((entry) => [entry.path, entry.texture]),
     );
     this.loadedTextures = new Set(textures.values());
+    this.resolvedTextureMap = textures;
+    this.animationTargets = new Map();
+    this.animations = packet.animations || [];
+    this.animationEpoch = performance.now();
 
     for (const meshPacket of packet.meshes || []) {
       if (!meshPacket.vertices.length || !meshPacket.indices.length) continue;
@@ -305,8 +340,97 @@ export class NifViewer {
       mesh.matrixAutoUpdate = false;
       mesh.userData.collision = !!meshPacket.collision;
       mesh.userData.hidden = !!meshPacket.hidden;
+      mesh.userData.animationBaseMatrix = mesh.matrix.clone();
       mesh.visible = !meshPacket.hidden && (!meshPacket.collision || this.collisionVisible);
       this.modelRoot.add(mesh);
+      this.#registerAnimationTargets(mesh, meshPacket.animationTargets, mesh.name);
+    }
+
+    for (const particlePacket of packet.particles || []) {
+      if (!particlePacket.positions.length) continue;
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(particlePacket.positions, 3));
+      if (particlePacket.colors.length / 4 === particlePacket.positions.length / 3) {
+        geometry.setAttribute('color', new THREE.BufferAttribute(particlePacket.colors, 4));
+      }
+      const rawTexture = particlePacket.material.texture;
+      let texturePath = null;
+      try { if (rawTexture) texturePath = normalizeAssetPath(rawTexture, { root: 'textures' }); } catch {}
+      const texture = texturePath ? textures.get(texturePath) : null;
+      const sizes = particlePacket.sizes || [];
+      const averageSize = sizes.length ? sizes.reduce((sum, value) => sum + value, 0) / sizes.length : 1;
+      const material = new THREE.PointsMaterial({
+        color: rawTexture && !texture ? FALLBACK_COLOR : 0xffffff,
+        map: texture || null,
+        size: Math.max(0.001, particlePacket.radius * averageSize * 2),
+        sizeAttenuation: true,
+        transparent: true,
+        opacity: THREE.MathUtils.clamp(particlePacket.material.opacity ?? 1, 0, 1),
+        alphaTest: particlePacket.material.alphaTest ? Math.max(particlePacket.material.alphaThreshold || 0, 1 / 255) : 0.01,
+        vertexColors: geometry.hasAttribute('color'),
+        depthTest: particlePacket.material.depthTest !== false,
+        depthWrite: false,
+      });
+      const points = new THREE.Points(geometry, material);
+      points.name = particlePacket.name || particlePacket.blockType;
+      points.matrix.fromArray(particlePacket.transform);
+      points.matrixAutoUpdate = false;
+      points.userData.hidden = !!particlePacket.hidden;
+      points.userData.animationBaseMatrix = points.matrix.clone();
+      points.visible = !particlePacket.hidden;
+      this.modelRoot.add(points);
+      this.#registerAnimationTargets(points, particlePacket.animationTargets, points.name);
+    }
+  }
+
+  #registerAnimationTargets(object, targets, name) {
+    for (const target of [...(targets || []), name].filter(Boolean)) {
+      const key = String(target).toLowerCase();
+      if (!this.animationTargets.has(key)) this.animationTargets.set(key, []);
+      const objects = this.animationTargets.get(key);
+      if (!objects.includes(object)) objects.push(object);
+    }
+  }
+
+  #applyAnimations(elapsed) {
+    if (!this.animations?.length || !this.animationTargets) return;
+    for (const animation of this.animations) {
+      if (!animation.active || !animation.target) continue;
+      const objects = this.animationTargets.get(animation.target.toLowerCase()) || [];
+      if (!objects.length) continue;
+      const time = animationTime(animation, elapsed);
+      const data = animation.data || {};
+      if (data.kind === 'visibility') {
+        const visible = sampleStep(data.keys, time, true);
+        for (const object of objects) {
+          object.visible = visible && !object.userData.hidden && (!object.userData.collision || this.collisionVisible);
+        }
+      } else if (data.kind === 'uv') {
+        const uOffset = sampleScalar(data.uOffset, time, 0);
+        const vOffset = sampleScalar(data.vOffset, time, 0);
+        const uTiling = sampleScalar(data.uTiling, time, 1);
+        const vTiling = sampleScalar(data.vTiling, time, 1);
+        for (const object of objects) {
+          const map = object.material?.map;
+          if (!map) continue;
+          map.offset.set(uOffset, vOffset);
+          map.repeat.set(uTiling, vTiling);
+        }
+      } else if (data.kind === 'flip' && data.textures?.length && data.secsPerFrame > 0) {
+        const index = Math.floor(Math.max(0, time - (data.flipStartTime || 0)) / data.secsPerFrame) % data.textures.length;
+        let path = null;
+        try { path = normalizeAssetPath(data.textures[index], { root: 'textures' }); } catch {}
+        const texture = path ? this.resolvedTextureMap?.get(path) : null;
+        if (texture) for (const object of objects) if (object.material) object.material.map = texture;
+      } else if (data.kind === 'keyframe') {
+        const transform = sampledTransform(data, time);
+        const origin = sampledTransform(data, animation.startTime || 0);
+        const delta = transform.multiply(origin.invert());
+        for (const object of objects) {
+          object.matrix.copy(delta).multiply(object.userData.animationBaseMatrix);
+          object.matrixWorldNeedsUpdate = true;
+        }
+      }
     }
   }
 
@@ -337,7 +461,7 @@ export class NifViewer {
 
   #disposeModel() {
     this.modelRoot.traverse((object) => {
-      if (!object.isMesh) return;
+      if (!object.isMesh && !object.isPoints) return;
       object.geometry?.dispose();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       for (const material of materials) {
@@ -347,6 +471,9 @@ export class NifViewer {
     });
     for (const texture of this.loadedTextures || []) texture.dispose();
     this.loadedTextures = null;
+    this.resolvedTextureMap = null;
+    this.animationTargets = null;
+    this.animations = null;
     this.modelRoot.clear();
   }
 
@@ -396,6 +523,71 @@ function applyBlendMode(material, source, destination) {
   material.blendEquation = THREE.AddEquation;
   material.blendSrc = factors[source] ?? THREE.SrcAlphaFactor;
   material.blendDst = factors[destination] ?? THREE.OneMinusSrcAlphaFactor;
+}
+
+function animationTime(animation, elapsed) {
+  const start = Number(animation.startTime) || 0;
+  const stop = Number(animation.stopTime);
+  const duration = Number.isFinite(stop) && stop > start ? stop - start : 0;
+  let value = elapsed * (Number(animation.frequency) || 1) + (Number(animation.phase) || 0);
+  if (!duration) return start + value;
+  if (animation.cycleType === 'Clamp') return THREE.MathUtils.clamp(value, start, stop);
+  value = ((value - start) % duration + duration) % duration;
+  if (animation.cycleType === 'Reverse') {
+    const doubled = ((elapsed * (Number(animation.frequency) || 1) + (Number(animation.phase) || 0) - start) % (duration * 2) + duration * 2) % (duration * 2);
+    return doubled > duration ? stop - (doubled - duration) : start + doubled;
+  }
+  return start + value;
+}
+
+function keyInterval(keys, time) {
+  const values = keys || [];
+  if (!values.length) return null;
+  if (time <= values[0].time) return [values[0], values[0], 0];
+  for (let index = 1; index < values.length; index += 1) {
+    if (time <= values[index].time) {
+      const before = values[index - 1];
+      const after = values[index];
+      const span = after.time - before.time;
+      return [before, after, span > 0 ? (time - before.time) / span : 0];
+    }
+  }
+  return [values.at(-1), values.at(-1), 0];
+}
+
+function sampleScalar(keys, time, fallback) {
+  const interval = keyInterval(keys, time);
+  if (!interval) return fallback;
+  return THREE.MathUtils.lerp(interval[0].value, interval[1].value, interval[2]);
+}
+
+function sampleVector(keys, time, fallback) {
+  const interval = keyInterval(keys, time);
+  if (!interval) return fallback.clone();
+  return new THREE.Vector3(...interval[0].value).lerp(new THREE.Vector3(...interval[1].value), interval[2]);
+}
+
+function sampleQuaternion(keys, time) {
+  const interval = keyInterval(keys, time);
+  if (!interval) return new THREE.Quaternion();
+  return new THREE.Quaternion(...interval[0].value).slerp(new THREE.Quaternion(...interval[1].value), interval[2]);
+}
+
+function sampleStep(keys, time, fallback) {
+  const values = keys || [];
+  let result = fallback;
+  for (const key of values) {
+    if (key.time > time) break;
+    result = !!key.value;
+  }
+  return result;
+}
+
+function sampledTransform(data, time) {
+  const position = sampleVector(data.translations, time, new THREE.Vector3());
+  const rotation = sampleQuaternion(data.rotations, time);
+  const scaleValue = sampleScalar(data.scales, time, 1);
+  return new THREE.Matrix4().compose(position, rotation, new THREE.Vector3(scaleValue, scaleValue, scaleValue));
 }
 
 async function mapLimit(values, limit, mapper) {

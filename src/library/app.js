@@ -5,6 +5,7 @@ import { createLibraryComponent } from './component.js';
 import { AssetResolver } from './resolver/asset-resolver.js';
 import { meshKey, normalizeAssetPath } from './resolver/path-utils.js';
 import { OAABSource } from './sources/oaab-source.js';
+import { BSA_PRIORITIES } from './sources/bsa-source.js';
 import { createLibraryState } from './state.js';
 
 const DATA_LOCAL = '/assets/data/library/';
@@ -21,7 +22,7 @@ export function fetchLibraryData(file, fetchImpl = globalThis.fetch.bind(globalT
 
 export function createLibraryServices({ fetchImpl = globalThis.fetch?.bind(globalThis) } = {}) {
   const resolver = new AssetResolver();
-  resolver.addSource(new OAABSource({ fetchImpl }), 100);
+  resolver.addSource(new OAABSource({ fetchImpl }), BSA_PRIORITIES.oaab);
 
   const fetchData = (file) => fetchLibraryData(file, fetchImpl);
   const providers = Object.freeze({
@@ -40,16 +41,27 @@ export function createLibraryServices({ fetchImpl = globalThis.fetch?.bind(globa
   };
 }
 
+export function registerLibraryServiceWorker() {
+  if (typeof navigator === 'undefined' || !navigator.serviceWorker || !globalThis.isSecureContext) return Promise.resolve(null);
+  const url = new URL('../../library/sw.js', import.meta.url);
+  return navigator.serviceWorker.register(url, { scope: '/library/' }).catch(error => {
+    console.warn('Library service worker registration failed', error);
+    return null;
+  });
+}
+
 // The declarative runtime evaluates a classic-script component body. Keep its
 // inline class to a compatibility shim and expose the module-backed component
 // factory and shared utilities through one frozen bridge.
 if (typeof window !== 'undefined') {
+  registerLibraryServiceWorker();
   window.OAAB_LIBRARY = Object.freeze({
     createLibraryComponent,
     createLibraryServices,
     fetchLibraryData,
     meshKey,
     normalizeAssetPath,
+    registerLibraryServiceWorker,
   });
 }
 

@@ -1,8 +1,10 @@
 mod nif;
+mod plugin;
 
 use wasm_bindgen::prelude::*;
 
 pub use nif::{RenderPacket, parse_nif_packet};
+pub use plugin::{PluginPacket, parse_plugin_packet};
 
 const PARSER_VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), "+tes3-44ea38c");
 
@@ -22,6 +24,15 @@ pub fn parser_version() -> String {
 #[wasm_bindgen]
 pub fn parse_nif(bytes: &[u8]) -> Result<String, JsValue> {
     let packet = parse_nif_packet(bytes).map_err(|error| JsValue::from_str(&error))?;
+    serde_json::to_string(&packet).map_err(|error| JsValue::from_str(&error.to_string()))
+}
+
+/// Parse a TES3 ESP/ESM into the source-neutral records and cells consumed by
+/// the Library. The worker owns the input buffer so plugin bytes never leave
+/// the browser or cross the main thread more than once.
+#[wasm_bindgen]
+pub fn parse_plugin(bytes: &[u8]) -> Result<String, JsValue> {
+    let packet = parse_plugin_packet(bytes).map_err(|error| JsValue::from_str(&error))?;
     serde_json::to_string(&packet).map_err(|error| JsValue::from_str(&error.to_string()))
 }
 

@@ -18,6 +18,11 @@ export class Tes3WorkerClient {
     return this.#request('parseNif', { bytes: buffer }, [buffer]);
   }
 
+  parsePlugin(bytes) {
+    const buffer = toStandaloneArrayBuffer(bytes);
+    return this.#request('parsePlugin', { bytes: buffer }, [buffer]);
+  }
+
   terminate() {
     this.#worker.terminate();
     this.#failAll(new Error('TES3 worker terminated'));
@@ -54,4 +59,3 @@ function toStandaloneArrayBuffer(bytes) {
   }
   throw new TypeError('TES3 parser input must be an ArrayBuffer or typed array');
 }
-

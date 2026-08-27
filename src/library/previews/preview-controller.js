@@ -630,6 +630,8 @@ export function withLibraryPreviews(Base) {
       src: (isSpell || isLeveledList) ? '' : ((x && (x.render || x.img)) || ''),
       title: (x && x.id) || '',
       meta: (x && (x.mesh || x.name || x.type)) || '',
+      mesh: (x && x.mesh) || '',
+      source: (x && x.source) || '',
       lightTint: (x && x.lightTint) || '',
       lightColor: (x && x.lightColor) || '',
       lightHex: (x && x.lightHex) || '',

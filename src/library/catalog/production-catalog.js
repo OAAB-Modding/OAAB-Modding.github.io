@@ -139,6 +139,7 @@ export function withProductionCatalog(Base) {
         this._tilesetDefs = tilesetDefs;
         const records = catalogRecords.map(record => record.raw);
         const recordByRaw = new WeakMap(catalogRecords.map(record => [record.raw, record]));
+        this.enrichOaabRecords(catalogRecords, deprecated, wikiBooks, tagDefs, tilesetDefs);
         const enchantmentsByKey = this.enchantmentMap(records);
         const labelType = (t) => this.displayType(t);
         const thumbnailPath = (mesh) => {
@@ -253,8 +254,43 @@ export function withProductionCatalog(Base) {
   findCatalogItem(id) {
     const key = String(id || '').trim().toLowerCase();
     if (!key) return null;
-    const all = (this._oaabItems || []).concat(this._vanillaItems || []);
+    const displayed = this.state?.data?.items || [];
+    const displayedItem = displayed.find(x => String(x.id || '').trim().toLowerCase() === key);
+    if (displayedItem) return displayedItem;
+    const all = (this._importedItems || []).concat(this._oaabItems || [], this._vanillaItems || []);
     return all.find(x => String(x.id || '').trim().toLowerCase() === key) || null;
+  }
+
+  enrichOaabRecords(records, deprecated, wikiBooks, tagDefs, tilesetDefs) {
+    const tilesetsById = new Map();
+    for (const tileset of tilesetDefs.tilesets || []) {
+      for (const [piece, subsets] of Object.entries(tileset.pieces || {})) {
+        for (const [subset, ids] of Object.entries(subsets || {})) {
+          for (const id of ids) {
+            const key = String(id).toLowerCase();
+            if (!tilesetsById.has(key)) tilesetsById.set(key, []);
+            tilesetsById.get(key).push({ key: tileset.key, label: tileset.label, piece, subset });
+          }
+        }
+      }
+    }
+    for (const record of records) {
+      const idKey = record.id.toLowerCase();
+      const typeKey = this.displayType(record.type).toLowerCase();
+      const tags = (tagDefs || []).filter(tag => (
+        !tag.excludeTypes.includes(typeKey) &&
+        tag.include.some(word => this.tagWordMatches(idKey, word)) &&
+        !tag.exclude.some(word => this.tagWordMatches(idKey, word))
+      )).map(tag => tag.label);
+      record.metadata.oaab = {
+        tags,
+        tilesets: tilesetsById.get(idKey) || [],
+        releaseAdded: null,
+        releaseModified: [],
+        deprecated: !!deprecated[record.id],
+        wikiPage: wikiBooks[idKey]?.wikiUrl || null,
+      };
+    }
   }
 
   // Compose the catalogue shown in the grid. OAAB objects are always present;
@@ -266,8 +302,10 @@ export function withProductionCatalog(Base) {
 
   buildData(vanillaOn) {
     const showVan = (vanillaOn != null) ? vanillaOn : this.state.vanilla;
-    const oaab = this._oaabItems || [];
-    const van = (showVan && this._vanillaItems) ? this._vanillaItems : [];
+    const sourceEnabled = this._librarySourceEnabled || new Set(['oaab-data', 'vanilla']);
+    const oaab = sourceEnabled.has('oaab-data') ? (this._oaabItems || []) : [];
+    const van = (showVan && sourceEnabled.has('vanilla') && this._vanillaItems) ? this._vanillaItems : [];
+    const imported = (this._importedItems || []).filter(item => sourceEnabled.has(item.source));
     let items;
     if (!van.length) {
       items = oaab.slice();
@@ -278,7 +316,12 @@ export function withProductionCatalog(Base) {
       van.forEach(x => { if (!seen[x.id]) { seen[x.id] = 1; items.push(x); } });
       items.sort((a, b) => this.csCompareIds(a.id, b.id));
     }
-    const searchableItems = oaab.concat(this._vanillaItems || []);
+    if (imported.length) {
+      const winners = new Map(items.map(item => [String(item.id || '').toLowerCase(), item]));
+      imported.forEach(item => winners.set(String(item.id || '').toLowerCase(), item));
+      items = [...winners.values()].sort((a, b) => this.csCompareIds(a.id, b.id));
+    }
+    const searchableItems = oaab.concat(this._vanillaItems || [], imported);
     const displayByKey = Object.create(null);
     searchableItems.forEach(x => { displayByKey[String(x.id || '').trim().toLowerCase()] = x; });
     const contentByKey = Object.create(null);
@@ -299,6 +342,48 @@ export function withProductionCatalog(Base) {
       .map(k => ({ label: k, count: counts[k] }))
       .sort((a, b) => a.label.localeCompare(b.label));
     return { total: items.length, types, items };
+  }
+
+  setLibrarySourceEnabled(sourceId, enabled) {
+    if (!this._librarySourceEnabled) this._librarySourceEnabled = new Set(['oaab-data', 'vanilla']);
+    if (enabled) this._librarySourceEnabled.add(sourceId);
+    else this._librarySourceEnabled.delete(sourceId);
+    this.setState({ data: this.buildData() });
+  }
+
+  setImportedRecords(records) {
+    this._importedItems = (records || []).map(record => {
+      const raw = record.raw || {};
+      return {
+        record,
+        source: record.source,
+        id: record.id,
+        name: record.name || '',
+        type: this.displayType(record.type),
+        img: '/assets/images/general/icon.png',
+        render: '',
+        mesh: record.mesh || '',
+        inventory: Array.isArray(raw.contents) ? raw.contents : null,
+        spells: null,
+        effects: [],
+        enchantment: null,
+        alchemy: null,
+        bookRef: null,
+        detail: this.detailSourceRecord(raw),
+        imported: true,
+      };
+    });
+    this.setState({ data: this.buildData() });
+  }
+
+  setImportedThumbnail(record, url) {
+    const item = (this._importedItems || []).find(value => value.record === record || (
+      value.source === record.source && String(value.id).toLowerCase() === String(record.id).toLowerCase()
+    ));
+    if (!item) return;
+    item.img = url;
+    item.render = url;
+    this.setState({ data: this.buildData() });
   }
 
   // Lazily load the vanilla object catalogues. The three base-game files share
@@ -474,6 +559,17 @@ export function withProductionCatalog(Base) {
 
     Promise.all(jobs).then(rows => {
       const releases = rows.filter(r => r && (r.added.length || r.modified.length)).reverse();
+      const itemsById = new Map(items.map(item => [String(item.id).toLowerCase(), item]));
+      for (const release of releases.slice().reverse()) {
+        for (const id of release.added) {
+          const metadata = itemsById.get(String(id).toLowerCase())?.record?.metadata?.oaab;
+          if (metadata && !metadata.releaseAdded) metadata.releaseAdded = release.version;
+        }
+        for (const id of release.modified) {
+          const metadata = itemsById.get(String(id).toLowerCase())?.record?.metadata?.oaab;
+          if (metadata) metadata.releaseModified.push(release.version);
+        }
+      }
       this.setState({ relData: releases });
     });
   }
