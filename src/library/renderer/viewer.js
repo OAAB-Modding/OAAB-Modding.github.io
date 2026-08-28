@@ -7,6 +7,7 @@ import { normalizeAssetPath } from '../resolver/path-utils.js';
 import { Tes3WorkerClient } from '../workers/tes3-worker-client.js';
 import { fingerprintBytes } from '../storage/thumbnail-cache.js';
 import {
+  cameraDistanceScaleForView,
   cameraDirectionForView,
   isEditorMarkerName,
   isViewerObjectVisible,
@@ -251,7 +252,10 @@ export class NifViewer {
   #applyCameraView(view) {
     const target = this.cameraHome?.target?.clone() || this.controls.target.clone();
     const referencePosition = this.cameraHome?.position || this.camera.position;
-    const distance = Math.max(referencePosition.distanceTo(target), 0.01);
+    const distance = Math.max(
+      referencePosition.distanceTo(target) * cameraDistanceScaleForView(view),
+      0.01,
+    );
     const direction = new THREE.Vector3(...cameraDirectionForView(view)).normalize();
     this.camera.position.copy(target).add(direction.multiplyScalar(distance));
     this.controls.target.copy(target);

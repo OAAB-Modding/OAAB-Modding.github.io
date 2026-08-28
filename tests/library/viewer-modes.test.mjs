@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  cameraDistanceScaleForView,
   cameraDirectionForView,
   isEditorMarkerName,
   isViewerObjectVisible,
@@ -47,4 +48,6 @@ test('head bodyparts use the legacy front-facing thumbnail view', () => {
   }), '');
   assert.deepEqual(cameraDirectionForView('front'), [0, 0, 1]);
   assert.deepEqual(cameraDirectionForView(), [1, 0.72, 1]);
+  assert.equal(cameraDistanceScaleForView('front'), 0.9);
+  assert.equal(cameraDistanceScaleForView(), 1);
 });
