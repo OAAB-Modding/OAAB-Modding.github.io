@@ -41,6 +41,14 @@ export class LibraryDatabase {
     return this.#request(store, 'readonly', objectStore => objectStore.getAll());
   }
 
+  async getThumbnailsByPath(path) {
+    return this.#request(
+      'thumbnails',
+      'readonly',
+      objectStore => objectStore.index('path').getAll(path),
+    );
+  }
+
   async put(store, value) {
     return this.#request(store, 'readwrite', objectStore => objectStore.put(value));
   }

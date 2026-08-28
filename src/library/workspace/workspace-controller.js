@@ -724,14 +724,15 @@ export class LibraryWorkspace {
     return true;
   }
 
-  async findCachedThumbnail(record, variant) {
-    const entries = await this.database.getAll('thumbnails');
-    const entry = entries.find(value => (
-      value.rendererVersion === NIF_RENDERER_VERSION
-      && value.variant === variant
-      && value.recordSource === record.source
-      && String(value.recordId || '').toLowerCase() === String(record.id || '').toLowerCase()
-    ));
+  async findCachedThumbnail(record, variant = THUMBNAIL_VARIANT_GRID) {
+    let path;
+    try {
+      path = normalizeAssetPath(record?.mesh, { root: 'meshes' });
+    } catch {
+      return null;
+    }
+    const entries = await this.database.getThumbnailsByPath(path);
+    const entry = newestThumbnailEntry(entries, record, path, variant);
     return entry ? { ...entry, url: this.thumbnailCache.urlFor(entry) } : null;
   }
 
@@ -875,22 +876,28 @@ export class LibraryWorkspace {
   }
 
   async restoreCachedThumbnails(records) {
-    const entries = await this.database.getAll('thumbnails');
-    const byRecord = new Map((records || []).map(record => [`${record.source}\0${record.id.toLowerCase()}`, record]));
-    for (const entry of entries) {
-      if (entry.rendererVersion !== NIF_RENDERER_VERSION || (entry.variant || THUMBNAIL_VARIANT_GRID) !== THUMBNAIL_VARIANT_GRID) continue;
-      const record = byRecord.get(`${entry.recordSource}\0${String(entry.recordId || '').toLowerCase()}`);
+    const recordsByPath = new Map();
+    for (const record of records || []) {
       if (!record?.mesh) continue;
       try {
         const path = normalizeAssetPath(record.mesh, { root: 'meshes' });
-        if (entry.path !== path) continue;
+        const matches = recordsByPath.get(path) || [];
+        matches.push(record);
+        recordsByPath.set(path, matches);
+      } catch {}
+    }
+    for (const [path, matchingRecords] of recordsByPath) {
+      const entries = await this.database.getThumbnailsByPath(path);
+      for (const record of matchingRecords) {
+        const entry = newestThumbnailEntry(entries, record, path, THUMBNAIL_VARIANT_GRID);
+        if (!entry) continue;
         // The cache key already includes the mesh and texture fingerprints.
         // Restore it immediately, even before the user reselects the local
         // Data Files folder. A later asset-source change clears these items
         // and schedules fresh captures, so stale local files cannot persist
         // once the resolver has new input.
         this.component.setImportedThumbnail(record, this.thumbnailCache.urlFor(entry));
-      } catch {}
+      }
     }
   }
 
@@ -1153,6 +1160,25 @@ function sourceName(record) {
 
 function thumbnailRecordKey(record) {
   return `${record?.source || ''}\0${String(record?.id || '').toLowerCase()}`;
+}
+
+function newestThumbnailEntry(entries, record, path, variant) {
+  const recordId = String(record?.id || '').toLowerCase();
+  let newest = null;
+  for (const entry of entries || []) {
+    if (
+      !entry?.blob
+      || entry.path !== path
+      || entry.rendererVersion !== NIF_RENDERER_VERSION
+      || (entry.variant || THUMBNAIL_VARIANT_GRID) !== variant
+      || entry.recordSource !== record?.source
+      || String(entry.recordId || '').toLowerCase() !== recordId
+    ) continue;
+    const createdAt = Number(entry.createdAt) || 0;
+    const newestCreatedAt = Number(newest?.createdAt) || 0;
+    if (!newest || createdAt >= newestCreatedAt) newest = entry;
+  }
+  return newest;
 }
 
 function assetSourceFingerprint(asset) {

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { LibraryWorkspace } from '../../src/library/workspace/workspace-controller.js';
+import { NIF_RENDERER_VERSION } from '../../src/library/storage/thumbnail-cache.js';
 
 function workspaceWithoutConstructor() {
   return Object.create(LibraryWorkspace.prototype);
@@ -193,6 +194,69 @@ test('asset-source changes reset jobs and invalidate imported thumbnails', () =>
   assert.equal(workspace.thumbnailJobs.size, 0);
   assert.equal(refreshed, 1);
   assert.equal(synced, 1);
+});
+
+test('cached thumbnail lookup queries the normalized mesh path and selects the newest valid entry', async () => {
+  const workspace = workspaceWithoutConstructor();
+  const record = { id: 'Demo', source: 'plugin:demo', mesh: 'OAAB\\Furniture\\Chair.nif' };
+  let queriedPath = '';
+  workspace.database = {
+    async getThumbnailsByPath(path) {
+      queriedPath = path;
+      return [
+        { key: 'old', path, rendererVersion: NIF_RENDERER_VERSION, variant: 'preview', recordSource: record.source, recordId: 'demo', createdAt: 10, blob: {} },
+        { key: 'wrong-version', path, rendererVersion: 'old', variant: 'preview', recordSource: record.source, recordId: 'demo', createdAt: 50, blob: {} },
+        { key: 'wrong-variant', path, rendererVersion: NIF_RENDERER_VERSION, variant: 'grid', recordSource: record.source, recordId: 'demo', createdAt: 60, blob: {} },
+        { key: 'wrong-record', path, rendererVersion: NIF_RENDERER_VERSION, variant: 'preview', recordSource: record.source, recordId: 'other', createdAt: 70, blob: {} },
+        { key: 'missing-blob', path, rendererVersion: NIF_RENDERER_VERSION, variant: 'preview', recordSource: record.source, recordId: 'demo', createdAt: 80 },
+        { key: 'new', path, rendererVersion: NIF_RENDERER_VERSION, variant: 'preview', recordSource: record.source, recordId: 'DEMO', createdAt: 20, blob: {} },
+      ];
+    },
+  };
+  workspace.thumbnailCache = { urlFor: entry => `blob:${entry.key}` };
+
+  const cached = await workspace.findCachedThumbnail(record, 'preview');
+
+  assert.equal(queriedPath, 'meshes/oaab/furniture/chair.nif');
+  assert.equal(cached.key, 'new');
+  assert.equal(cached.url, 'blob:new');
+});
+
+test('cached thumbnail restoration queries each normalized mesh path once', async () => {
+  const workspace = workspaceWithoutConstructor();
+  const records = [
+    { id: 'One', source: 'plugin:demo', mesh: 'OAAB\\Shared.nif' },
+    { id: 'Two', source: 'plugin:demo', mesh: 'meshes/oaab/shared.nif' },
+    { id: 'Invalid', source: 'plugin:demo', mesh: '../outside.nif' },
+  ];
+  const queries = [];
+  workspace.database = {
+    async getThumbnailsByPath(path) {
+      queries.push(path);
+      return [
+        { key: 'one-old', path, rendererVersion: NIF_RENDERER_VERSION, variant: 'grid', recordSource: 'plugin:demo', recordId: 'one', createdAt: 10, blob: {} },
+        { key: 'one-new', path, rendererVersion: NIF_RENDERER_VERSION, variant: 'grid', recordSource: 'plugin:demo', recordId: 'ONE', createdAt: 20, blob: {} },
+        { key: 'one-preview', path, rendererVersion: NIF_RENDERER_VERSION, variant: 'preview', recordSource: 'plugin:demo', recordId: 'one', createdAt: 30, blob: {} },
+        { key: 'two-legacy-grid', path, rendererVersion: NIF_RENDERER_VERSION, recordSource: 'plugin:demo', recordId: 'two', createdAt: 15, blob: {} },
+        { key: 'two-old-renderer', path, rendererVersion: 'old', variant: 'grid', recordSource: 'plugin:demo', recordId: 'two', createdAt: 40, blob: {} },
+      ];
+    },
+  };
+  workspace.thumbnailCache = { urlFor: entry => `blob:${entry.key}` };
+  const restored = [];
+  workspace.component = {
+    setImportedThumbnail(record, url) {
+      restored.push([record.id, url]);
+    },
+  };
+
+  await workspace.restoreCachedThumbnails(records);
+
+  assert.deepEqual(queries, ['meshes/oaab/shared.nif']);
+  assert.deepEqual(restored, [
+    ['One', 'blob:one-new'],
+    ['Two', 'blob:two-legacy-grid'],
+  ]);
 });
 
 test('unknown totals remove the progress value attribute', () => {
