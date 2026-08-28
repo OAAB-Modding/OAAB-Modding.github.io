@@ -439,6 +439,7 @@ button {
 }
 .dropdown-button:hover,
 .dropdown-button-release:hover,
+.dropdown-button-source:hover,
 .icon-button:hover {
   border-color: #9a92d6 !important;
 }
@@ -2400,6 +2401,33 @@ button {
   padding:6px;
   animation:oaabFade .14s ease both;
 }
+.dropdown-button-source {
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  min-width:174px;
+  justify-content:space-between;
+  font-family:'EB Garamond',serif;
+  font-size:15px;
+  border-radius:9px;
+  padding:10px 14px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:all .18s;
+}
+.dropdown-menu-source {
+  position:absolute;
+  top:calc(100% + 8px);
+  left:0;
+  z-index:60;
+  width:300px;
+  background:#15100b;
+  border:1px solid #322a20;
+  border-radius:12px;
+  box-shadow:0 18px 44px rgba(0,0,0,0.55);
+  padding:6px;
+  animation:oaabFade .14s ease both;
+}
 .release-version-mono {
   font-family:'JetBrains Mono',monospace;
   font-size:13.5px;
@@ -2417,23 +2445,6 @@ button {
   border-radius:8px;
   cursor:pointer;
   transition:all .18s;
-}
-.vanilla-toggle {
-  flex:0 0 auto;
-  display:inline-flex;
-  align-items:center;
-  gap:10px;
-  height:42px;
-  padding:0 16px 0 12px;
-  border-radius:9px;
-  font-family:'EB Garamond',serif;
-  font-size:15px;
-  cursor:pointer;
-  white-space:nowrap;
-  transition:all .18s;
-}
-.vanilla-toggle:hover {
-  border-color:#d2823f !important;
 }
 .tileset-toggle {
   flex:0 0 auto;
@@ -2458,24 +2469,6 @@ button {
 .tileset-toggle:disabled {
   cursor:not-allowed;
   opacity:.45;
-}
-.vanilla-switch {
-  position:relative;
-  flex:0 0 auto;
-  width:28px;
-  height:15px;
-  border-radius:8px;
-  transition:background .18s;
-}
-.vanilla-knob {
-  position:absolute;
-  top:2px;
-  left:0;
-  width:11px;
-  height:11px;
-  border-radius:50%;
-  box-shadow:0 1px 2px rgba(0,0,0,0.3);
-  transition:transform .18s, background .18s;
 }
 .release-legend {
   flex:0 0 auto;
@@ -5473,7 +5466,8 @@ button {
 }
 .theme-light .dropdown-menu-type,
 .theme-light .dropdown-menu-tags,
-.theme-light .dropdown-menu-release {
+.theme-light .dropdown-menu-release,
+.theme-light .dropdown-menu-source {
   background:#fbf7ef;
   border-color:#d8cdb8;
   box-shadow:0 18px 44px rgba(60,45,25,0.18);
@@ -6359,11 +6353,11 @@ button {
   .search-mode-menu {
     width:164px;
   }
-  .dropdown-button, .dropdown-button-type, .dropdown-button-release {
+  .dropdown-button, .dropdown-button-type, .dropdown-button-release, .dropdown-button-source {
     min-width: 0;
   }
-  .dropdown-menu-tags, .dropdown-menu-type, .dropdown-menu-release {
-    width: min(86vw, 288px);
+  .dropdown-menu-tags, .dropdown-menu-type, .dropdown-menu-release, .dropdown-menu-source {
+    width: min(86vw, 300px);
   }
   /* Keep the size slider usable but compact, let it grow to fill its row */
   .thumb-scale-control {
@@ -6667,7 +6661,7 @@ button {
 .library-page--popout .dropdown-button,
 .library-page--popout .dropdown-button-type,
 .library-page--popout .dropdown-button-release,
-.library-page--popout .vanilla-toggle,
+.library-page--popout .dropdown-button-source,
 .library-page--popout .release-mode-button,
 .library-page--popout .clear-filters-button {
   height:28px;
@@ -6691,7 +6685,7 @@ button {
 .library-page--popout .dropdown-button:hover,
 .library-page--popout .dropdown-button-type:hover,
 .library-page--popout .dropdown-button-release:hover,
-.library-page--popout .vanilla-toggle:hover,
+.library-page--popout .dropdown-button-source:hover,
 .library-page--popout .release-mode-button:hover,
 .library-page--popout .clear-filters-button:hover {
   background:var(--csse-control-hover) !important;
@@ -6701,7 +6695,7 @@ button {
 .library-page--popout .dropdown-button:focus-visible,
 .library-page--popout .dropdown-button-type:focus-visible,
 .library-page--popout .dropdown-button-release:focus-visible,
-.library-page--popout .vanilla-toggle:focus-visible,
+.library-page--popout .dropdown-button-source:focus-visible,
 .library-page--popout .release-mode-button:focus-visible,
 .library-page--popout .clear-filters-button:focus-visible,
 .library-page--popout .view-mode-button:focus-visible,
@@ -6711,7 +6705,8 @@ button {
 }
 .library-page--popout .dropdown-button,
 .library-page--popout .dropdown-button-type,
-.library-page--popout .dropdown-button-release {
+.library-page--popout .dropdown-button-release,
+.library-page--popout .dropdown-button-source {
   justify-content:space-between;
   padding:0 0 0 6px;
 }
@@ -6731,9 +6726,6 @@ button {
   border-radius:0;
   background:var(--csse-selection);
 }
-.library-page--popout .vanilla-toggle {
-  padding:0 9px 0 7px;
-}
 .library-page--popout .tileset-toggle {
   height:28px;
   min-width:0;
@@ -6750,19 +6742,6 @@ button {
   border-color:var(--csse-selection-border) !important;
   background:var(--csse-control-hover) !important;
   color:var(--csse-text-strong) !important;
-}
-.library-page--popout .vanilla-switch {
-  width:25px;
-  height:13px;
-  border-radius:0;
-  outline:1px solid var(--csse-border);
-}
-.library-page--popout .vanilla-knob {
-  top:1px;
-  width:11px;
-  height:11px;
-  border-radius:0;
-  box-shadow:none;
 }
 .library-page--popout .thumb-scale-control,
 .library-page--popout .view-mode-group,
@@ -6822,6 +6801,7 @@ button {
 .library-page--popout .dropdown-menu-type,
 .library-page--popout .dropdown-menu-tags,
 .library-page--popout .dropdown-menu-release,
+.library-page--popout .dropdown-menu-source,
 .library-page--popout .asset-compact-actions-menu {
   margin:0;
   padding:2px;
@@ -6836,7 +6816,8 @@ button {
 .library-page--popout .search-mode-menu,
 .library-page--popout .dropdown-menu-type,
 .library-page--popout .dropdown-menu-tags,
-.library-page--popout .dropdown-menu-release {
+.library-page--popout .dropdown-menu-release,
+.library-page--popout .dropdown-menu-source {
   top:calc(100% + 2px);
 }
 .library-page--popout .dropdown-row,
@@ -7280,7 +7261,7 @@ button {
 .library-page--popout .theme-light .dropdown-button,
 .library-page--popout .theme-light .dropdown-button-type,
 .library-page--popout .theme-light .dropdown-button-release,
-.library-page--popout .theme-light .vanilla-toggle,
+.library-page--popout .theme-light .dropdown-button-source,
 .library-page--popout .theme-light .release-mode-button,
 .library-page--popout .theme-light .clear-filters-button,
 .library-page--popout .theme-light .search-mode-button,
@@ -7299,7 +7280,7 @@ button {
 .library-page--popout .theme-light .dropdown-button:hover,
 .library-page--popout .theme-light .dropdown-button-type:hover,
 .library-page--popout .theme-light .dropdown-button-release:hover,
-.library-page--popout .theme-light .vanilla-toggle:hover,
+.library-page--popout .theme-light .dropdown-button-source:hover,
 .library-page--popout .theme-light .release-mode-button:hover,
 .library-page--popout .theme-light .clear-filters-button:hover,
 .library-page--popout .theme-light .search-mode-button:hover,
@@ -7311,7 +7292,7 @@ button {
 .library-page--popout .theme-light .dropdown-button:active,
 .library-page--popout .theme-light .dropdown-button-type:active,
 .library-page--popout .theme-light .dropdown-button-release:active,
-.library-page--popout .theme-light .vanilla-toggle:active,
+.library-page--popout .theme-light .dropdown-button-source:active,
 .library-page--popout .theme-light .release-mode-button:active,
 .library-page--popout .theme-light .clear-filters-button:active,
 .library-page--popout .theme-light .search-mode-button:active,
@@ -7349,7 +7330,7 @@ button {
 .library-page--popout .theme-light .dropdown-button:focus-visible,
 .library-page--popout .theme-light .dropdown-button-type:focus-visible,
 .library-page--popout .theme-light .dropdown-button-release:focus-visible,
-.library-page--popout .theme-light .vanilla-toggle:focus-visible,
+.library-page--popout .theme-light .dropdown-button-source:focus-visible,
 .library-page--popout .theme-light .release-mode-button:focus-visible,
 .library-page--popout .theme-light .clear-filters-button:focus-visible,
 .library-page--popout .theme-light .view-mode-button:focus-visible,
@@ -7370,6 +7351,7 @@ button {
 .library-page--popout .theme-light .dropdown-menu-type,
 .library-page--popout .theme-light .dropdown-menu-tags,
 .library-page--popout .theme-light .dropdown-menu-release,
+.library-page--popout .theme-light .dropdown-menu-source,
 .library-page--popout .theme-light .asset-compact-actions-menu {
   border:1px solid #a0a0a0;
   box-shadow:2px 2px 3px rgba(0,0,0,.35);
@@ -7387,26 +7369,7 @@ button {
   color:#000000 !important;
 }
 
-/* (3) Vanilla toggle switch uses the selection blue (like the size slider),
-   not orange. Track neutral when off, blue when on; white knob. */
-.library-page--popout .vanilla-toggle .vanilla-switch {
-  background:var(--csse-control-hover) !important;
-}
-.library-page--popout .vanilla-toggle[aria-pressed="true"] .vanilla-switch {
-  background:var(--csse-selection) !important;
-}
-.library-page--popout .vanilla-toggle .vanilla-knob {
-  background:#f0f0f0 !important;
-  box-shadow:none !important;
-}
-.library-page--popout .theme-light .vanilla-toggle[aria-pressed="true"] .vanilla-switch {
-  background:#0078d7 !important;
-}
-.library-page--popout .theme-light .vanilla-toggle .vanilla-knob {
-  background:#ffffff !important;
-}
-
-/* (4) Checkboxes in light mode: always white, no blue — just a checkmark */
+/* (3) Checkboxes in light mode: always white, no blue — just a checkmark */
 .library-page--popout .theme-light .menu-check,
 .library-page--popout .theme-light .menu-check[style*="background: transparent"] {
   background:#ffffff !important;
@@ -7425,7 +7388,8 @@ button {
 }
 .library-page--popout .theme-light .dropdown-button:active .dropdown-chevron,
 .library-page--popout .theme-light .dropdown-button-type:active .dropdown-chevron,
-.library-page--popout .theme-light .dropdown-button-release:active .dropdown-chevron {
+.library-page--popout .theme-light .dropdown-button-release:active .dropdown-chevron,
+.library-page--popout .theme-light .dropdown-button-source:active .dropdown-chevron {
   border-color:#696969 #ffffff #ffffff #696969;
   box-shadow:inset 1px 1px 0 #a0a0a0, inset -1px -1px 0 #e3e3e3;
 }

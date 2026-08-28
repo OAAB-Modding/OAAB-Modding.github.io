@@ -1,3 +1,7 @@
+import { writeStoredCatalogSources } from '../state.js';
+
+const DEFAULT_CATALOG_SOURCE = 'oaab-data';
+
 export function withProductionCatalog(Base) {
   return class ProductionCatalog extends Base {
   initializeProductionCatalog() {
@@ -246,7 +250,10 @@ export function withProductionCatalog(Base) {
         this._oaabContentRecords = contentRecords;
         this.setState({ data: this.buildData() });
         this.loadMeshDiffs(items);
-        this.loadVanilla();
+        // Keep the initial page light when the user has not selected the
+        // vanilla catalogue. Selecting it from the Catalog Source control
+        // starts this same lazy load on demand.
+        if (this.isLibrarySourceEnabled('vanilla')) this.loadVanilla();
       })
       .catch(e => console.error('library data load failed', e));
   }
@@ -293,16 +300,102 @@ export function withProductionCatalog(Base) {
     }
   }
 
-  // Compose the catalogue shown in the grid. OAAB objects are always present;
-  // when the Vanilla toggle is on, the base-game objects (Morrowind, Tribunal,
-  // Bloodmoon) are merged in too. Type counts/tabs are derived from the merged
-  // set so the toggle updates them automatically. Called only on data load and
-  // when the toggle flips — never per render — so `data` identity stays stable
-  // for the renderVals caches.
+  // Compose the catalogue shown in the grid from the selected source set.
+  // Type counts/tabs are derived from the merged set so source changes update
+  // them automatically. Called only on data load and source changes — never
+  // per render — so `data` identity stays stable for the renderVals caches.
+
+  getLibrarySourceEnabled() {
+    const configured = this._librarySourceEnabled
+      || (Array.isArray(this.state?.catalogSources) ? this.state.catalogSources : null);
+    const sources = new Set(configured || [DEFAULT_CATALOG_SOURCE]);
+    if (!configured && this.state?.vanilla) sources.add('vanilla');
+    return sources;
+  }
+
+  isLibrarySourceEnabled(sourceId) {
+    const id = String(sourceId || '').trim();
+    if (!id) return false;
+    const sources = this.getLibrarySourceEnabled();
+    return sources.has(id) && (id !== 'vanilla' || !!this.state?.vanilla);
+  }
+
+  libraryCatalogSourceOptions() {
+    const options = [
+      {
+        id: 'oaab-data',
+        label: 'OAAB_Data',
+        summary: 'OAAB_Data public catalogue',
+        count: (this._oaabItems || []).length,
+      },
+      {
+        id: 'vanilla',
+        label: 'Vanilla masters',
+        summary: 'Morrowind, Tribunal, and Bloodmoon',
+        count: this._vanillaItems ? this._vanillaItems.length : null,
+      },
+    ];
+    const byId = new Map(options.map(option => [option.id, option]));
+    const addImportedSource = (id, filename) => {
+      const sourceId = String(id || '').trim();
+      if (!sourceId || byId.has(sourceId)) return;
+      const label = String(filename || sourceId.replace(/^plugin:/i, '') || 'Imported plugin');
+      const option = {
+        id: sourceId,
+        label,
+        summary: 'Imported plugin catalogue',
+        count: 0,
+      };
+      byId.set(sourceId, option);
+      options.push(option);
+    };
+
+    for (const plugin of this._workspace?.plugins || []) {
+      addImportedSource(plugin.id, plugin.filename);
+    }
+    for (const item of this._importedItems || []) {
+      const filename = item.record?.metadata?.plugin?.filename;
+      addImportedSource(item.source, filename);
+      const option = byId.get(item.source);
+      if (option) option.count += 1;
+    }
+    const enabled = this.getLibrarySourceEnabled();
+    return options.map(option => ({
+      ...option,
+      enabled: enabled.has(option.id) && (option.id !== 'vanilla' || !!this.state?.vanilla),
+    }));
+  }
+
+  setLibrarySourceSelection(sourceIds) {
+    const selected = new Set(Array.from(sourceIds || [])
+      .map(sourceId => String(sourceId || '').trim())
+      .filter(Boolean));
+    this._librarySourceEnabled = selected;
+    const vanilla = selected.has('vanilla');
+    const patch = {
+      catalogSources: [...selected],
+      vanilla,
+      catalogSourceOpen: this.state.catalogSourceOpen,
+      data: this.buildData(vanilla),
+    };
+    if (!vanilla) {
+      patch.tileset = '';
+      patch.tilesetSubset = 'all';
+      patch.tilesetPiece = '';
+    }
+    if (typeof this.setFilterState === 'function') {
+      this.setFilterState(patch);
+    } else {
+      writeStoredCatalogSources(selected);
+      this.setState(patch);
+      this._workspace?.persistWorkspaceSettings?.();
+    }
+    if (vanilla && !this._vanillaItems) this.loadVanilla();
+  }
 
   buildData(vanillaOn) {
+    const sourceEnabled = this.getLibrarySourceEnabled();
     const showVan = (vanillaOn != null) ? vanillaOn : this.state.vanilla;
-    const sourceEnabled = this._librarySourceEnabled || new Set(['oaab-data', 'vanilla']);
     const oaab = sourceEnabled.has('oaab-data') ? (this._oaabItems || []) : [];
     const van = (showVan && sourceEnabled.has('vanilla') && this._vanillaItems) ? this._vanillaItems : [];
     const imported = (this._importedItems || []).filter(item => sourceEnabled.has(item.source));
@@ -345,23 +438,31 @@ export function withProductionCatalog(Base) {
   }
 
   setLibrarySourceEnabled(sourceId, enabled) {
-    if (!this._librarySourceEnabled) this._librarySourceEnabled = new Set(['oaab-data', 'vanilla']);
-    if (enabled) this._librarySourceEnabled.add(sourceId);
-    else this._librarySourceEnabled.delete(sourceId);
-    this.setState({ data: this.buildData() });
+    const sources = this.getLibrarySourceEnabled();
+    const id = String(sourceId || '').trim();
+    if (!id) return;
+    if (enabled) sources.add(id);
+    else sources.delete(id);
+    this.setLibrarySourceSelection(sources);
   }
 
-  setImportedRecords(records) {
+  setImportedRecords(records, { preserveThumbnails = true } = {}) {
+    const previous = new Map((this._importedItems || []).map(item => [
+      `${item.source}\0${String(item.id || '').toLowerCase()}`,
+      item,
+    ]));
     this._importedItems = (records || []).map(record => {
       const raw = record.raw || {};
+      const old = previous.get(`${record.source}\0${String(record.id || '').toLowerCase()}`);
+      const preserveThumbnail = preserveThumbnails && old?.record === record;
       return {
         record,
         source: record.source,
         id: record.id,
         name: record.name || '',
         type: this.displayType(record.type),
-        img: '/assets/images/general/icon.png',
-        render: '',
+        img: preserveThumbnail ? old.img : '/assets/images/general/icon.png',
+        render: preserveThumbnail ? old.render : '',
         mesh: record.mesh || '',
         inventory: Array.isArray(raw.contents) ? raw.contents : null,
         spells: null,
@@ -371,18 +472,18 @@ export function withProductionCatalog(Base) {
         bookRef: null,
         detail: this.detailSourceRecord(raw),
         imported: true,
+        thumbnailReady: !!(preserveThumbnail && old.thumbnailReady),
       };
     });
     this.setState({ data: this.buildData() });
   }
 
   setImportedThumbnail(record, url) {
-    const item = (this._importedItems || []).find(value => value.record === record || (
-      value.source === record.source && String(value.id).toLowerCase() === String(record.id).toLowerCase()
-    ));
+    const item = (this._importedItems || []).find(value => value.record === record);
     if (!item) return;
     item.img = url;
     item.render = url;
+    item.thumbnailReady = true;
     this.setState({ data: this.buildData() });
   }
 

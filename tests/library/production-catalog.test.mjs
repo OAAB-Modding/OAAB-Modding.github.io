@@ -5,7 +5,12 @@ import { withProductionCatalog } from '../../src/library/catalog/production-cata
 
 class CatalogBase {
   constructor() {
-    this.state = { vanilla: false, data: { items: [] } };
+    this.state = {
+      vanilla: false,
+      catalogSources: ['oaab-data'],
+      catalogSourceOpen: true,
+      data: { items: [] },
+    };
   }
 
   setState(next) {
@@ -57,4 +62,30 @@ test('OAAB enrichment stays on OAAB records and carries project metadata', () =>
   assert.equal(record.metadata.oaab.tilesets[0].piece, 'wall');
   assert.equal(record.metadata.oaab.deprecated, true);
   assert.equal(record.metadata.oaab.wikiPage, 'https://example.test/wiki');
+});
+
+test('catalog source selection controls built-in and imported records', () => {
+  const catalog = new ProductionCatalog();
+  catalog._oaabItems = [{ id: 'oaab_object', type: 'Static' }];
+  catalog._vanillaItems = [{ id: 'vanilla_object', type: 'Static' }];
+  catalog._importedItems = [{ id: 'mod_object', type: 'Static', source: 'plugin:demo', record: { metadata: { plugin: { filename: 'Demo.esp' } } } }];
+
+  assert.deepEqual(catalog.libraryCatalogSourceOptions().map(source => [source.id, source.enabled]), [
+    ['oaab-data', true],
+    ['vanilla', false],
+    ['plugin:demo', false],
+  ]);
+  assert.deepEqual(catalog.buildData().items.map(item => item.id), ['oaab_object']);
+
+  catalog.setLibrarySourceEnabled('vanilla', true);
+  assert.equal(catalog.state.vanilla, true);
+  assert.deepEqual(catalog.state.data.items.map(item => item.id), ['oaab_object', 'vanilla_object']);
+
+  catalog.setLibrarySourceSelection(['vanilla', 'plugin:demo']);
+  assert.equal(catalog.state.vanilla, true);
+  assert.deepEqual(catalog.state.data.items.map(item => item.id), ['mod_object', 'vanilla_object']);
+  assert.deepEqual(catalog.libraryCatalogSourceOptions().filter(source => source.enabled).map(source => source.id), [
+    'vanilla',
+    'plugin:demo',
+  ]);
 });

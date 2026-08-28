@@ -95,6 +95,9 @@ export function createLibraryComponent(DCLogic) {
       if (this.state.searchSuggestOpen && !(t.closest && t.closest('[data-searchbox]'))) {
         this.setState({ searchSuggestOpen: false });
       }
+      if (this.state.catalogSourceOpen && !(t.closest && t.closest('[data-sourcedd]'))) {
+        this.setState({ catalogSourceOpen: false });
+      }
       if (this.state.relOpen && !(t.closest && t.closest('[data-reldd]'))) {
         this.setState({ relOpen: false });
       }
@@ -153,8 +156,8 @@ export function createLibraryComponent(DCLogic) {
         this.setState({ compactActionsId: null });
         return;
       }
-      if ((this.state.searchModeOpen || this.state.searchSuggestOpen) && e.key === 'Escape') {
-        this.setState({ searchModeOpen: false, searchSuggestOpen: false });
+      if ((this.state.searchModeOpen || this.state.searchSuggestOpen || this.state.catalogSourceOpen) && e.key === 'Escape') {
+        this.setState({ searchModeOpen: false, searchSuggestOpen: false, catalogSourceOpen: false });
         return;
       }
       if (!this.state.tagOpen) return;

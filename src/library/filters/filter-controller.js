@@ -1,3 +1,5 @@
+import { writeStoredCatalogSources } from '../state.js';
+
 export function withLibraryFilters(Base) {
   return class LibraryFilters extends Base {
   filterSnapshot(state) {
@@ -11,6 +13,9 @@ export function withLibraryFilters(Base) {
       releases: (s.releases || []).slice(),
       relKinds: (s.relKinds || ['added', 'modified']).slice(),
       vanilla: !!s.vanilla,
+      catalogSources: Array.isArray(s.catalogSources)
+        ? s.catalogSources.slice()
+        : (s.vanilla ? ['oaab-data', 'vanilla'] : ['oaab-data']),
       detailFilters: Object.assign({}, filters),
       tileset: s.tileset || '',
       tilesetSubset: s.tilesetSubset || 'all',
@@ -33,6 +38,9 @@ export function withLibraryFilters(Base) {
       releases: (snap.releases || []).slice(),
       relKinds: (snap.relKinds || ['added', 'modified']).slice(),
       vanilla: !!snap.vanilla,
+      catalogSources: Array.isArray(snap.catalogSources)
+        ? snap.catalogSources.slice()
+        : (snap.vanilla ? ['oaab-data', 'vanilla'] : ['oaab-data']),
       detailFilters: Object.assign({}, snap.detailFilters || {}),
       tileset: snap.tileset || '',
       tilesetSubset: snap.tilesetSubset || 'all',
@@ -40,6 +48,7 @@ export function withLibraryFilters(Base) {
       tagOpen: false,
       typeOpen: false,
       relOpen: false,
+      catalogSourceOpen: false,
       searchModeOpen: false,
       searchSuggestOpen: false,
       compactActionsId: null,
@@ -54,10 +63,30 @@ export function withLibraryFilters(Base) {
     this.setState(s => {
       const patch = typeof updater === 'function' ? updater(s) : updater;
       if (!patch) return {};
-      if (Object.prototype.hasOwnProperty.call(patch, 'vanilla')) {
+      const hasCatalogSources = Object.prototype.hasOwnProperty.call(patch, 'catalogSources');
+      if (hasCatalogSources || Object.prototype.hasOwnProperty.call(patch, 'vanilla')) {
+        const sourceSelection = new Set(
+          hasCatalogSources
+            ? Array.from(patch.catalogSources || [])
+            : (this._librarySourceEnabled || this.state.catalogSources || ['oaab-data']),
+        );
+        if (!hasCatalogSources) {
+          if (patch.vanilla) sourceSelection.add('vanilla');
+          else sourceSelection.delete('vanilla');
+        }
+        this._librarySourceEnabled = sourceSelection;
+        patch.catalogSources = [...sourceSelection];
+        patch.vanilla = sourceSelection.has('vanilla');
         try { localStorage.setItem('oaab_vanilla', patch.vanilla ? '1' : '0'); } catch (e) {}
+        writeStoredCatalogSources(sourceSelection);
+        this._workspace?.persistWorkspaceSettings?.();
         if (patch.vanilla && !this._vanillaItems) this.loadVanilla();
         patch.data = this.buildData(!!patch.vanilla);
+        if (!patch.vanilla) {
+          patch.tileset = '';
+          patch.tilesetSubset = 'all';
+          patch.tilesetPiece = '';
+        }
       }
 
       const nextState = Object.assign({}, s, patch);
@@ -130,9 +159,22 @@ export function withLibraryFilters(Base) {
       const target = index + delta;
       if (target < 0 || target >= history.length) return {};
       const patch = this.filterPatchForSnapshot(history[target]);
+      const sourceSelection = new Set(
+        patch.catalogSources || (patch.vanilla ? ['oaab-data', 'vanilla'] : ['oaab-data']),
+      );
+      this._librarySourceEnabled = sourceSelection;
+      patch.catalogSources = [...sourceSelection];
+      patch.vanilla = sourceSelection.has('vanilla');
       try { localStorage.setItem('oaab_vanilla', patch.vanilla ? '1' : '0'); } catch (e) {}
+      writeStoredCatalogSources(sourceSelection);
+      this._workspace?.persistWorkspaceSettings?.();
       if (patch.vanilla && !this._vanillaItems) this.loadVanilla();
       patch.data = this.buildData(!!patch.vanilla);
+      if (!patch.vanilla) {
+        patch.tileset = '';
+        patch.tilesetSubset = 'all';
+        patch.tilesetPiece = '';
+      }
       return Object.assign({}, patch, {
         filterHistory: history,
         filterHistoryIndex: target,

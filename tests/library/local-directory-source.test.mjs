@@ -41,3 +41,23 @@ test('directory handles are indexed without reading file payloads', async () => 
   await source.get('meshes/lazy.nif');
   assert.equal(reads, 2); // stat and get preserve lazy File System Access reads
 });
+
+test('selected files can be indexed in paint-friendly batches with progress', async () => {
+  const files = Array.from({ length: 5 }, (_, index) => (
+    localFile(`asset-${index}.nif`, `Data Files/Meshes/asset-${index}.nif`, String(index))
+  ));
+  const progress = [];
+  const source = new LocalDirectorySource();
+  await source.addFilesWithProgress(files, {
+    batchSize: 2,
+    onProgress: value => progress.push({ ...value }),
+  });
+
+  assert.deepEqual(progress.map(value => [value.completed, value.total]), [
+    [0, 5],
+    [2, 5],
+    [4, 5],
+    [5, 5],
+  ]);
+  assert.equal(source.entries.size, 5);
+});

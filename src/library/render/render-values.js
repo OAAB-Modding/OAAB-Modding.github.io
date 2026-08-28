@@ -10,7 +10,46 @@ export function withLibraryRenderValues(Base) {
     const selTags = this.state.tags || [];
     const compact = !!this.state.compact;
     const comfortable = !compact;
-    const vanillaOn = !!this.state.vanilla;
+    // Theme-aware neutral palette for the toolbar's inline-coloured controls.
+    // Accent (ember/azura) selected states stay the same in both themes.
+    const light = this.state.theme === 'light';
+    const P = light
+      ? { surface: '#fbf7ef', border: '#d8cdb8', muted: '#6a5d49', soft: '#8a7c66', strong: '#2b2218', dim: '#b3a89a', tagText: '#5b5170', tagOn: '#3f3768' }
+      : { surface: '#15100b', border: '#322a20', muted: '#b3a690', soft: '#9a8d77', strong: '#f4ecdd', dim: '#5a5346', tagText: '#cabfdb', tagOn: '#efe9f6' };
+    const catalogSourceOptions = typeof this.libraryCatalogSourceOptions === 'function'
+      ? this.libraryCatalogSourceOptions()
+      : [{ id: 'oaab-data', label: 'OAAB_Data', summary: 'OAAB_Data public catalogue', count: 0, enabled: true }];
+    const selectedCatalogSources = catalogSourceOptions.filter(source => source.enabled);
+    const catalogSourcesAll = catalogSourceOptions.length > 0 && selectedCatalogSources.length === catalogSourceOptions.length;
+    const catalogSourceSummary = selectedCatalogSources.length === 0
+      ? 'No catalog source'
+      : (catalogSourcesAll
+        ? 'All sources'
+        : (selectedCatalogSources.length === 1
+          ? selectedCatalogSources[0].label
+          : `${selectedCatalogSources.length} sources`));
+    const catalogSourceMenu = catalogSourceOptions.map(source => {
+      const on = !!source.enabled;
+      return {
+        id: source.id,
+        label: source.label,
+        summary: source.summary,
+        count: source.count == null ? (source.id === 'vanilla' ? (this._vanillaLoading ? 'Loading…' : 'Load') : '—') : source.count,
+        mark: on ? '\u2713' : '',
+        checkBg: on ? '#9a92d6' : 'transparent',
+        checkBd: on ? '#9a92d6' : P.border,
+        labelColor: on ? P.strong : P.soft,
+        countColor: P.soft,
+      };
+    });
+    const catalogSourceAllRow = {
+      mark: catalogSourcesAll ? '\u2713' : '',
+      checkBg: catalogSourcesAll ? '#9a92d6' : 'transparent',
+      checkBd: catalogSourcesAll ? '#9a92d6' : P.border,
+      labelColor: catalogSourcesAll ? P.strong : P.soft,
+    };
+    const catalogSourceDefault = selectedCatalogSources.length === 1 && selectedCatalogSources[0]?.id === 'oaab-data';
+    const catalogSourceFilterActive = !catalogSourcesAll && !catalogSourceDefault;
     const tilesetDefs = this._tilesetDefs || { pieces: [], tilesets: [] };
     const tilesets = tilesetDefs.tilesets || [];
     const activeTileset = tilesets.find(set => set.key === this.state.tileset) || null;
@@ -26,13 +65,6 @@ export function withLibraryRenderValues(Base) {
     const tilesetFilterKey = tilesetActive
       ? activeTileset.key + '\u0000' + validSubset + '\u0000' + activeTilesetPiece
       : '';
-
-    // Theme-aware neutral palette for the toolbar's inline-coloured controls.
-    // Accent (ember/azura) selected states stay the same in both themes.
-    const light = this.state.theme === 'light';
-    const P = light
-      ? { surface: '#fbf7ef', border: '#d8cdb8', muted: '#6a5d49', soft: '#8a7c66', strong: '#2b2218', dim: '#b3a89a', tagText: '#5b5170', tagOn: '#3f3768' }
-      : { surface: '#15100b', border: '#322a20', muted: '#b3a690', soft: '#9a8d77', strong: '#f4ecdd', dim: '#5a5346', tagText: '#cabfdb', tagOn: '#efe9f6' };
 
     // Tag rules are loaded from assets/data/library/tags.json. They use plain
     // include/exclude word lists matched against IDs and can exclude complete
@@ -361,6 +393,7 @@ export function withLibraryRenderValues(Base) {
         id: x.id,
         name: x.name || '',
         hasName: !!(x.name && x.name.length),
+        localThumbnail: !!(x.imported && x.mesh && !x.thumbnailReady),
         type: x.type,
         img: x.img,
         render: (x.isSpell || x.isLeveledList) ? '' : (x.render || x.img),
@@ -436,7 +469,7 @@ export function withLibraryRenderValues(Base) {
     // shorter mobile nav.
     const narrow = !isPopout && !!this.state.narrow;
 
-    const hasFilterWithoutSearch = active !== 'All' || selTags.length > 0 || relSels.length > 0 || tilesetActive;
+    const hasFilterWithoutSearch = active !== 'All' || selTags.length > 0 || relSels.length > 0 || tilesetActive || catalogSourceFilterActive;
     let emptyTitle = 'No thumbnails in this category yet.';
     let emptyCopy = "These records exist in the library data but aren't part of the current thumbnail render set.";
     if (detailView && filtered.length > 0 && detailItems.length === 0) {
@@ -457,13 +490,13 @@ export function withLibraryRenderValues(Base) {
                 : 'No object ID, name, mesh, or light color matches "' + rawQuery + '".'))));
     } else if (hasFilterWithoutSearch) {
       emptyTitle = 'No matching thumbnails.';
-      emptyCopy = 'Try clearing a type, tag, release, or tileset filter.';
+      emptyCopy = 'Try clearing a source, type, tag, release, or tileset filter.';
     }
 
     // Active-filter count powers the mobile "Filters" toggle badge.
     const filterCount =
       (active !== 'All' ? 1 : 0) + selTags.length + (rawQuery || selectedSearchMode ? 1 : 0) + relSels.length +
-      (vanillaOn ? 1 : 0) + (tilesetActive ? 1 : 0) + detailFilterCount;
+      (catalogSourceFilterActive ? 1 : 0) + (tilesetActive ? 1 : 0) + detailFilterCount;
     const filtersOpen = !!this.state.filtersOpen;
     const filterHistory = Array.isArray(this.state.filterHistory) ? this.state.filterHistory : [];
     const filterHistoryIndex = typeof this.state.filterHistoryIndex === 'number' ? this.state.filterHistoryIndex : -1;
@@ -661,20 +694,23 @@ export function withLibraryRenderValues(Base) {
       stopCompactActionsClick: (e) => {
         if (e && e.stopPropagation) e.stopPropagation();
       },
-      vanillaOn,
-      vanillaBg: vanillaOn ? 'rgba(210,130,63,0.14)' : P.surface,
-      vanillaBd: vanillaOn ? '#7a4f2c' : P.border,
-      vanillaFg: vanillaOn ? (light ? '#7a3f12' : '#f0c89c') : P.soft,
-      vanillaTrackBg: vanillaOn ? 'rgba(210,130,63,0.9)' : (light ? '#d8cdb8' : '#3a3226'),
-      vanillaKnobBg: vanillaOn ? '#15110c' : (light ? '#fbf7ef' : '#9a8d77'),
-      vanillaKnobX: vanillaOn ? 13 : 2,
-      vanillaTitle: vanillaOn ? 'Vanilla assets shown \u2014 click to hide' : 'Show vanilla Morrowind, Tribunal & Bloodmoon assets',
-      toggleVanilla: () => {
-        const next = !this.state.vanilla;
-        try { localStorage.setItem('oaab_vanilla', next ? '1' : '0'); } catch (e) {}
-        this.setFilterState(next
-          ? { vanilla: true }
-          : { vanilla: false, tileset: '', tilesetSubset: 'all', tilesetPiece: '' });
+      catalogSourceOpen: !!this.state.catalogSourceOpen,
+      catalogSourceSummary,
+      catalogSourceMenu,
+      catalogSourceAllRow,
+      catalogSourcesAll,
+      catalogSourceChevronDeg: this.state.catalogSourceOpen ? '180' : '0',
+      toggleCatalogSource: () => this.setState(s => ({ catalogSourceOpen: !s.catalogSourceOpen })),
+      pickCatalogSource: (e) => {
+        const target = e && e.currentTarget;
+        if (!target) return;
+        if (target.dataset.all === '1') {
+          this.setLibrarySourceSelection(catalogSourcesAll ? [] : catalogSourceOptions.map(source => source.id));
+          return;
+        }
+        const id = target.dataset.catalogSource || '';
+        const source = catalogSourceOptions.find(option => option.id === id);
+        if (source) this.setLibrarySourceEnabled(id, !source.enabled);
       },
       tilesetActive,
       tilesetsUnavailable: tilesets.length === 0,
@@ -699,12 +735,14 @@ export function withLibraryRenderValues(Base) {
           return;
         }
         if (!tilesets.length) return;
-        this.loadVanilla();
+        const sourceSelection = this.getLibrarySourceEnabled();
+        sourceSelection.add('vanilla');
         this.setFilterState({
+          catalogSources: [...sourceSelection],
+          vanilla: true,
           tileset: tilesets[0].key,
           tilesetSubset: 'all',
           tilesetPiece: '',
-          vanilla: true,
           active: 'All',
           detailFilters: {},
           detailSort: null,
@@ -717,12 +755,14 @@ export function withLibraryRenderValues(Base) {
         const key = e.currentTarget && e.currentTarget.value ? e.currentTarget.value : '';
         const nextSet = tilesets.find(set => set.key === key);
         if (!nextSet) return;
-        this.loadVanilla();
+        const sourceSelection = this.getLibrarySourceEnabled();
+        sourceSelection.add('vanilla');
         this.setFilterState({
+          catalogSources: [...sourceSelection],
+          vanilla: true,
           tileset: nextSet.key,
           tilesetSubset: 'all',
           tilesetPiece: '',
-          vanilla: true,
           virtualStartRow: 0,
           virtualEndRow: 8,
         });
@@ -765,6 +805,10 @@ export function withLibraryRenderValues(Base) {
       filterToggleFg: P.tagText,
       filterToggleBg: P.surface,
       filterToggleBd: P.border,
+      catalogSourceDotOp: catalogSourceFilterActive ? '1' : '0',
+      catalogSourceBtnFg: catalogSourceFilterActive ? (light ? '#4a4173' : '#efe9f6') : P.soft,
+      catalogSourceBtnBg: catalogSourceFilterActive ? 'rgba(154,146,214,0.15)' : P.surface,
+      catalogSourceBtnBd: catalogSourceFilterActive ? '#5a5380' : P.border,
       tabbarTop: isPopout ? 28 : (this.state.navHeight || (narrow ? 65 : 73)),
       barPadX: isPopout ? 12 : (narrow ? 14 : 32),
       secPadX: isPopout ? 12 : (narrow ? 14 : 32),

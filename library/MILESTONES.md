@@ -116,7 +116,7 @@ record shape:
 Exit criteria:
 
 - Gallery, compact, and detail views behave as before.
-- Search, type/tag/tileset/release filters, and the vanilla toggle are intact.
+- Search, type/tag/tileset/release filters, and catalog-source selection are intact.
 - Previews, books, container contents, enchantment/alchemy/effect data, CSSE
   drag/drop, popout mode, and existing URLs are intact.
 - OAAB_Data JSON is a catalog provider rather than the core record model.
@@ -260,6 +260,10 @@ Exit criteria:
   catalog interface.
 - Import errors are local, actionable, and do not break built-in catalogs.
 
+The toolbar's Catalog Source control now selects OAAB_Data, vanilla masters,
+and imported plugin catalogues as a persisted multi-source set. The former
+vanilla-only switch remains readable as a legacy preference during migration.
+
 ### Phase 8 — Automatic OAAB dependency resolution
 
 **Status: Complete.**
@@ -286,6 +290,9 @@ Exit criteria:
 `LocalDirectorySource` supports multi-file input, `webkitdirectory` fallback,
 and lazy `showDirectoryPicker()` handles. All entries use canonical,
 case-insensitive Data Files paths and bytes are read only on resolution.
+Multi-file and directory indexing expose determinate or indeterminate progress
+in the Local TES3 workspace and yield between batches so large selections keep
+the UI responsive.
 
 Add **Add Data Files** with two modes:
 
@@ -385,6 +392,9 @@ after reload without re-parsing or re-rendering.
 For records without a thumbnail, resolve and parse the NIF through the existing
 pipeline, frame it with the shared renderer, render one frame, encode WebP, and
 store the result in IndexedDB. Keep normal browsing image-based.
+Imported mesh cards now enqueue only viewport-near records through one shared
+offscreen viewer, cache the generated WebP, and skip texture reads for the
+background pass; interactive 3D previews retain full texture resolution.
 
 Use a stable versioned key containing the source fingerprint, normalized asset
 path, asset modification timestamp/hash, and renderer version, for example
@@ -408,6 +418,8 @@ Create focused stores for `plugins`, `plugin-records`, `asset-metadata`,
 `thumbnails`, and `settings`. Store fingerprints, parsed record indexes,
 dependency metadata, thumbnail blobs, and source settings—but never complete
 Morrowind BSAs.
+The selected catalog-source IDs are also kept in local display preferences so
+the toolbar remains stable before or without workspace cache restoration.
 
 Provide actions to clear imported plugins, clear thumbnail cache, and clear all
 Library cache.
@@ -614,6 +626,7 @@ node tests/library/local-directory-source.test.mjs
 node tests/library/bsa-source.test.mjs
 node tests/library/dependency-scanner.test.mjs
 node tests/library/thumbnail-cache.test.mjs
+node tests/library/workspace-controller.test.mjs
 cargo fmt --manifest-path wasm/Cargo.toml -- --check
 cargo clippy --manifest-path wasm/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path wasm/Cargo.toml
@@ -657,6 +670,15 @@ At the Phase 20 completion checkpoint on 2026-08-26:
   Service Worker, workspace controller, WASM loader, and WASM binary routes.
 - The final implementation preserves static GitHub Pages operation and never
   uploads or persists selected BSA/loose-file payloads.
+
+At the Catalog Source/local-thumbnail maintenance checkpoint on 2026-08-26:
+
+- All Library JavaScript modules passed `node --check`; the focused Node suite
+  passed, including batched loose-file progress, source persistence, source
+  selection, and source-filter history.
+- A local HTTP browser smoke test verified the full-page and compact popout
+  Catalog Source menus, on-demand vanilla loading, idle-hidden workspace
+  progress UI, and loose-file chooser indexing.
 
 ## Roadmap maintenance checklist
 

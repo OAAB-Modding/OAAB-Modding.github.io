@@ -6,6 +6,8 @@ import {
   createProductionLibraryState,
   readStoredBoolean,
   readStoredScale,
+  readStoredCatalogSources,
+  writeStoredCatalogSources,
 } from '../../src/library/state.js';
 
 class TestLogic {
@@ -19,6 +21,9 @@ function memoryStorage(values = {}) {
   return {
     getItem(key) {
       return Object.hasOwn(values, key) ? values[key] : null;
+    },
+    setItem(key, value) {
+      values[key] = String(value);
     },
   };
 }
@@ -51,6 +56,19 @@ test('stored preference readers use safe defaults', () => {
   assert.equal(readStoredScale(memoryStorage({ oaab_scale: '0.5' })), 0.5);
 });
 
+test('catalog source preference supersedes the legacy vanilla flag', () => {
+  const storage = memoryStorage({
+    oaab_vanilla: '1',
+    oaab_catalog_sources: JSON.stringify(['oaab-data', 'plugin:demo', 'oaab-data']),
+  });
+  const state = createProductionLibraryState({ storage });
+  assert.deepEqual(state.catalogSources, ['oaab-data', 'plugin:demo']);
+  assert.equal(state.vanilla, false);
+
+  writeStoredCatalogSources(new Set(['vanilla', 'oaab-data']), storage);
+  assert.deepEqual(readStoredCatalogSources(storage), ['vanilla', 'oaab-data']);
+});
+
 test('component factory composes the production behavior modules', () => {
   const Component = createLibraryComponent(TestLogic);
   const component = new Component();
@@ -71,6 +89,29 @@ test('component factory composes the production behavior modules', () => {
   assert.equal(snapshot.active, 'Book');
   assert.deepEqual(snapshot.tags, ['Dunmer']);
   assert.equal(snapshot.query, 'ash');
+});
+
+test('catalog source changes participate in filter history', () => {
+  const Component = createLibraryComponent(TestLogic);
+  const component = new Component();
+  component._oaabItems = [];
+  component._vanillaItems = [];
+  let persistedSelections = 0;
+  component._workspace = {
+    persistWorkspaceSettings() {
+      persistedSelections += 1;
+    },
+  };
+
+  component.setLibrarySourceSelection(['vanilla']);
+  assert.deepEqual(component.state.catalogSources, ['vanilla']);
+  assert.equal(component.state.filterHistoryIndex, 1);
+
+  persistedSelections = 0;
+  component.moveFilterHistory(-1);
+  assert.deepEqual(component.state.catalogSources, ['oaab-data']);
+  assert.equal(component.state.vanilla, false);
+  assert.equal(persistedSelections, 1);
 });
 
 test('component factory rejects an invalid runtime base', () => {

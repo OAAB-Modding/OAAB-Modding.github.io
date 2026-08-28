@@ -36,8 +36,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=library-csse-popout-20260710d">
-<link rel="stylesheet" href="./workspace.css?v=20260826">
+<link rel="stylesheet" href="../style.css?v=library-catalog-sources-20260826">
+<link rel="stylesheet" href="./workspace.css?v=20260826b">
 <script src="../theme.js"></script>
 </helmet>
 
@@ -270,12 +270,28 @@
         </div>
       </sc-if>
       </sc-if>
-      <button onClick="{{ toggleVanilla }}" title="{{ vanillaTitle }}" aria-pressed="{{ vanillaOn }}" style="order:{{ dropOrder }};background:{{ vanillaBg }};color:{{ vanillaFg }};border:1px solid {{ vanillaBd }};" class="vanilla-toggle">
-        <span style="background:{{ vanillaTrackBg }};" class="vanilla-switch">
-          <span style="transform:translateX({{ vanillaKnobX }}px);background:{{ vanillaKnobBg }};" class="vanilla-knob"></span>
-        </span>
-        <span>Vanilla</span>
-      </button>
+      <div data-sourcedd="" style="order:{{ dropOrder }};" class="dropdown">
+        <button type="button" onClick="{{ toggleCatalogSource }}" title="Choose which catalogues appear in the Library" aria-expanded="{{ catalogSourceOpen }}" style="color:{{ catalogSourceBtnFg }};background:{{ catalogSourceBtnBg }};border:1px solid {{ catalogSourceBtnBd }};" class="dropdown-button-source">
+          <span class="menu-label"><span style="opacity:{{ catalogSourceDotOp }};" class="filter-dot"></span><span>{{ catalogSourceSummary }}</span></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:rotate({{ catalogSourceChevronDeg }}deg);" class="dropdown-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <sc-if value="{{ catalogSourceOpen }}" hint-placeholder-val="{{ false }}">
+          <div class="dropdown-menu-source">
+            <button type="button" data-all="1" onClick="{{ pickCatalogSource }}" style="color:{{ catalogSourceAllRow.labelColor }};" class="dropdown-row-all">
+              <span class="menu-label"><span style="background:{{ catalogSourceAllRow.checkBg }};border:1px solid {{ catalogSourceAllRow.checkBd }};" class="menu-check">{{ catalogSourceAllRow.mark }}</span>Show all sources</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <div data-tabscroll="" class="dropdown-scroll">
+              <sc-for list="{{ catalogSourceMenu }}" as="source" hint-placeholder-count="4">
+                <button type="button" data-catalog-source="{{ source.id }}" onClick="{{ pickCatalogSource }}" class="dropdown-row-split">
+                  <span style="color:{{ source.labelColor }};" class="menu-label"><span style="background:{{ source.checkBg }};border:1px solid {{ source.checkBd }};" class="menu-check">{{ source.mark }}</span><span>{{ source.label }}</span></span>
+                  <span style="color:{{ source.countColor }};" class="menu-count">{{ source.count }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
       <button onClick="{{ toggleTilesets }}" title="Browse architectural tilesets" aria-pressed="{{ tilesetActive }}" aria-expanded="{{ showTilesetBrowser }}" disabled="{{ tilesetsUnavailable }}" style="order:{{ dropOrder }};background:{{ tilesetToggleBg }};color:{{ tilesetToggleFg }};border:1px solid {{ tilesetToggleBd }};" class="tileset-toggle">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M3 4h18v16H3z"></path><path d="M9 4v5H3m12-5v5h6M9 20v-5H3m12 5v-5h6M9 9h6v6H9z"></path></svg>
         <span>Tilesets</span>
@@ -522,7 +538,7 @@
     <div data-grid="" style="grid-template-columns:{{ gridCols }};gap:{{ gridGap }}px;padding-top:{{ gridPadTop }}px;padding-bottom:{{ gridPadBottom }}px;" class="asset-grid">
       <sc-for list="{{ items }}" as="it" hint-placeholder-count="18">
         <figure title="{{ it.tip }}" draggable="{{ yes }}" data-eid="{{ it.id }}" onDragStart="{{ onDrag }}" class="asset-card">
-          <div class="asset-thumb-frame {{ it.previewClass }}" data-render-id="{{ it.renderId }}" data-render="{{ it.render }}" data-render-title="{{ it.renderTitle }}" data-render-meta="{{ it.renderMeta }}" onClick="{{ openRenderPreview }}">
+          <div class="asset-thumb-frame {{ it.previewClass }}" data-render-id="{{ it.renderId }}" data-render="{{ it.render }}" data-render-title="{{ it.renderTitle }}" data-render-meta="{{ it.renderMeta }}" data-local-thumbnail="{{ it.localThumbnail }}" data-local-thumbnail-id="{{ it.id }}" onClick="{{ openRenderPreview }}">
             <div key="{{ it.thumbKey }}" data-thumb="" class="asset-thumb-layer">
               <sc-if value="{{ it.hasSingleImage }}" hint-placeholder-val="{{ true }}">
                 <div data-spin="" class="asset-spinner-wrap">

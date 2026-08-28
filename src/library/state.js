@@ -16,10 +16,44 @@ export function readStoredScale(storage = globalThis.localStorage, fallback = 1)
   }
 }
 
+// Catalog sources are kept as a small JSON list so the toolbar control can
+// preserve the user's choice without coupling the production component to the
+// workspace's IndexedDB lifecycle. A missing value is distinct from an empty
+// list: an empty list is a valid choice that means "show no sources".
+export function readStoredCatalogSources(storage = globalThis.localStorage) {
+  try {
+    const value = storage?.getItem('oaab_catalog_sources');
+    if (value == null) return null;
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return null;
+    return [...new Set(parsed
+      .filter(source => typeof source === 'string')
+      .map(source => source.trim())
+      .filter(Boolean))];
+  } catch {
+    return null;
+  }
+}
+
+export function writeStoredCatalogSources(sources, storage = globalThis.localStorage) {
+  try {
+    const values = [...new Set(Array.from(sources || [])
+      .filter(source => typeof source === 'string')
+      .map(source => source.trim())
+      .filter(Boolean))];
+    storage?.setItem('oaab_catalog_sources', JSON.stringify(values));
+  } catch {}
+}
+
 export function createProductionLibraryState({
   storage = globalThis.localStorage,
   windowObject = globalThis.window,
 } = {}) {
+  const storedCatalogSources = readStoredCatalogSources(storage);
+  const legacyVanilla = readStoredBoolean('oaab_vanilla', false, storage);
+  const catalogSources = storedCatalogSources || (legacyVanilla
+    ? ['oaab-data', 'vanilla']
+    : ['oaab-data']);
   return {
     data: null,
     active: 'All',
@@ -33,6 +67,8 @@ export function createProductionLibraryState({
     searchMode: '',
     searchModeOpen: false,
     searchSuggestOpen: false,
+    catalogSourceOpen: false,
+    catalogSources,
     relData: [],
     releases: [],
     relKinds: ['added', 'modified'],
@@ -49,7 +85,9 @@ export function createProductionLibraryState({
     detailFilters: {},
     detailSort: null,
     compact: readStoredBoolean('oaab_compact_v2', false, storage),
-    vanilla: readStoredBoolean('oaab_vanilla', false, storage),
+    // Kept as a compatibility field for filter history and tileset behavior.
+    // The Catalog Source control is authoritative for the visible source set.
+    vanilla: catalogSources.includes('vanilla'),
     scale: readStoredScale(storage),
     theme: windowObject?.OAAB_THEME ? windowObject.OAAB_THEME.read() : 'dark',
     narrow: windowObject?.matchMedia

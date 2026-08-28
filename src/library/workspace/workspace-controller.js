@@ -18,7 +18,7 @@ export function initializeLibraryWorkspace(component) {
   return workspace;
 }
 
-class LibraryWorkspace {
+export class LibraryWorkspace {
   constructor(component) {
     this.component = component;
     this.doc = component.activeDoc?.() || document;
@@ -28,6 +28,13 @@ class LibraryWorkspace {
     this.database = new LibraryDatabase();
     this.thumbnailCache = new ThumbnailCache(this.database);
     this.selectedRecord = null;
+    this.thumbnailJobs = new Map();
+    this.thumbnailQueue = [];
+    this.thumbnailPumpRunning = false;
+    this.thumbnailGeneration = 0;
+    this.thumbnailObserver = null;
+    this.interactiveViewerActive = false;
+    this.productionViewerActive = false;
   }
 
   mount() {
@@ -69,6 +76,17 @@ class LibraryWorkspace {
       const button = event.target.closest('[data-workspace-tab]');
       if (button) this.selectTab(button.dataset.workspaceTab);
     });
+    this.thumbnailHost = this.dialog.querySelector('[data-thumbnail-render-host]');
+    if (globalThis.IntersectionObserver) {
+      this.thumbnailObserver = new IntersectionObserver(entries => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          this.thumbnailObserver.unobserve(entry.target);
+          this.queueImportedThumbnail(entry.target);
+        }
+        this.pumpThumbnailQueue();
+      }, { rootMargin: '240px' });
+    }
     this.render();
     this.restorePlugins();
   }
@@ -77,17 +95,20 @@ class LibraryWorkspace {
     this.dialog.hidden = false;
     this.doc.body.classList.add('library-workspace-opened');
     this.dialog.querySelector('[data-open-plugin]').focus();
+    this.syncImportedThumbnailTargets();
   }
 
   close() {
     this.dialog.hidden = true;
     this.doc.body.classList.remove('library-workspace-opened');
+    this.interactiveViewerActive = false;
     this.button?.focus();
   }
 
   async importPlugins(files) {
     const selected = Array.from(files || []).filter(file => /\.(?:esp|esm)$/i.test(file.name));
     if (!selected.length) return this.status('Choose one or more .esp or .esm files.', true);
+    const importedSourceIds = new Set();
     for (const file of selected) {
       this.status(`Parsing ${file.name} locally…`);
       try {
@@ -108,13 +129,20 @@ class LibraryWorkspace {
           enabled: true,
         });
         await this.persistPlugin(this.plugins.at(-1));
-        this.component._librarySourceEnabled ??= new Set(['oaab-data', 'vanilla']);
+        this.component._librarySourceEnabled ??= new Set(this.component.state.catalogSources || ['oaab-data']);
         this.component._librarySourceEnabled.add(provider.id);
+        importedSourceIds.add(provider.id);
       } catch (error) {
         this.status(`${file.name}: ${error.message}`, true);
       }
     }
     this.applyLoadOrder();
+    if (importedSourceIds.size) {
+      const sourceSelection = this.component.getLibrarySourceEnabled?.()
+        || new Set(this.component.state.catalogSources || ['oaab-data']);
+      importedSourceIds.forEach(id => sourceSelection.add(id));
+      this.component.setLibrarySourceSelection?.(sourceSelection);
+    }
     await this.persistWorkspaceSettings();
     this.render();
     const total = this.plugins.reduce((sum, plugin) => sum + plugin.records.length, 0);
@@ -153,7 +181,7 @@ class LibraryWorkspace {
       await this.database.put('settings', {
         key: 'workspace',
         pluginOrder: this.plugins.map(plugin => plugin.id),
-        enabledSources: [...(this.component._librarySourceEnabled || new Set(['oaab-data', 'vanilla']))],
+        enabledSources: [...(this.component._librarySourceEnabled || new Set(this.component.state.catalogSources || ['oaab-data']))],
         updatedAt: Date.now(),
       });
     } catch (error) {
@@ -170,8 +198,20 @@ class LibraryWorkspace {
       if (this.plugins.length) return;
       const order = new Map((settings?.pluginOrder || []).map((id, index) => [id, index]));
       stored.sort((left, right) => (order.get(left.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(right.id) ?? Number.MAX_SAFE_INTEGER));
-      const enabledSources = new Set(settings?.enabledSources || ['oaab-data', 'vanilla', ...stored.map(plugin => plugin.id)]);
+      const enabledSources = new Set(settings?.enabledSources ?? (
+        Array.isArray(this.component.state.catalogSources)
+          ? this.component.state.catalogSources
+          : [
+            'oaab-data',
+            ...(this.component.state.vanilla ? ['vanilla'] : []),
+            ...stored.map(plugin => plugin.id),
+          ]
+      ));
       this.component._librarySourceEnabled = enabledSources;
+      this.component.setState({
+        catalogSources: [...enabledSources],
+        vanilla: enabledSources.has('vanilla'),
+      });
       if (!stored.length) {
         this.component.setState({ data: this.component.buildData() });
         this.render();
@@ -221,9 +261,6 @@ class LibraryWorkspace {
 
   toggleSource(id, enabled) {
     if (id === 'oaab-data' || id === 'vanilla') {
-      if (id === 'vanilla' && enabled && !this.component.state.vanilla) {
-        this.component.setFilterState({ vanilla: true });
-      }
       this.component.setLibrarySourceEnabled(id, enabled);
     } else {
       const plugin = this.plugins.find(entry => entry.id === id);
@@ -262,10 +299,23 @@ class LibraryWorkspace {
       this.assetSources.push(source);
       this.component._libraryServices.resolver.addSource(source, BSA_PRIORITIES.loose);
     }
-    source.addFiles(selected);
-    this.dataInput.value = '';
-    this.render();
-    this.status(`${selected.length.toLocaleString()} local file${selected.length === 1 ? '' : 's'} indexed in memory`);
+    this.beginProgress('Indexing loose files', selected.length);
+    try {
+      await source.addFilesWithProgress(selected, {
+        onProgress: progress => this.updateProgress({
+          ...progress,
+          label: `Indexing loose files · ${progress.completed.toLocaleString()} of ${progress.total.toLocaleString()}`,
+        }),
+      });
+      this.dataInput.value = '';
+      this.render();
+      this.refreshImportedThumbnailsForAssetChange();
+      this.status(`${selected.length.toLocaleString()} local file${selected.length === 1 ? '' : 's'} indexed in memory`);
+    } catch (error) {
+      this.status(`Could not index loose files: ${error.message}`, true);
+    } finally {
+      this.endProgress();
+    }
   }
 
   async addFolderFiles(files) {
@@ -273,11 +323,24 @@ class LibraryWorkspace {
     if (!selected.length) return;
     const label = selected[0].webkitRelativePath?.split('/')[0] || 'Selected Data Files';
     const source = new LocalDirectorySource({ id: `plugin-folder:${slug(label)}`, label });
-    source.addFiles(selected);
-    this.replaceAssetSource(source, BSA_PRIORITIES.pluginFolder);
-    this.directoryInput.value = '';
-    this.render();
-    this.status(`${source.entries.size.toLocaleString()} assets indexed from ${label}`);
+    this.beginProgress(`Indexing ${label}`, selected.length);
+    try {
+      await source.addFilesWithProgress(selected, {
+        onProgress: progress => this.updateProgress({
+          ...progress,
+          label: `Indexing ${label} · ${progress.completed.toLocaleString()} of ${progress.total.toLocaleString()}`,
+        }),
+      });
+      this.replaceAssetSource(source, BSA_PRIORITIES.pluginFolder);
+      this.directoryInput.value = '';
+      this.render();
+      this.refreshImportedThumbnailsForAssetChange();
+      this.status(`${source.entries.size.toLocaleString()} assets indexed from ${label}`);
+    } catch (error) {
+      this.status(`Could not index ${label}: ${error.message}`, true);
+    } finally {
+      this.endProgress();
+    }
   }
 
   async addDirectory() {
@@ -288,17 +351,26 @@ class LibraryWorkspace {
     try {
       const handle = await globalThis.showDirectoryPicker({ mode: 'read' });
       const source = new LocalDirectorySource({ id: `plugin-folder:${slug(handle.name)}`, label: handle.name, directoryHandle: handle });
-      this.status(`Indexing ${handle.name}…`);
-      await source.indexDirectory();
+      this.beginProgress(`Indexing ${handle.name}`, 0);
+      await source.indexDirectory(handle, {
+        onProgress: progress => this.updateProgress({
+          ...progress,
+          label: `Indexing ${handle.name} · ${progress.completed.toLocaleString()} files found`,
+        }),
+      });
       this.replaceAssetSource(source, BSA_PRIORITIES.pluginFolder);
       this.render();
+      this.refreshImportedThumbnailsForAssetChange();
       this.status(`${source.entries.size.toLocaleString()} assets indexed lazily from ${handle.name}`);
     } catch (error) {
       if (error.name !== 'AbortError') this.status(error.message, true);
+    } finally {
+      this.endProgress();
     }
   }
 
   async addBsas(files) {
+    let added = 0;
     for (const file of Array.from(files || []).filter(value => /\.bsa$/i.test(value.name))) {
       try {
         this.status(`Indexing ${file.name}…`);
@@ -310,12 +382,14 @@ class LibraryWorkspace {
             : lower.includes('morrowind') ? BSA_PRIORITIES.morrowind
               : BSA_PRIORITIES.pluginFolder;
         this.replaceAssetSource(source, priority);
+        added += 1;
       } catch (error) {
         this.status(`${file.name}: ${error.message}`, true);
       }
     }
     this.bsaInput.value = '';
     this.render();
+    if (added) this.refreshImportedThumbnailsForAssetChange();
     this.status(`${this.assetSources.filter(source => source instanceof BsaSource).length} BSA archive${this.assetSources.filter(source => source instanceof BsaSource).length === 1 ? '' : 's'} indexed`);
   }
 
@@ -326,6 +400,18 @@ class LibraryWorkspace {
     source.priority = priority;
     this.assetSources.push(source);
     this.component._libraryServices.resolver.addSource(source, priority);
+  }
+
+  resetImportedThumbnailJobs() {
+    this.thumbnailGeneration += 1;
+    this.thumbnailQueue = [];
+    this.thumbnailJobs.clear();
+  }
+
+  refreshImportedThumbnailsForAssetChange() {
+    this.resetImportedThumbnailJobs();
+    this.component.setImportedRecords(this.resolved?.records || [], { preserveThumbnails: false });
+    this.syncImportedThumbnailTargets();
   }
 
   async runDiagnostics() {
@@ -381,6 +467,53 @@ class LibraryWorkspace {
     }
   }
 
+  beginProgress(label, total) {
+    this.progressActive = true;
+    this.progressTotal = Math.max(0, Number(total) || 0);
+    this.progressCompleted = 0;
+    this.updateProgress({ label, completed: 0, total: this.progressTotal });
+    this.setWorkspaceBusy(true);
+  }
+
+  updateProgress({ label, completed = 0, total = this.progressTotal } = {}) {
+    if (!this.progressActive) return;
+    this.progressTotal = Math.max(0, Number(total) || 0);
+    this.progressCompleted = Math.max(0, Number(completed) || 0);
+    const wrap = this.dialog?.querySelector('[data-workspace-progress]');
+    const bar = this.dialog?.querySelector('[data-workspace-progress-bar]');
+    const text = this.dialog?.querySelector('[data-progress-label]');
+    const value = this.dialog?.querySelector('[data-progress-value]');
+    if (!wrap || !bar || !text || !value) return;
+    wrap.hidden = false;
+    text.textContent = label || 'Working…';
+    if (this.progressTotal > 0) {
+      bar.max = this.progressTotal;
+      bar.value = Math.min(this.progressCompleted, this.progressTotal);
+      const percent = Math.round((bar.value / this.progressTotal) * 100);
+      value.textContent = `${percent}%`;
+      bar.setAttribute('aria-valuetext', `${percent}% complete`);
+    } else {
+      bar.removeAttribute('value');
+      value.textContent = `${this.progressCompleted.toLocaleString()} found`;
+      bar.setAttribute('aria-valuetext', `${this.progressCompleted.toLocaleString()} files found`);
+    }
+  }
+
+  endProgress() {
+    if (!this.progressActive) return;
+    this.progressActive = false;
+    const wrap = this.dialog?.querySelector('[data-workspace-progress]');
+    const bar = this.dialog?.querySelector('[data-workspace-progress-bar]');
+    if (wrap) wrap.hidden = true;
+    if (bar) bar.removeAttribute('aria-valuetext');
+    this.setWorkspaceBusy(false);
+  }
+
+  setWorkspaceBusy(busy) {
+    const selectors = '[data-open-plugin], [data-add-files], [data-add-directory], [data-add-bsa]';
+    for (const button of this.dialog?.querySelectorAll(selectors) || []) button.disabled = !!busy;
+  }
+
   status(message, error = false) {
     const target = this.dialog?.querySelector('[data-workspace-status]');
     if (!target) return;
@@ -391,11 +524,18 @@ class LibraryWorkspace {
   render() {
     if (!this.dialog) return;
     const sourceList = this.dialog.querySelector('[data-source-list]');
+    const sourceEnabled = sourceId => typeof this.component.isLibrarySourceEnabled === 'function'
+      ? this.component.isLibrarySourceEnabled(sourceId)
+      : this.component._librarySourceEnabled?.has(sourceId) !== false;
     const builtins = [
-      { id: 'oaab-data', filename: 'OAAB_Data (public)', enabled: this.component._librarySourceEnabled?.has('oaab-data') !== false, summary: 'Built-in catalogue and public assets' },
-      { id: 'vanilla', filename: 'Vanilla masters', enabled: !!this.component.state.vanilla && this.component._librarySourceEnabled?.has('vanilla') !== false, summary: 'Morrowind, Tribunal, and Bloodmoon catalogue' },
+      { id: 'oaab-data', filename: 'OAAB_Data (public)', enabled: sourceEnabled('oaab-data'), summary: 'Built-in catalogue and public assets' },
+      { id: 'vanilla', filename: 'Vanilla masters', enabled: sourceEnabled('vanilla'), summary: 'Morrowind, Tribunal, and Bloodmoon catalogue' },
     ];
-    sourceList.replaceChildren(...builtins.concat(this.plugins).map((source, index) => {
+    const importedSources = this.plugins.map(plugin => ({
+      ...plugin,
+      enabled: sourceEnabled(plugin.id),
+    }));
+    sourceList.replaceChildren(...builtins.concat(importedSources).map((source, index) => {
       const row = element('li', { className: 'library-source-row' }, this.doc);
       const stats = source.packet?.stats;
       row.innerHTML = `<label><input type="checkbox" ${source.enabled ? 'checked' : ''}><span><strong>${escapeHtml(source.filename)}</strong><small>${escapeHtml(source.summary || `${stats.totalRecords} records · ${stats.meshRecords} meshes · ${stats.uniqueMeshes} unique NIFs`)}</small></span></label>`;
@@ -479,7 +619,11 @@ class LibraryWorkspace {
     panel.querySelector('[data-record-details]').hidden = mode !== 'details';
     const live = panel.querySelector('[data-record-live]');
     live.hidden = mode !== '3d';
-    if (mode !== '3d') return;
+    this.interactiveViewerActive = mode === '3d';
+    if (mode !== '3d') {
+      this.syncImportedThumbnailTargets();
+      return;
+    }
     const status = live.querySelector('[data-record-viewer-status]');
     try {
       const viewer = await this.ensureViewer(live, status);
@@ -511,7 +655,26 @@ class LibraryWorkspace {
     return this.viewer;
   }
 
-  async cacheThumbnail(record, result) {
+  async ensureThumbnailViewer() {
+    if (!this.thumbnailViewer) {
+      this.thumbnailViewerCreationPromise ??= import('../renderer/viewer.js').then(({ NifViewer }) => {
+        this.thumbnailViewerCanvas = element('canvas', { className: 'library-live-canvas' }, this.doc);
+        return new NifViewer({
+          canvas: this.thumbnailViewerCanvas,
+          resolver: this.component._libraryServices.resolver,
+        });
+      });
+      this.thumbnailViewer = await this.thumbnailViewerCreationPromise;
+    }
+    this.thumbnailViewer.attachTo(this.thumbnailHost);
+    return this.thumbnailViewer;
+  }
+
+  async cacheThumbnail(record, result, {
+    viewer = this.viewer,
+    shouldCommit = () => true,
+  } = {}) {
+    if (!viewer || !shouldCommit()) return false;
     const sourceFingerprint = `${result.asset.source}:${result.asset.lastModified || result.asset.url || result.asset.size || 'asset'}`;
     const identity = {
       sourceFingerprint,
@@ -520,14 +683,116 @@ class LibraryWorkspace {
       rendererVersion: NIF_RENDERER_VERSION,
     };
     let cached = await this.thumbnailCache.get(identity);
+    if (!shouldCommit()) return false;
     if (!cached) {
-      const blob = await this.viewer.captureThumbnail();
+      const blob = await viewer.captureThumbnail();
+      if (!shouldCommit()) return false;
       cached = await this.thumbnailCache.put(identity, blob, {
         recordId: record.id,
         recordSource: record.source,
       });
     }
+    if (!shouldCommit()) return false;
     this.component.setImportedThumbnail(record, cached.url);
+    return true;
+  }
+
+  syncImportedThumbnailTargets() {
+    if (!this.dialog) return;
+    const targets = [...this.doc.querySelectorAll('[data-local-thumbnail="true"]')];
+    let fallbackQueued = 0;
+    for (const target of targets) {
+      const id = target.dataset.localThumbnailId || '';
+      const item = this.component.findCatalogItem(id);
+      if (!item?.imported || !item.mesh || item.thumbnailReady) continue;
+      const record = item.record || item;
+      const key = thumbnailRecordKey(record);
+      const job = this.thumbnailJobs.get(key);
+      const currentJob = job?.record === record && job.generation === this.thumbnailGeneration;
+      if (job && !currentJob) this.thumbnailJobs.delete(key);
+      if (currentJob && ['done', 'failed', 'loading'].includes(job.status)) continue;
+      if (this.thumbnailObserver) {
+        this.thumbnailObserver.observe(target);
+      } else if (fallbackQueued < 4) {
+        fallbackQueued += 1;
+        this.queueImportedThumbnail(target);
+      }
+    }
+    this.pumpThumbnailQueue();
+  }
+
+  queueImportedThumbnail(target) {
+    const id = target?.dataset?.localThumbnailId || '';
+    if (!id) return;
+    const item = this.component.findCatalogItem(id);
+    if (!item?.imported || !item.mesh || item.thumbnailReady) return;
+    const record = item.record || item;
+    const key = thumbnailRecordKey(record);
+    const existing = this.thumbnailJobs.get(key);
+    if (existing?.record === record && existing.generation === this.thumbnailGeneration) return;
+    if (existing) this.thumbnailJobs.delete(key);
+    const generation = this.thumbnailGeneration;
+    this.thumbnailJobs.set(key, { record, status: 'queued', generation });
+    this.thumbnailQueue.push({ key, record, generation });
+  }
+
+  async pumpThumbnailQueue() {
+    if (this.thumbnailPumpRunning) return;
+    if (!this.dialog || this.interactiveViewerActive || this.productionViewerActive || this.component.state.renderPreview) return;
+    this.thumbnailPumpRunning = true;
+    try {
+      while (this.thumbnailQueue.length) {
+        if (!this.dialog || this.interactiveViewerActive || this.productionViewerActive || this.component.state.renderPreview) break;
+        const entry = this.thumbnailQueue.shift();
+        const queuedJob = entry && this.thumbnailJobs.get(entry.key);
+        if (
+          !entry
+          || entry.generation !== this.thumbnailGeneration
+          || queuedJob?.record !== entry.record
+          || queuedJob?.generation !== entry.generation
+          || queuedJob?.status !== 'queued'
+        ) continue;
+        this.thumbnailJobs.set(entry.key, {
+          record: entry.record,
+          status: 'loading',
+          generation: entry.generation,
+        });
+        const isCurrent = () => {
+          const job = this.thumbnailJobs.get(entry.key);
+          return entry.generation === this.thumbnailGeneration
+            && job?.record === entry.record
+            && job?.generation === entry.generation
+            && job?.status === 'loading';
+        };
+        try {
+          const viewer = await this.ensureThumbnailViewer();
+          // Background cards only need the mesh silhouette. Skipping texture
+          // reads keeps local thumbnail generation bounded for large mod data
+          // folders; the interactive 3D mode still resolves textures normally.
+          const result = await viewer.load(entry.record.mesh, { resolveTextures: false });
+          const committed = await this.cacheThumbnail(entry.record, result, { viewer, shouldCommit: isCurrent });
+          if (committed && isCurrent()) {
+            this.thumbnailJobs.set(entry.key, {
+              record: entry.record,
+              status: 'done',
+              generation: entry.generation,
+            });
+          }
+        } catch (error) {
+          if (isCurrent()) {
+            this.thumbnailJobs.set(entry.key, {
+              record: entry.record,
+              status: 'failed',
+              generation: entry.generation,
+            });
+            console.warn('local thumbnail generation failed', entry.record.id, error);
+          }
+        }
+        await yieldToBrowser();
+      }
+    } finally {
+      this.thumbnailPumpRunning = false;
+    }
   }
 
   async restoreCachedThumbnails(records) {
@@ -556,6 +821,8 @@ class LibraryWorkspace {
     const dialog = this.doc.querySelector('.library-render-dialog');
     if (!preview || !dialog || !preview.mesh) {
       this.productionPreviewId = null;
+      this.productionViewerActive = false;
+      this.syncImportedThumbnailTargets();
       return;
     }
     let controls = dialog.querySelector('[data-live-preview-controls]');
@@ -572,6 +839,7 @@ class LibraryWorkspace {
       this.productionPreviewId = preview.id;
       this.showProductionMode('preview');
     }
+    this.syncImportedThumbnailTargets();
   }
 
   async showProductionMode(mode) {
@@ -579,6 +847,7 @@ class LibraryWorkspace {
     const dialog = this.doc.querySelector('.library-render-dialog');
     const media = dialog?.querySelector('.library-render-media');
     if (!preview || !dialog || !media) return;
+    this.productionViewerActive = mode === '3d';
     for (const button of dialog.querySelectorAll('[data-live-mode]')) {
       button.setAttribute('aria-pressed', String(button.dataset.liveMode === mode));
     }
@@ -615,6 +884,7 @@ class LibraryWorkspace {
         status.dataset.error = 'true';
       }
     }
+    if (mode !== '3d') this.syncImportedThumbnailTargets();
   }
 
   renderCells() {
@@ -663,9 +933,15 @@ class LibraryWorkspace {
 
   async clearImportedPlugins() {
     await this.database.clearImportedPlugins();
+    const sourceSelection = this.component.getLibrarySourceEnabled?.() || new Set(['oaab-data']);
     for (const plugin of this.plugins) this.component._librarySourceEnabled?.delete(plugin.id);
     this.plugins = [];
     this.selectedRecord = null;
+    this.resetImportedThumbnailJobs();
+    for (const sourceId of [...sourceSelection]) {
+      if (sourceId !== 'oaab-data' && sourceId !== 'vanilla') sourceSelection.delete(sourceId);
+    }
+    this.component.setLibrarySourceSelection?.(sourceSelection);
     this.applyLoadOrder();
     await this.persistWorkspaceSettings();
     this.render();
@@ -674,15 +950,21 @@ class LibraryWorkspace {
 
   async clearThumbnails() {
     await this.thumbnailCache.clear();
-    this.component.setImportedRecords(this.resolved?.records || []);
+    this.refreshImportedThumbnailsForAssetChange();
     this.status('Generated thumbnail cache cleared.');
   }
 
   async clearAllCache() {
     await this.database.clearAll();
+    const sourceSelection = this.component.getLibrarySourceEnabled?.() || new Set(['oaab-data']);
     for (const plugin of this.plugins) this.component._librarySourceEnabled?.delete(plugin.id);
     this.plugins = [];
     this.selectedRecord = null;
+    this.resetImportedThumbnailJobs();
+    for (const sourceId of [...sourceSelection]) {
+      if (sourceId !== 'oaab-data' && sourceId !== 'vanilla') sourceSelection.delete(sourceId);
+    }
+    this.component.setLibrarySourceSelection?.(sourceSelection);
     this.thumbnailCache.revokeUrls();
     this.applyLoadOrder();
     this.render();
@@ -691,7 +973,12 @@ class LibraryWorkspace {
 
   dispose() {
     this.viewer?.dispose();
+    this.thumbnailViewer?.dispose();
     this.worker.terminate();
+    this.thumbnailObserver?.disconnect();
+    this.thumbnailGeneration += 1;
+    this.thumbnailQueue = [];
+    this.thumbnailJobs.clear();
     this.thumbnailCache.revokeUrls();
     this.database.close();
     this.dialog?.remove();
@@ -714,12 +1001,17 @@ function workspaceMarkup() {
       <button type="button" data-run-diagnostics disabled>Scan dependencies</button>
       <details class="library-cache-actions"><summary>Cache</summary><div><button type="button" data-clear-plugins>Clear imported plugins</button><button type="button" data-clear-thumbnails>Clear thumbnails</button><button type="button" data-clear-all>Clear all cache</button></div></details>
       <span data-workspace-status role="status">Files stay on this device.</span>
+      <div data-workspace-progress hidden class="library-workspace-progress" role="status" aria-live="polite">
+        <div><span data-progress-label>Working…</span><strong data-progress-value>0%</strong></div>
+        <progress data-workspace-progress-bar max="1" value="0" aria-label="Library import progress"></progress>
+      </div>
     </div>
     <nav data-workspace-tablist role="tablist" class="library-workspace-tabs">
       <button type="button" role="tab" data-workspace-tab="records" aria-selected="true">Records</button>
       <button type="button" role="tab" data-workspace-tab="cells" aria-selected="false">Cells</button>
       <button type="button" role="tab" data-workspace-tab="diagnostics" aria-selected="false">Diagnostics</button>
     </nav>
+    <div data-thumbnail-render-host class="library-thumbnail-render-host" aria-hidden="true"></div>
     <div class="library-workspace-grid">
       <aside><h3>Catalog sources and load order</h3><ul data-source-list class="library-source-list"></ul><h3 class="library-asset-source-heading">Asset resolver priority</h3><ul data-asset-source-list class="library-source-list"></ul></aside>
       <section data-workspace-panel="records" class="library-record-browser"><div><p data-record-count>0 winning records</p><div data-record-list class="library-imported-records"></div></div><article data-record-detail class="library-record-detail"></article></section>
@@ -731,6 +1023,17 @@ function workspaceMarkup() {
 
 function sourceName(record) {
   return record.metadata?.plugin?.filename || record.metadata?.loadOrder?.winningPlugin || record.source;
+}
+
+function thumbnailRecordKey(record) {
+  return `${record?.source || ''}\0${String(record?.id || '').toLowerCase()}`;
+}
+
+function yieldToBrowser() {
+  return new Promise(resolve => {
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => resolve());
+    else setTimeout(resolve, 0);
+  });
 }
 
 function slug(value) {
