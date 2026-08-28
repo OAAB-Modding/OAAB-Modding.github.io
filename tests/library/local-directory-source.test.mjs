@@ -25,6 +25,15 @@ test('indexes multi-file selections by case-insensitive Data Files paths', async
   assert.equal(asset.lastModified, 42);
 });
 
+test('indexes BMP textures and supplies an image MIME type when the file does not', async () => {
+  const source = new LocalDirectorySource({ files: [
+    localFile('Wood.BMP', 'Data Files/Textures/OAAB/Wood.BMP', 'bmp bytes'),
+  ] });
+
+  const asset = await source.get('textures/oaab/wood.bmp');
+  assert.equal(asset.mimeType, 'image/bmp');
+});
+
 test('directory handles are indexed without reading file payloads', async () => {
   let reads = 0;
   const file = localFile('lazy.nif', '', 'lazy');

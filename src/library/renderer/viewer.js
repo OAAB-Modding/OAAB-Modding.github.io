@@ -386,12 +386,19 @@ export class NifViewer {
 
   async #textureFromAsset(asset) {
     const extension = asset.path.split('.').pop();
-    const blob = new Blob([asset.bytes], { type: asset.mimeType });
+    const blob = new Blob([asset.bytes], {
+      // Some CDNs serve legacy BMP files as application/octet-stream. Keep
+      // the native image decoder on the BMP path by supplying its MIME type.
+      type: extension === 'bmp' ? 'image/bmp' : asset.mimeType,
+    });
     const url = URL.createObjectURL(blob);
     try {
       let texture;
       if (extension === 'dds') texture = await this.ddsLoader.loadAsync(url);
       else if (extension === 'tga') texture = await this.tgaLoader.loadAsync(url);
+      // Browsers decode BMP through the same native image path used for PNG
+      // and JPEG, so no additional Three.js loader is required.
+      else if (extension === 'bmp') texture = await this.imageLoader.loadAsync(url);
       else texture = await this.imageLoader.loadAsync(url);
       texture.name = asset.path;
       texture.colorSpace = THREE.SRGBColorSpace;

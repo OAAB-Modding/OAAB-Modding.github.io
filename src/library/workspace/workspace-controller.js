@@ -1336,7 +1336,7 @@ function workspaceMarkup() {
       <button type="button" data-open-plugin class="library-workspace-primary">Open Plugin</button>
       <input data-plugin-input type="file" accept=".esp,.esm" multiple hidden>
       <button type="button" data-add-files>Add loose files</button>
-      <input data-files-input type="file" accept=".nif,.dds,.tga,.png,.jpg,.jpeg" multiple hidden>
+      <input data-files-input type="file" accept=".nif,.dds,.tga,.bmp,.png,.jpg,.jpeg" multiple hidden>
       <button type="button" data-add-directory>Add Data Files folder</button>
       <input data-directory-input type="file" webkitdirectory multiple hidden>
       <button type="button" data-add-bsa>Add BSA</button>

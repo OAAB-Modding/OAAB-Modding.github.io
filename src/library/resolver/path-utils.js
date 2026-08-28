@@ -4,6 +4,7 @@ const EXTENSION_ROOTS = new Map([
   ['.nif', 'meshes'],
   ['.dds', 'textures'],
   ['.tga', 'textures'],
+  ['.bmp', 'textures'],
   ['.png', 'textures'],
   ['.jpg', 'textures'],
   ['.jpeg', 'textures'],

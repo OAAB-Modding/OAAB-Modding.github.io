@@ -15,6 +15,7 @@ test('normalizes the canonical examples and infers TES3 roots', () => {
   assert.equal(normalizeAssetPath('oaab\\f\\chair.nif'), 'meshes/oaab/f/chair.nif');
   assert.equal(normalizeAssetPath('textures/foo.dds'), 'textures/foo.dds');
   assert.equal(normalizeAssetPath('OAAB\\f\\chair.dds'), 'textures/oaab/f/chair.dds');
+  assert.equal(normalizeAssetPath('OAAB\\f\\chair.bmp'), 'textures/oaab/f/chair.bmp');
 });
 
 test('collapses installer/repository prefixes and produces the existing mesh key', () => {

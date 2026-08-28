@@ -57,5 +57,5 @@ function isRuntimeAsset(url) {
   if (isApplicationCode(url)) return true;
   if (url.origin === self.location.origin && url.pathname.startsWith('/library/')) return true;
   return /(?:cdn\.jsdelivr\.net\/gh\/OAAB-Modding\/Data|raw\.githubusercontent\.com\/OAAB-Modding\/Data)/i.test(url.href)
-    && /\.(?:nif|dds|tga|png|jpe?g)$/i.test(url.pathname);
+    && /\.(?:nif|dds|tga|bmp|png|jpe?g)$/i.test(url.pathname);
 }

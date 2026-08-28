@@ -1,6 +1,9 @@
 import { normalizeAssetPath } from './path-utils.js';
 import { AssetNotFoundError } from '../sources/asset-source.js';
 
+const TEXTURE_FORMAT_PRIORITY = Object.freeze(['dds', 'tga', 'bmp']);
+const TEXTURE_FORMATS = new Set(TEXTURE_FORMAT_PRIORITY);
+
 export class AssetResolutionError extends Error {
   constructor(path, attempts) {
     super(`Unable to resolve asset: ${path}`);
@@ -72,14 +75,16 @@ export class AssetResolver {
   }
 }
 
-// Morrowind assets frequently keep the authoring-time .tga reference in the
-// NIF while distributing the optimized replacement as .dds. Resolve that
-// replacement inside each source so normal source/load-order priority still
-// wins before falling through to a lower-priority source.
+// Morrowind assets can keep any of the supported legacy texture extensions in
+// the NIF while another format with the same basename is installed. Resolve
+// the formats in engine order inside each source so normal source/load-order
+// priority still wins before falling through to a lower-priority source.
 function resolutionCandidates(path) {
-  const candidates = [path];
-  if (path.startsWith('textures/') && path.endsWith('.tga')) {
-    candidates.push(`${path.slice(0, -4)}.dds`);
-  }
-  return candidates;
+  if (!path.startsWith('textures/')) return [path];
+
+  const extension = path.slice(path.lastIndexOf('.') + 1);
+  if (!TEXTURE_FORMATS.has(extension)) return [path];
+
+  const basename = path.slice(0, -(extension.length + 1));
+  return TEXTURE_FORMAT_PRIORITY.map(format => `${basename}.${format}`);
 }

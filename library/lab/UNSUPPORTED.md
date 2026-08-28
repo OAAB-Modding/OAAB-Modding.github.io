@@ -14,8 +14,8 @@ controller-heavy lights and a particle-only model.
 - Base diffuse textures through the shared `AssetResolver`
 - `NiMaterialProperty`, `NiAlphaProperty`, `NiVertexColorProperty`,
   `NiStencilProperty` and `NiZBufferProperty`
-- DDS (DXT1/DXT3/DXT5), TGA and browser-native PNG/JPEG textures through the
-  pinned Three.js loaders
+- DDS (DXT1/DXT3/DXT5) and TGA through the pinned Three.js loaders, plus
+  browser-native BMP, PNG, and JPEG textures
 - Collision-root detection; collision meshes are hidden by default and can be
   enabled in the lab
 - `NiUVController`, `NiFlipController`, `NiVisController`, and

@@ -63,3 +63,28 @@ test('resolves NIF tga references to installed dds replacements within source pr
   assert.equal(result.source, 'data-files');
   assert.deepEqual([...new Uint8Array(result.bytes)], [2]);
 });
+
+test('uses the DDS, TGA, BMP texture fallback order for same-name files', async () => {
+  const allFormats = new AssetResolver().addSource(new MemorySource('all-formats', {
+    'textures/tx_wood.dds': new Uint8Array([3]).buffer,
+    'textures/tx_wood.tga': new Uint8Array([2]).buffer,
+    'textures/tx_wood.bmp': new Uint8Array([1]).buffer,
+  }));
+
+  const result = await allFormats.resolve('textures\\tx_wood.bmp');
+  assert.equal(result.path, 'textures/tx_wood.dds');
+  assert.equal(result.requestedPath, 'textures/tx_wood.bmp');
+  assert.deepEqual([...new Uint8Array(result.bytes)], [3]);
+
+  const tgaOnly = new AssetResolver().addSource(new MemorySource('tga-only', {
+    'textures/tx_wood.tga': new Uint8Array([2]).buffer,
+  }));
+  const tgaResult = await tgaOnly.resolve('textures\\tx_wood.dds');
+  assert.equal(tgaResult.path, 'textures/tx_wood.tga');
+
+  const bmpOnly = new AssetResolver().addSource(new MemorySource('bmp-only', {
+    'textures/tx_wood.bmp': new Uint8Array([1]).buffer,
+  }));
+  const bmpResult = await bmpOnly.resolve('textures\\tx_wood.tga');
+  assert.equal(bmpResult.path, 'textures/tx_wood.bmp');
+});

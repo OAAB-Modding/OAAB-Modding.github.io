@@ -44,6 +44,7 @@ export function mimeTypeForAsset(path) {
     nif: 'application/octet-stream',
     dds: 'image/vnd-ms.dds',
     tga: 'image/x-tga',
+    bmp: 'image/bmp',
     png: 'image/png',
     jpg: 'image/jpeg',
     jpeg: 'image/jpeg',

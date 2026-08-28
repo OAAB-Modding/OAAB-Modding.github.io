@@ -23,7 +23,7 @@ uploading users' ESP, ESM, BSA, or loose asset files.
 | Phase 2 — Asset sources | **Complete** | OAAB, loose-file/directory, and TES3 BSA sources share the ordered resolver. |
 | Phase 3 — NIF renderer lab | **Complete** | The isolated lab and production viewer render supported NetImmerse 4.0.0.2 content. |
 | Phase 4 — TES3 WASM | **Complete** | NIF and ESP/ESM parsing run through the worker/WASM boundary. |
-| Phase 5 — Textures | **Complete** | DDS, TGA, PNG, and JPEG resolution, fallbacks, and diagnostics are implemented. |
+| Phase 5 — Textures | **Complete** | DDS, TGA, BMP, PNG, and JPEG resolution, fallbacks, and diagnostics are implemented. |
 | Phase 6 — Camera/preview | **Complete** | Framing, controls, debug toggles, and hidden-by-default collision are shared by lab and production. |
 | Phases 7–11 | **Complete** | Local plugins/assets, BSA indexes, source priority, and dependency diagnostics are integrated. |
 | Phases 12–17 | **Complete** | One live viewer, IndexedDB thumbnails/data, runtime HTTP cache, and OAAB enrichment are integrated. |
@@ -208,10 +208,11 @@ Exit criteria met:
 
 NIF texture paths return to `AssetResolver`; the renderer never constructs an
 OAAB URL. The lab uses pinned Three.js loaders for DDS and TGA plus browser-native
-PNG/JPEG loading. DDS DXT1, DXT3, and DXT5, alpha, and mipmaps are delegated to
-the Three.js DDS loader. Authoring-time TGA references also resolve installed
-DDS replacements using normal source priority. Missing textures show a visible
-fallback material and remain listed separately from resolved textures.
+BMP, PNG, and JPEG loading. DDS DXT1, DXT3, and DXT5, alpha, and mipmaps are
+delegated to the Three.js DDS loader. Legacy texture references resolve same-name
+formats in DDS, TGA, then BMP order within each source, while normal source
+priority remains authoritative. Missing textures show a visible fallback
+material and remain listed separately from resolved textures.
 
 OAAB NIFs may reference vanilla textures. Those paths now resolve through a
 selected loose-file/directory or BSA source when present and otherwise remain
