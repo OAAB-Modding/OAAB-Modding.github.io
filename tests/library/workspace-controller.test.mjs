@@ -17,7 +17,7 @@ test('PNG download filenames are safe and retain the record ID', () => {
   assert.equal(pngFilenameForView(''), 'oaab-3d-view.png');
 });
 
-test('3D PNG downloads capture the current viewer frame and revoke the temporary URL', async () => {
+test('3D PNG downloads capture the current transparent frame and revoke the temporary URL', async () => {
   const workspace = workspaceWithoutConstructor();
   const events = [];
   const anchor = {

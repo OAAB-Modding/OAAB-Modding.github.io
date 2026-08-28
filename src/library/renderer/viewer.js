@@ -6,6 +6,7 @@ import { TGALoader } from 'three/addons/loaders/TGALoader.js';
 import { normalizeAssetPath } from '../resolver/path-utils.js';
 import { Tes3WorkerClient } from '../workers/tes3-worker-client.js';
 import { fingerprintBytes } from '../storage/thumbnail-cache.js';
+import { captureTransparentPng } from './capture.js';
 import {
   cameraDistanceScaleForView,
   cameraFrameMarginForView,
@@ -39,7 +40,9 @@ export class NifViewer {
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
-      alpha: false,
+      // Keep an alpha channel available for transparent PNG exports. The
+      // interactive viewer remains opaque because scene.background is a Color.
+      alpha: true,
       preserveDrawingBuffer: true,
     });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -251,17 +254,7 @@ export class NifViewer {
   }
 
   async capturePng() {
-    // WebGLRenderer is created with alpha disabled and the scene always has a
-    // color background, so the encoded PNG is opaque while matching the
-    // current interactive camera, zoom, and visible render modes exactly.
-    this.controls.update();
-    this.renderer.render(this.scene, this.camera);
-    return new Promise((resolve, reject) => {
-      this.canvas.toBlob(
-        value => value ? resolve(value) : reject(new Error('Unable to encode PNG')),
-        'image/png',
-      );
-    });
+    return captureTransparentPng(this);
   }
 
   #applyCameraView(view) {

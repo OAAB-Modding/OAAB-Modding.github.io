@@ -702,7 +702,7 @@ export class LibraryWorkspace {
         <button type="button" data-viewer-toggle="wireframe" title="Show triangle edges">Wireframe</button>
         <button type="button" data-viewer-toggle="collision" title="Show or hide RootCollisionNode geometry">Collision</button>
         <button type="button" data-viewer-toggle="normals" title="Color surfaces by their normals">Normals</button>
-        <button type="button" data-viewer-download disabled title="Download the current camera view with an opaque background">Download PNG</button>`;
+        <button type="button" data-viewer-download disabled title="Download the current camera view with a transparent background">Download PNG</button>`;
       this.viewerControls.addEventListener('pointerdown', event => event.stopPropagation());
       this.viewerControls.addEventListener('click', event => {
         event.preventDefault();
