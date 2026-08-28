@@ -8,6 +8,7 @@ import { Tes3WorkerClient } from '../workers/tes3-worker-client.js';
 import { fingerprintBytes } from '../storage/thumbnail-cache.js';
 import {
   cameraDistanceScaleForView,
+  cameraFrameMarginForView,
   cameraDirectionForView,
   isEditorMarkerName,
   isViewerObjectVisible,
@@ -222,7 +223,6 @@ export class NifViewer {
     const oldTarget = this.controls.target.clone();
     try {
       if (!includeGrid) this.grid.visible = false;
-      if (view) this.#applyCameraView(view);
       // Capture the requested logical size exactly. The interactive viewer
       // can use a high device-pixel ratio, but grid thumbnails should stay
       // cheap and predictable on both desktop and mobile screens.
@@ -230,6 +230,7 @@ export class NifViewer {
       this.renderer.setSize(width, height, false);
       this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();
+      if (view) this.#applyCameraView(view);
       this.renderer.render(this.scene, this.camera);
       return await new Promise((resolve, reject) => {
         this.canvas.toBlob(value => value ? resolve(value) : reject(new Error('Unable to encode thumbnail')), type, quality);
@@ -252,17 +253,25 @@ export class NifViewer {
   #applyCameraView(view) {
     const target = this.cameraHome?.target?.clone() || this.controls.target.clone();
     const referencePosition = this.cameraHome?.position || this.camera.position;
-    const distance = Math.max(
-      referencePosition.distanceTo(target) * cameraDistanceScaleForView(view),
-      0.01,
-    );
+    const homeDistance = referencePosition.distanceTo(target);
+    const verticalHalfExtent = view === 'front' && this.cameraFrameBounds
+      ? Math.max((this.cameraFrameBounds.maxY - this.cameraFrameBounds.minY) / 2, 0.01)
+      : 0;
+    const distance = verticalHalfExtent
+      ? verticalHalfExtent
+        / Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))
+        * cameraFrameMarginForView(view)
+        * cameraDistanceScaleForView(view)
+      : homeDistance * cameraDistanceScaleForView(view);
+    const framedDistance = Math.max(distance, 0.01);
     const direction = new THREE.Vector3(...cameraDirectionForView(view)).normalize();
-    this.camera.position.copy(target).add(direction.multiplyScalar(distance));
+    this.camera.position.copy(target).add(direction.multiplyScalar(framedDistance));
     this.controls.target.copy(target);
     this.controls.update();
   }
 
   frameModel() {
+    this.cameraFrameBounds = null;
     this.modelRoot.position.set(0, 0, 0);
     this.modelRoot.updateWorldMatrix(true, true);
 
@@ -287,6 +296,10 @@ export class NifViewer {
     this.modelRoot.updateWorldMatrix(true, true);
 
     const centeredBox = new THREE.Box3().setFromObject(this.modelRoot);
+    this.cameraFrameBounds = {
+      minY: centeredBox.min.y,
+      maxY: centeredBox.max.y,
+    };
     const sphere = centeredBox.getBoundingSphere(new THREE.Sphere());
     const radius = Math.max(sphere.radius, 0.01);
     const distance = radius / Math.sin(THREE.MathUtils.degToRad(this.camera.fov / 2));

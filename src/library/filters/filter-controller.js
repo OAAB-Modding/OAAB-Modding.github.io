@@ -302,7 +302,10 @@ export function withLibraryFilters(Base) {
   inventorySearchItems(ownerId, fallbackItems) {
     const all = (this._oaabItems || []).concat(this._vanillaItems || []);
     const source = Array.isArray(fallbackItems) ? fallbackItems : all;
-    const displaySource = all.length ? all : source;
+    // `fallbackItems` is the active merged catalogue passed by renderVals.
+    // Prefer it for both the owner and its entries so imported records remain
+    // searchable when OAAB or vanilla records are also loaded.
+    const displaySource = source.length ? source : all;
     const byKey = Object.create(null);
     displaySource.forEach(x => { byKey[String(x.id || '').toLowerCase()] = x; });
     const ownerSource = Object.create(null);

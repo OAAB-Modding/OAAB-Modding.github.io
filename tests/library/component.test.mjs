@@ -164,6 +164,41 @@ test('imported plugins reuse built-in book, magic, light, and record-type featur
   assert.deepEqual(preview.blocks.map(block => block.text), ['Title & Text', 'Second line']);
 });
 
+test('imported plugin contents remain searchable alongside built-in records', () => {
+  const Component = createLibraryComponent(TestLogic);
+  const component = new Component();
+  component._oaabItems = [{
+    id: 'oaab_only',
+    type: 'Static',
+    name: '',
+    mesh: 'meshes/oaab_only.nif',
+    source: 'oaab-data',
+    raw: { id: 'oaab_only', type: 'Static' },
+  }];
+  component._librarySourceEnabled = new Set(['oaab-data', 'plugin:demo']);
+  component.setImportedRecords([
+    {
+      id: 'items_test',
+      type: 'LeveledItem',
+      name: '',
+      mesh: null,
+      source: 'plugin:demo',
+      raw: { id: 'items_test', type: 'LeveledItem', items: [['armor_test', 1]] },
+    },
+    {
+      id: 'armor_test',
+      type: 'Armor',
+      name: 'Test Armor',
+      mesh: 'meshes/armor_test.nif',
+      source: 'plugin:demo',
+      raw: { id: 'armor_test', type: 'Armor' },
+    },
+  ]);
+
+  const results = component.inventorySearchItems('items_test', component.state.data.items);
+  assert.deepEqual(results.map(item => item.id), ['items_test', 'armor_test']);
+});
+
 test('catalog source changes participate in filter history', () => {
   const Component = createLibraryComponent(TestLogic);
   const component = new Component();
