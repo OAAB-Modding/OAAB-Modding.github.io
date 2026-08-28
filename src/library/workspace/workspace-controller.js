@@ -15,6 +15,12 @@ import {
 import { normalizeAssetPath } from '../resolver/path-utils.js';
 
 const THUMBNAIL_MAX_ATTEMPTS = 2;
+const VIEWER_TOGGLES = {
+  markers: { property: 'markersVisible', method: 'setMarkersVisible' },
+  wireframe: { property: 'wireframe', method: 'setWireframe' },
+  collision: { property: 'collisionVisible', method: 'setCollisionVisible' },
+  normals: { property: 'normalInspector', method: 'setNormalInspector' },
+};
 
 export function initializeLibraryWorkspace(component) {
   const workspace = new LibraryWorkspace(component);
@@ -671,7 +677,41 @@ export class LibraryWorkspace {
       this.viewer = await this.viewerCreationPromise;
     }
     this.viewer.attachTo(host);
+    this.ensureViewerControls(host, this.viewer);
     return this.viewer;
+  }
+
+  ensureViewerControls(host, viewer) {
+    if (!this.viewerControls) {
+      this.viewerControls = element('div', { className: 'library-viewer-controls' }, this.doc);
+      this.viewerControls.setAttribute('role', 'toolbar');
+      this.viewerControls.setAttribute('aria-label', '3D render modes');
+      this.viewerControls.innerHTML = `
+        <button type="button" data-viewer-toggle="markers" title="Show or hide shapes named EditorMarker">Markers</button>
+        <button type="button" data-viewer-toggle="wireframe" title="Show triangle edges">Wireframe</button>
+        <button type="button" data-viewer-toggle="collision" title="Show or hide RootCollisionNode geometry">Collision</button>
+        <button type="button" data-viewer-toggle="normals" title="Color surfaces by their normals">Normals</button>`;
+      this.viewerControls.addEventListener('pointerdown', event => event.stopPropagation());
+      this.viewerControls.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const button = event.target.closest('[data-viewer-toggle]');
+        const toggle = VIEWER_TOGGLES[button?.dataset.viewerToggle];
+        if (!toggle) return;
+        viewer[toggle.method](!viewer[toggle.property]);
+        this.syncViewerControls(viewer);
+      });
+    }
+    if (this.viewerControls.parentElement !== host) host.append(this.viewerControls);
+    this.syncViewerControls(viewer);
+  }
+
+  syncViewerControls(viewer = this.viewer) {
+    if (!viewer || !this.viewerControls) return;
+    for (const button of this.viewerControls.querySelectorAll('[data-viewer-toggle]')) {
+      const toggle = VIEWER_TOGGLES[button.dataset.viewerToggle];
+      if (toggle) button.setAttribute('aria-pressed', String(!!viewer[toggle.property]));
+    }
   }
 
   async ensureThumbnailViewer() {
@@ -1275,6 +1315,7 @@ export class LibraryWorkspace {
     this.thumbnailJobs.clear();
     this.thumbnailCache.revokeUrls();
     this.database.close();
+    this.viewerControls?.remove();
     this.dialog?.remove();
     this.button?.remove();
   }

@@ -6,6 +6,7 @@ import { TGALoader } from 'three/addons/loaders/TGALoader.js';
 import { normalizeAssetPath } from '../resolver/path-utils.js';
 import { Tes3WorkerClient } from '../workers/tes3-worker-client.js';
 import { fingerprintBytes } from '../storage/thumbnail-cache.js';
+import { isEditorMarkerName, isViewerObjectVisible } from './viewer-modes.js';
 
 const FALLBACK_COLOR = 0xd45a8b;
 
@@ -20,7 +21,9 @@ export class NifViewer {
     this.worker = new Tes3WorkerClient();
     this.loadGeneration = 0;
     this.wireframe = false;
+    this.markersVisible = true;
     this.collisionVisible = false;
+    this.normalInspector = false;
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x17130f);
@@ -131,7 +134,22 @@ export class NifViewer {
   setWireframe(visible) {
     this.wireframe = !!visible;
     this.modelRoot.traverse((object) => {
-      if (object.isMesh && object.material) object.material.wireframe = this.wireframe;
+      if (!object.isMesh) return;
+      const materials = new Set([
+        object.material,
+        object.userData.renderMaterial,
+        object.userData.normalMaterial,
+      ]);
+      for (const material of materials) {
+        if (material) material.wireframe = this.wireframe;
+      }
+    });
+  }
+
+  setMarkersVisible(visible) {
+    this.markersVisible = !!visible;
+    this.modelRoot.traverse((object) => {
+      if (object.isMesh && object.userData.marker) this.#syncObjectVisibility(object);
     });
   }
 
@@ -146,7 +164,17 @@ export class NifViewer {
   setCollisionVisible(visible) {
     this.collisionVisible = !!visible;
     this.modelRoot.traverse((object) => {
-      if (object.isMesh && object.userData.collision) object.visible = this.collisionVisible;
+      if (object.isMesh && object.userData.collision) this.#syncObjectVisibility(object);
+    });
+  }
+
+  setNormalInspector(visible) {
+    this.normalInspector = !!visible;
+    this.modelRoot.traverse((object) => {
+      if (!object.isMesh || !object.userData.renderMaterial) return;
+      object.material = this.normalInspector
+        ? object.userData.normalMaterial
+        : object.userData.renderMaterial;
     });
   }
 
@@ -379,9 +407,15 @@ export class NifViewer {
       mesh.name = meshPacket.name || meshPacket.blockType;
       mesh.matrix.fromArray(meshPacket.transform);
       mesh.matrixAutoUpdate = false;
+      mesh.userData.renderMaterial = material;
+      mesh.userData.normalMaterial = createNormalInspectorMaterial(material, this.wireframe);
       mesh.userData.collision = !!meshPacket.collision;
+      mesh.userData.marker = isEditorMarkerName(mesh.name);
       mesh.userData.hidden = !!meshPacket.hidden;
-      mesh.visible = !meshPacket.hidden && (!meshPacket.collision || this.collisionVisible);
+      mesh.material = this.normalInspector
+        ? mesh.userData.normalMaterial
+        : mesh.userData.renderMaterial;
+      this.#syncObjectVisibility(mesh);
       this.modelRoot.add(mesh);
     }
 
@@ -404,9 +438,16 @@ export class NifViewer {
       particleMesh.matrixAutoUpdate = false;
       particleMesh.frustumCulled = false;
       particleMesh.userData.hidden = !!particlePacket.hidden;
-      particleMesh.visible = !particlePacket.hidden;
+      this.#syncObjectVisibility(particleMesh);
       this.modelRoot.add(particleMesh);
     }
+  }
+
+  #syncObjectVisibility(object) {
+    object.visible = isViewerObjectVisible(object.userData, {
+      markersVisible: this.markersVisible,
+      collisionVisible: this.collisionVisible,
+    });
   }
 
   #createMaterial(packet, texture, expectedTexture, hasVertexColors) {
@@ -458,7 +499,11 @@ export class NifViewer {
     this.modelRoot.traverse((object) => {
       if (!object.isMesh && !object.isPoints) return;
       object.geometry?.dispose();
-      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      const materials = new Set([
+        ...(Array.isArray(object.material) ? object.material : [object.material]),
+        object.userData.renderMaterial,
+        object.userData.normalMaterial,
+      ]);
       for (const material of materials) {
         if (!material) continue;
         material.dispose();
@@ -472,6 +517,38 @@ export class NifViewer {
   #status(stage, message) {
     this.onStatus({ stage, message });
   }
+}
+
+function createNormalInspectorMaterial(sourceMaterial, wireframe) {
+  const material = new THREE.ShaderMaterial({
+    side: sourceMaterial.side,
+    wireframe,
+    depthTest: sourceMaterial.depthTest,
+    depthWrite: sourceMaterial.depthWrite,
+    toneMapped: false,
+    vertexShader: `
+      varying vec3 vWorldNormal;
+
+      void main() {
+        vec3 viewNormal = normalize(normalMatrix * normal);
+        vWorldNormal = normalize(vec3(
+          dot(viewMatrix[0].xyz, viewNormal),
+          dot(viewMatrix[1].xyz, viewNormal),
+          dot(viewMatrix[2].xyz, viewNormal)
+        ));
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vWorldNormal;
+
+      void main() {
+        gl_FragColor = vec4(vWorldNormal * 0.5 + 0.5, 1.0);
+      }
+    `,
+  });
+  material.userData.normalInspector = true;
+  return material;
 }
 
 function createParticleGeometry(packet) {

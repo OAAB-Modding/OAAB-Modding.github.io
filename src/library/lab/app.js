@@ -59,7 +59,9 @@ function wireControls() {
   });
   elements.runFixtures.addEventListener('click', () => runFixtureCorpus().catch(showError));
   document.querySelector('#reset-camera').addEventListener('click', () => viewer.resetCamera());
+  document.querySelector('#show-markers').addEventListener('change', (event) => viewer.setMarkersVisible(event.target.checked));
   document.querySelector('#wireframe').addEventListener('change', (event) => viewer.setWireframe(event.target.checked));
+  document.querySelector('#inspect-normals').addEventListener('change', (event) => viewer.setNormalInspector(event.target.checked));
   document.querySelector('#show-grid').addEventListener('change', (event) => viewer.setGridVisible(event.target.checked));
   document.querySelector('#show-axes').addEventListener('change', (event) => viewer.setAxesVisible(event.target.checked));
   document.querySelector('#show-collision').addEventListener('change', (event) => viewer.setCollisionVisible(event.target.checked));

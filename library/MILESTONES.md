@@ -229,8 +229,9 @@ Exit criteria met:
 
 The viewer derives a combined bound, centers the model, frames it according to
 its size, and adjusts near/far clipping. Orbit, wheel zoom, pan,
-double-click/reset, grid, axes, wireframe, collision visibility, and background
-controls are present. Collision geometry is hidden by default.
+double-click/reset, grid, axes, wireframe, EditorMarker visibility, collision
+visibility, normal inspection, and background controls are present. Collision
+geometry is hidden by default.
 
 Exit criteria met:
 
