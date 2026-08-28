@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  cameraDirectionForView,
   isEditorMarkerName,
   isViewerObjectVisible,
+  thumbnailViewForRecord,
 } from '../../src/library/renderer/viewer-modes.js';
 
 test('EditorMarker shapes are recognized by name without case sensitivity', () => {
@@ -28,4 +30,21 @@ test('viewer visibility composes hidden, marker, and collision flags', () => {
     { hidden: true },
     { markersVisible: true, collisionVisible: true },
   ), false);
+});
+
+test('head bodyparts use the legacy front-facing thumbnail view', () => {
+  assert.equal(thumbnailViewForRecord({
+    type: 'Bodypart',
+    raw: { data: { part: 'Head' } },
+  }), 'front');
+  assert.equal(thumbnailViewForRecord({
+    type: 'Bodypart',
+    raw: { data: { part: 'Hair' } },
+  }), '');
+  assert.equal(thumbnailViewForRecord({
+    type: 'Miscellaneous',
+    name: 'Slaughterfish Head',
+  }), '');
+  assert.deepEqual(cameraDirectionForView('front'), [0, 0, 1]);
+  assert.deepEqual(cameraDirectionForView(), [1, 0.72, 1]);
 });

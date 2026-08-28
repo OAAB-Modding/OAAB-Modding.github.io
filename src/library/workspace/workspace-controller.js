@@ -13,6 +13,7 @@ import {
   fingerprintBytes,
 } from '../storage/thumbnail-cache.js';
 import { normalizeAssetPath } from '../resolver/path-utils.js';
+import { thumbnailViewForRecord } from '../renderer/viewer-modes.js';
 
 const THUMBNAIL_MAX_ATTEMPTS = 2;
 const VIEWER_TOGGLES = {
@@ -756,9 +757,12 @@ export class LibraryWorkspace {
     }
     if (!shouldCommit()) return null;
     if (!cached) {
-      const options = captureOptions
-        ? { includeGrid: false, ...captureOptions }
-        : { includeGrid: false };
+      const view = thumbnailViewForRecord(record);
+      const options = {
+        includeGrid: false,
+        ...(view ? { view } : {}),
+        ...(captureOptions || {}),
+      };
       const blob = await viewer.captureThumbnail(options);
       if (!shouldCommit()) return null;
       if (this.thumbnailCacheWritable !== false) {

@@ -66,6 +66,37 @@ test('background thumbnails capture from their dedicated viewer', async () => {
   assert.equal(importedUrl, 'blob:background');
 });
 
+test('generated head thumbnails request the front-facing camera preset', async () => {
+  const workspace = workspaceWithoutConstructor();
+  const record = {
+    id: 'face',
+    source: 'plugin:demo',
+    raw: { type: 'Bodypart', data: { part: 'Head' } },
+  };
+  let captureOptions;
+  workspace.thumbnailCache = {
+    async get() { return null; },
+    async put() { return { url: 'blob:face' }; },
+  };
+
+  const cached = await workspace.getOrCreateThumbnail(record, {
+    path: 'meshes/face.nif',
+    asset: { source: 'local-files', lastModified: 42 },
+    assetFingerprint: 'asset-hash',
+    textureDiagnostics: [],
+  }, {
+    viewer: {
+      async captureThumbnail(options) {
+        captureOptions = options;
+        return new Blob(['face']);
+      },
+    },
+  });
+
+  assert.equal(cached.url, 'blob:face');
+  assert.deepEqual(captureOptions, { includeGrid: false, view: 'front' });
+});
+
 test('thumbnail persistence failures fall back to a session URL', async () => {
   const workspace = workspaceWithoutConstructor();
   const record = { id: 'demo', source: 'plugin:demo' };
