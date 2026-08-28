@@ -21,7 +21,8 @@ controller-heavy lights and a particle-only model.
 - `NiUVController`, `NiFlipController`, `NiVisController`, and
   `NiKeyframeController` playback with linear interpolation/fallbacks
 - `NiParticles`, `NiAutoNormalParticles`, and `NiRotatingParticles` rendered as
-  textured point sprites, including active counts, radius, size, and color
+  instanced camera-facing quads, including controller-reconciled active counts,
+  per-particle size/color, texture apply mode, and alpha/depth state
 - `NiSkinInstance`, `NiSkinData`, and `NiSkinPartition` recognition with a
   stable bind-pose fallback and bone/partition diagnostics
 
@@ -33,8 +34,8 @@ current implementation does not evaluate their runtime behavior:
 - Animation beyond the supported controllers: `NiTextKeyExtraData`,
   `NiAlphaController`, `NiBSAnimationNode`, TCB tangent evaluation, and Euler
   rotation keys
-- Particle simulation beyond initial display: `NiBSParticleNode`,
-  `NiParticleGrowFade`, and `NiParticleSystemController`
+- Particle simulation beyond the saved live-particle display: emission,
+  `NiBSParticleNode` follow behavior, grow/fade, force modifiers, and colliders
 - View-dependent or selection nodes: `NiBillboardNode`, `NiLODNode`,
   `NiSwitchNode`, `NiSortAdjustNode`, `NiCollisionSwitch`
 - Miscellaneous: `NiStringExtraData`, `NiAlphaAccumulator`

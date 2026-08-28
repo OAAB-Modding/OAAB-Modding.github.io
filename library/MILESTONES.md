@@ -174,7 +174,7 @@ culling/stencil/depth properties where represented by the current packet.
 
 Supported or recognized blocks and all current limitations are maintained in
 [`lab/UNSUPPORTED.md`](lab/UNSUPPORTED.md). Phase 20 added selected controller
-playback, point-particle rendering, and bind-pose skinning diagnostics; morph
+playback, camera-facing particle rendering, and bind-pose skinning diagnostics; morph
 controllers, deforming skinning, and complex texture effects remain deferred.
 
 Exit criteria met:
@@ -531,7 +531,7 @@ focused on the records that can appear in the catalogue.
 
 The render packet and shared viewer now support UV, flipbook, visibility, and
 keyframe controller playback; `NiParticles`, `NiAutoNormalParticles`, and
-`NiRotatingParticles` render as textured point sprites; and skin instances,
+`NiRotatingParticles` render as individually sized, camera-facing quads; and skin instances,
 data, and partitions render in stable bind pose with diagnostics. A synthetic
 Rust fixture covers every added block family, and the public lab corpus asserts
 representative animation/particle output. Deforming skinning and particle

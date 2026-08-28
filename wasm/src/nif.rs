@@ -4,10 +4,11 @@ use serde::Serialize;
 use tes3::nif::{
     Map as NifTextureMap, NiAVObject, NiAlphaProperty, NiAutoNormalParticles, NiFlipController,
     NiFloatKey, NiGeometry, NiGeometryData, NiKey, NiKeyframeController, NiMaterialProperty,
-    NiNode, NiObjectNET, NiParticles, NiParticlesData, NiPosKey, NiRotKey, NiRotatingParticles,
-    NiSourceTexture, NiStencilProperty, NiStream, NiTexturingProperty, NiTimeController,
-    NiTriShape, NiTriShapeData, NiTriStrips, NiTriStripsData, NiType, NiUVController,
-    NiVertexColorProperty, NiVisController, NiZBufferProperty, TextureMap, TextureSource,
+    NiNode, NiObjectNET, NiParticleSystemController, NiParticles, NiParticlesData, NiPosKey,
+    NiRotKey, NiRotatingParticles, NiSourceTexture, NiStencilProperty, NiStream,
+    NiTexturingProperty, NiTimeController, NiTriShape, NiTriShapeData, NiTriStrips,
+    NiTriStripsData, NiType, NiUVController, NiVertexColorProperty, NiVisController,
+    NiZBufferProperty, TextureMap, TextureSource,
     glam::{Affine3A, Mat4},
 };
 
@@ -180,6 +181,7 @@ pub struct MaterialPacket {
     pub shininess: f32,
     pub opacity: f32,
     pub texture: Option<String>,
+    pub apply_mode: String,
     pub uv_set: usize,
     pub clamp_mode: String,
     pub filter_mode: String,
@@ -206,6 +208,7 @@ impl Default for MaterialPacket {
             shininess: 0.0,
             opacity: 1.0,
             texture: None,
+            apply_mode: "Modulate".to_owned(),
             uv_set: 0,
             clamp_mode: "WrapSWrapT".to_owned(),
             filter_mode: "Trilerp".to_owned(),
@@ -667,22 +670,42 @@ fn add_particles<T>(
         return;
     };
     let geometry_data: &NiGeometryData = data.as_ref();
-    let active = usize::from(data.num_active).min(geometry_data.vertices.len());
+    let capacity = geometry_data.vertices.len();
+    let controller = object_net
+        .controllers_of_type::<NiParticleSystemController>(context.stream)
+        .next();
+    let (active, radius) = if let Some(controller) = controller {
+        let active = if controller.particles.len() == capacity {
+            usize::from(controller.num_active_particles).min(capacity)
+        } else {
+            context.warnings.push(format!(
+                "{block_type} \"{}\" has mismatched particle pools; runtime active state was reset",
+                object_net.name
+            ));
+            0
+        };
+        (active, controller.initial_size)
+    } else {
+        (
+            usize::from(data.num_active).min(capacity),
+            data.particle_radius,
+        )
+    };
     let positions = geometry_data.vertices[..active]
         .iter()
         .flat_map(|value| value.to_array())
         .collect();
-    let colors = geometry_data
-        .vertex_colors
-        .iter()
-        .take(active)
-        .flat_map(|value| value.to_array())
+    let colors = (0..active)
+        .flat_map(|index| {
+            geometry_data
+                .vertex_colors
+                .get(index)
+                .map_or([1.0; 4], |value| value.to_array())
+        })
         .collect();
-    let sizes = if data.sizes.is_empty() {
-        vec![1.0; active]
-    } else {
-        data.sizes.iter().take(active).copied().collect()
-    };
+    let sizes = (0..active)
+        .map(|index| data.sizes.get(index).copied().unwrap_or(1.0))
+        .collect();
     let material = material_packet(context, av_object, inherited_properties);
     context.particles.push(ParticlePacket {
         name: object_net.name.clone(),
@@ -691,7 +714,7 @@ fn add_particles<T>(
         positions,
         colors,
         sizes,
-        radius: data.particle_radius.max(0.001),
+        radius,
         material,
         hidden: av_object.app_culled(),
         animation_targets: animation_target_names(animation_targets, &object_net.name),
@@ -917,6 +940,7 @@ fn material_packet(
         }
 
         if let Ok(texturing) = <&NiTexturingProperty>::try_from(property) {
+            packet.apply_mode = format!("{:?}", texturing.apply_mode);
             if let Some(Some(texture_map)) = texturing.texture_maps.first() {
                 let map: &NifTextureMap = match texture_map {
                     TextureMap::Map(map) => map,
@@ -989,10 +1013,10 @@ fn looks_like_collision(name: &str) -> bool {
 mod advanced_tests {
     use super::*;
     use tes3::nif::{
-        BoneData, LightingMode, NiAutoNormalParticlesData, NiFlipController, NiKeyframeData,
-        NiLinFloatKey, NiLinPosKey, NiLinRotKey, NiSkinData, NiSkinInstance, NiSkinPartition,
-        NiSourceTexture, NiTriShape, NiTriShapeData, NiUVData, NiVisData, NiVisKey,
-        SourceVertexMode, TextureSource,
+        ApplyMode, BoneData, LightingMode, NiAutoNormalParticlesData, NiFlipController,
+        NiKeyframeData, NiLinFloatKey, NiLinPosKey, NiLinRotKey, NiPerParticleData, NiSkinData,
+        NiSkinInstance, NiSkinPartition, NiSourceTexture, NiTexturingProperty, NiTriShape,
+        NiTriShapeData, NiUVData, NiVisData, NiVisKey, SourceVertexMode, TextureSource,
         glam::{Quat, vec3, vec4},
     };
 
@@ -1043,6 +1067,19 @@ mod advanced_tests {
             source: TextureSource::External("textures\\animated.dds".to_owned()),
             ..Default::default()
         });
+        let texturing_property = stream.insert(NiTexturingProperty {
+            apply_mode: ApplyMode::Replace,
+            texture_maps: vec![Some(TextureMap::Map(NifTextureMap {
+                texture,
+                ..Default::default()
+            }))],
+            ..Default::default()
+        });
+        stream
+            .get_mut(node)
+            .unwrap()
+            .properties
+            .push(texturing_property.cast());
 
         let mut keyframe = NiKeyframeController::default();
         keyframe.base.flags |= 0x0008;
@@ -1071,15 +1108,22 @@ mod advanced_tests {
         stream.get_mut(node).unwrap().controller = uv.cast();
 
         let mut particle_data = NiAutoNormalParticlesData::default();
-        particle_data.vertices = vec![vec3(0.0, 0.0, 0.0)];
-        particle_data.num_particles = 1;
-        particle_data.num_active = 1;
+        particle_data.vertices = vec![vec3(0.0, 0.0, 0.0), vec3(5.0, 0.0, 0.0)];
+        particle_data.num_particles = 2;
+        particle_data.num_active = 2;
         particle_data.particle_radius = 0.5;
         let particle_data = stream.insert(particle_data);
         let mut particles = NiAutoNormalParticles::default();
         particles.name = "ParticleFixture".to_owned();
         particles.geometry_data = particle_data.cast();
         let particles = stream.insert(particles);
+        let mut particle_controller = NiParticleSystemController::default();
+        particle_controller.base.target = particles.cast();
+        particle_controller.initial_size = 2.5;
+        particle_controller.particles = vec![NiPerParticleData::default(); 2];
+        particle_controller.num_active_particles = 1;
+        let particle_controller = stream.insert(particle_controller);
+        stream.get_mut(particles).unwrap().controller = particle_controller.cast();
 
         let partition = stream.insert(NiSkinPartition {
             partitions: vec![Default::default()],
@@ -1124,6 +1168,11 @@ mod advanced_tests {
         assert_eq!(packet.stats.animations, 4);
         assert_eq!(packet.stats.particles, 1);
         assert_eq!(packet.particles.len(), 1);
+        assert_eq!(packet.particles[0].positions.len(), 3);
+        assert_eq!(packet.particles[0].sizes, vec![1.0]);
+        assert_eq!(packet.particles[0].colors, vec![1.0; 4]);
+        assert_eq!(packet.particles[0].radius, 2.5);
+        assert_eq!(packet.particles[0].material.apply_mode, "Replace");
         assert!(packet.meshes[0].skinned);
         assert_eq!(packet.meshes[0].bone_count, 1);
         assert_eq!(packet.meshes[0].skin_partition_count, 1);

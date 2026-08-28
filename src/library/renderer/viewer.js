@@ -394,38 +394,31 @@ export class NifViewer {
 
     for (const particlePacket of packet.particles || []) {
       if (!particlePacket.positions.length) continue;
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.BufferAttribute(particlePacket.positions, 3));
-      if (particlePacket.colors.length / 4 === particlePacket.positions.length / 3) {
-        geometry.setAttribute('color', new THREE.BufferAttribute(particlePacket.colors, 4));
-      }
       const rawTexture = particlePacket.material.texture;
       let texturePath = null;
       try { if (rawTexture) texturePath = normalizeAssetPath(rawTexture, { root: 'textures' }); } catch {}
       const texture = texturePath ? textures.get(texturePath) : null;
-      const sizes = particlePacket.sizes || [];
-      const averageSize = sizes.length ? sizes.reduce((sum, value) => sum + value, 0) / sizes.length : 1;
-      const material = new THREE.PointsMaterial({
-        color: rawTexture && !texture ? FALLBACK_COLOR : 0xffffff,
-        map: texture || null,
-        size: Math.max(0.001, particlePacket.radius * averageSize * 2),
-        sizeAttenuation: true,
-        transparent: true,
-        opacity: THREE.MathUtils.clamp(particlePacket.material.opacity ?? 1, 0, 1),
-        alphaTest: particlePacket.material.alphaTest ? Math.max(particlePacket.material.alphaThreshold || 0, 1 / 255) : 0.01,
-        vertexColors: geometry.hasAttribute('color'),
-        depthTest: particlePacket.material.depthTest !== false,
-        depthWrite: false,
-      });
-      const points = new THREE.Points(geometry, material);
-      points.name = particlePacket.name || particlePacket.blockType;
-      points.matrix.fromArray(particlePacket.transform);
-      points.matrixAutoUpdate = false;
-      points.userData.hidden = !!particlePacket.hidden;
-      points.userData.animationBaseMatrix = points.matrix.clone();
-      points.visible = !particlePacket.hidden;
-      this.modelRoot.add(points);
-      this.#registerAnimationTargets(points, particlePacket.animationTargets, points.name);
+      const geometry = createParticleGeometry(particlePacket);
+      const material = createParticleMaterial(
+        particlePacket,
+        texture,
+        !!rawTexture,
+        this.wireframe,
+      );
+      const particleMesh = new THREE.Mesh(geometry, material);
+      particleMesh.name = particlePacket.name || particlePacket.blockType;
+      particleMesh.matrix.fromArray(particlePacket.transform);
+      particleMesh.matrixAutoUpdate = false;
+      particleMesh.frustumCulled = false;
+      particleMesh.userData.hidden = !!particlePacket.hidden;
+      particleMesh.userData.animationBaseMatrix = particleMesh.matrix.clone();
+      particleMesh.visible = !particlePacket.hidden;
+      this.modelRoot.add(particleMesh);
+      this.#registerAnimationTargets(
+        particleMesh,
+        particlePacket.animationTargets,
+        particleMesh.name,
+      );
     }
   }
 
@@ -457,6 +450,9 @@ export class NifViewer {
         const uTiling = sampleScalar(data.uTiling, time, 1);
         const vTiling = sampleScalar(data.vTiling, time, 1);
         for (const object of objects) {
+          // Morrowind's particle draw path emits literal quad UVs and ignores
+          // serialized particle UV sets, including NiUVController mutations.
+          if (object.material?.userData?.nifParticle) continue;
           const map = object.material?.map;
           if (!map) continue;
           map.offset.set(uOffset, vOffset);
@@ -467,7 +463,11 @@ export class NifViewer {
         let path = null;
         try { path = normalizeAssetPath(data.textures[index], { root: 'textures' }); } catch {}
         const texture = path ? this.resolvedTextureMap?.get(path) : null;
-        if (texture) for (const object of objects) if (object.material) object.material.map = texture;
+        if (texture) {
+          for (const object of objects) {
+            if (object.material) setMaterialMap(object.material, texture);
+          }
+        }
       } else if (data.kind === 'keyframe') {
         const transform = sampledTransform(data, time);
         const origin = sampledTransform(data, animation.startTime || 0);
@@ -489,29 +489,39 @@ export class NifViewer {
     const emissiveVertexColors = vertexColorMode === 'Emissive';
     const emissiveOnlyLighting = vertexColorMode === 'AmbientDiffuse'
       && vertexColorLightingMode === 'Emissive';
-    const material = new THREE.MeshPhongMaterial({
+    const replaceTexture = expectedTexture && packet.applyMode === 'Replace';
+    const common = {
       color: expectedTexture && !texture
         ? FALLBACK_COLOR
-        : emissiveOnlyLighting
-          ? 0x000000
-          : new THREE.Color().setRGB(diffuse[0], diffuse[1], diffuse[2], THREE.LinearSRGBColorSpace),
-      emissive: new THREE.Color().setRGB(...(packet.emissive || [0, 0, 0]), THREE.LinearSRGBColorSpace),
-      specular: new THREE.Color().setRGB(...(packet.specular || [0, 0, 0]), THREE.LinearSRGBColorSpace),
-      shininess: THREE.MathUtils.clamp(packet.shininess || 0, 0, 100),
+        : replaceTexture
+          ? 0xffffff
+          : emissiveOnlyLighting
+            ? 0x000000
+            : new THREE.Color().setRGB(diffuse[0], diffuse[1], diffuse[2], THREE.LinearSRGBColorSpace),
       map: texture || null,
       opacity: THREE.MathUtils.clamp(packet.opacity ?? 1, 0, 1),
       transparent: !!packet.alphaBlend || (packet.opacity ?? 1) < 1,
       alphaTest: packet.alphaTest ? Math.max(packet.alphaThreshold || 0, 1 / 255) : 0,
       depthTest: packet.depthTest !== false,
       depthWrite: packet.depthWrite !== false,
-      vertexColors: diffuseVertexColors || emissiveVertexColors,
+      vertexColors: !replaceTexture && (diffuseVertexColors || emissiveVertexColors),
       wireframe: this.wireframe,
       side: sideForDrawMode(packet.drawMode),
-    });
+    };
+    const material = replaceTexture
+      ? new THREE.MeshBasicMaterial(common)
+      : new THREE.MeshPhongMaterial({
+          ...common,
+          emissive: new THREE.Color().setRGB(...(packet.emissive || [0, 0, 0]), THREE.LinearSRGBColorSpace),
+          specular: new THREE.Color().setRGB(...(packet.specular || [0, 0, 0]), THREE.LinearSRGBColorSpace),
+          shininess: THREE.MathUtils.clamp(packet.shininess || 0, 0, 100),
+        });
 
     if (texture) applyTextureMapSettings(texture, packet.clampMode, packet.filterMode);
-    if (emissiveVertexColors) applyEmissiveVertexColors(material);
+    if (!replaceTexture && emissiveVertexColors) applyEmissiveVertexColors(material);
     if (packet.alphaBlend) applyBlendMode(material, packet.sourceBlend, packet.destinationBlend);
+    material.userData.clampMode = packet.clampMode;
+    material.userData.filterMode = packet.filterMode;
     return material;
   }
 
@@ -536,6 +546,187 @@ export class NifViewer {
   #status(stage, message) {
     this.onStatus({ stage, message });
   }
+}
+
+function createParticleGeometry(packet) {
+  const positions = packet.positions instanceof Float32Array
+    ? packet.positions
+    : Float32Array.from(packet.positions || []);
+  const count = Math.floor(positions.length / 3);
+  const sizes = new Float32Array(count);
+  const colors = new Float32Array(count * 4);
+  let maxSize = 0;
+
+  for (let index = 0; index < count; index += 1) {
+    const size = Number(packet.sizes?.[index]);
+    sizes[index] = Number.isFinite(size) ? size : 1;
+    maxSize = Math.max(maxSize, Math.abs(sizes[index]));
+    for (let channel = 0; channel < 4; channel += 1) {
+      const value = Number(packet.colors?.[index * 4 + channel]);
+      colors[index * 4 + channel] = Number.isFinite(value) ? value : 1;
+    }
+  }
+
+  const geometry = new THREE.InstancedBufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute([
+    -1, -1, 0,
+     1, -1, 0,
+     1,  1, 0,
+    -1,  1, 0,
+  ], 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute([
+    0, 0,
+    1, 0,
+    1, 1,
+    0, 1,
+  ], 2));
+  geometry.setAttribute('particlePosition', new THREE.InstancedBufferAttribute(positions, 3));
+  geometry.setAttribute('particleSize', new THREE.InstancedBufferAttribute(sizes, 1));
+  geometry.setAttribute('particleColor', new THREE.InstancedBufferAttribute(colors, 4));
+  geometry.setIndex([0, 1, 2, 0, 2, 3]);
+  geometry.instanceCount = count;
+
+  const bounds = new THREE.Box3();
+  const point = new THREE.Vector3();
+  for (let index = 0; index < count; index += 1) {
+    point.fromArray(positions, index * 3);
+    if ([point.x, point.y, point.z].every(Number.isFinite)) bounds.expandByPoint(point);
+  }
+  if (bounds.isEmpty()) bounds.setFromCenterAndSize(new THREE.Vector3(), new THREE.Vector3());
+
+  const transform = new THREE.Matrix4().fromArray(packet.transform || new THREE.Matrix4().elements);
+  const transformScale = new THREE.Vector3();
+  transform.decompose(new THREE.Vector3(), new THREE.Quaternion(), transformScale);
+  const nodeScale = Math.max(
+    Math.abs(transformScale.x),
+    Math.abs(transformScale.y),
+    Math.abs(transformScale.z),
+  );
+  const radius = Number.isFinite(packet.radius) ? Math.abs(packet.radius) : 0;
+  // The original point renderer transforms its camera basis into model space
+  // with the node scale, then transforms the completed quad back again. Its
+  // observable world-space sprite extent therefore scales by s².
+  bounds.expandByScalar(radius * maxSize * (Number.isFinite(nodeScale) ? nodeScale : 1));
+  geometry.boundingBox = bounds;
+  geometry.boundingSphere = bounds.getBoundingSphere(new THREE.Sphere());
+  return geometry;
+}
+
+function createParticleMaterial(particlePacket, texture, expectedTexture, wireframe) {
+  const packet = particlePacket.material;
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      particleMap: { value: texture || null },
+      hasParticleMap: { value: !!texture },
+      expectedTexture: { value: expectedTexture },
+      applyReplace: { value: expectedTexture && packet.applyMode === 'Replace' },
+      particleRadius: {
+        value: Number.isFinite(particlePacket.radius) ? particlePacket.radius : 0,
+      },
+      fallbackColor: { value: new THREE.Color(FALLBACK_COLOR) },
+      alphaTestMode: { value: alphaTestMode(packet) },
+      alphaThreshold: {
+        value: THREE.MathUtils.clamp(Number(packet.alphaThreshold) || 0, 0, 1),
+      },
+    },
+    vertexShader: `
+      attribute vec3 particlePosition;
+      attribute float particleSize;
+      attribute vec4 particleColor;
+      varying vec2 vParticleUv;
+      varying vec4 vParticleColor;
+      uniform float particleRadius;
+
+      void main() {
+        vParticleUv = uv;
+        vParticleColor = particleColor;
+        vec4 modelViewCenter = modelViewMatrix * vec4(particlePosition, 1.0);
+        float nodeScale = length(modelMatrix[0].xyz);
+        float halfExtent = particleRadius * particleSize * nodeScale * nodeScale;
+        modelViewCenter.xy += position.xy * halfExtent;
+        gl_Position = projectionMatrix * modelViewCenter;
+      }
+    `,
+    fragmentShader: `
+      varying vec2 vParticleUv;
+      varying vec4 vParticleColor;
+      uniform sampler2D particleMap;
+      uniform bool hasParticleMap;
+      uniform bool expectedTexture;
+      uniform bool applyReplace;
+      uniform vec3 fallbackColor;
+      uniform int alphaTestMode;
+      uniform float alphaThreshold;
+
+      bool passesAlphaTest(float alpha) {
+        if (alphaTestMode == 1) return true;
+        if (alphaTestMode == 2) return alpha < alphaThreshold;
+        if (alphaTestMode == 3) return alpha == alphaThreshold;
+        if (alphaTestMode == 4) return alpha <= alphaThreshold;
+        if (alphaTestMode == 5) return alpha > alphaThreshold;
+        if (alphaTestMode == 6) return alpha != alphaThreshold;
+        if (alphaTestMode == 7) return alpha >= alphaThreshold;
+        return alphaTestMode != 8;
+      }
+
+      void main() {
+        vec4 textureColor = hasParticleMap
+          ? texture2D(particleMap, vParticleUv)
+          : vec4(expectedTexture ? fallbackColor : vec3(1.0), 1.0);
+        vec4 outgoingColor = applyReplace
+          ? textureColor
+          : textureColor * vParticleColor;
+        if (alphaTestMode != 0 && !passesAlphaTest(outgoingColor.a)) discard;
+        gl_FragColor = outgoingColor;
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }
+    `,
+    transparent: !!packet.alphaBlend,
+    depthTest: packet.depthTest !== false,
+    depthWrite: packet.depthWrite !== false,
+    side: sideForDrawMode(packet.drawMode),
+    wireframe,
+    toneMapped: false,
+  });
+  material.map = texture || null;
+  material.userData.nifParticle = true;
+  material.userData.clampMode = packet.clampMode;
+  material.userData.filterMode = packet.filterMode;
+  if (texture) applyTextureMapSettings(texture, packet.clampMode, packet.filterMode);
+  if (packet.alphaBlend) {
+    applyBlendMode(material, packet.sourceBlend, packet.destinationBlend);
+  }
+  return material;
+}
+
+function alphaTestMode(packet) {
+  if (!packet.alphaTest) return 0;
+  return {
+    Always: 1,
+    Less: 2,
+    Equal: 3,
+    LessEqual: 4,
+    Greater: 5,
+    NotEqual: 6,
+    GreaterEqual: 7,
+    Never: 8,
+  }[packet.alphaTestMode] ?? 1;
+}
+
+function setMaterialMap(material, texture) {
+  material.map = texture;
+  if (material.uniforms?.particleMap) {
+    material.uniforms.particleMap.value = texture;
+    material.uniforms.hasParticleMap.value = true;
+  } else {
+    material.needsUpdate = true;
+  }
+  applyTextureMapSettings(
+    texture,
+    material.userData?.clampMode,
+    material.userData?.filterMode,
+  );
 }
 
 function sideForDrawMode(mode) {
