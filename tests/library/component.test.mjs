@@ -155,6 +155,7 @@ test('imported plugins reuse built-in book, magic, light, and record-type featur
   assert.equal(byId.get('items_test').type, 'Leveled List');
   assert.deepEqual(byId.get('creatures_test').leveledCreatures, [['creature_test', 2]]);
   assert.equal(byId.get('book_test').bookRef.source, 'plugin');
+  assert.match(byId.get('book_test').bookRef.searchText, /Second line/);
   assert.equal(byId.get('light_test').lightHex, '#0a141e');
   assert.equal(byId.get('light_test').lightTint, 'rgb(10, 20, 30)');
   assert.match(byId.get('light_test').img, /marker_light\.webp$/);
@@ -162,6 +163,71 @@ test('imported plugins reuse built-in book, magic, light, and record-type featur
   const preview = await component.fetchBookPreview(byId.get('book_test'));
   assert.equal(preview.loading, false);
   assert.deepEqual(preview.blocks.map(block => block.text), ['Title & Text', 'Second line']);
+});
+
+test('book text mode searches OAAB, vanilla, and parser-opened books', () => {
+  const Component = createLibraryComponent(TestLogic);
+  const component = new Component();
+  const oaabRecord = {
+    id: 'oaab_book',
+    type: 'Book',
+    name: 'OAAB Book',
+    text: '<DIV>The lantern remembers the buried moon.</DIV>',
+  };
+  const vanillaRecord = {
+    id: 'vanilla_book',
+    type: 'Book',
+    name: 'Vanilla Book',
+    text: '<P>Speak, friend &amp; enter the old hall.</P>',
+  };
+  const oaab = {
+    id: oaabRecord.id,
+    type: 'Book',
+    bookRef: component.wikiBookRef(oaabRecord, {
+      oaab_book: { source: 'wiki', rawUrl: 'https://example.test/book.md' },
+    }),
+  };
+  const vanilla = {
+    id: vanillaRecord.id,
+    type: 'Book',
+    bookRef: component.uespBookRef(vanillaRecord),
+  };
+  component.setImportedRecords([{
+    id: 'plugin_book',
+    type: 'Book',
+    name: 'Plugin Book',
+    mesh: 'meshes/plugin_book.nif',
+    source: 'plugin:demo',
+    raw: {
+      id: 'plugin_book',
+      type: 'Book',
+      text: '<DIV>Stars fall<BR>behind Red Mountain.</DIV>',
+    },
+  }]);
+  const plugin = component._importedItems[0];
+  const books = [oaab, vanilla, plugin];
+
+  assert.equal(component.allowedSearchModesForItems(books, 'Book').text, true);
+  assert.equal(component.allowedSearchModesForItems(books.concat({ id: 'crate', type: 'Container' }), 'All').text, undefined);
+  assert.deepEqual(component.activeSearchMode('text: buried moon', '', { '': true, text: true }), {
+    mode: 'text', term: 'buried moon', explicit: true,
+  });
+  assert.deepEqual(component.bookTextSearchItems('buried moon', books).map(item => item.id), ['oaab_book']);
+  assert.deepEqual(component.bookTextSearchItems('friend & enter', books).map(item => item.id), ['vanilla_book']);
+  assert.deepEqual(component.bookTextSearchItems('fall behind red mountain', books).map(item => item.id), ['plugin_book']);
+
+  component._isPopout = false;
+  component.state = {
+    ...component.state,
+    active: 'Book',
+    query: 'text: buried moon',
+    searchMode: '',
+    data: { items: books, types: [{ label: 'Book', count: books.length }], total: books.length },
+  };
+  const values = component.renderVals();
+  assert.deepEqual(values.items.map(item => item.id), ['oaab_book']);
+  assert.equal(values.searchModeLabel, 'Text');
+  assert.equal(values.searchPlaceholder, 'Search book text');
 });
 
 test('imported plugin contents remain searchable alongside built-in records', () => {

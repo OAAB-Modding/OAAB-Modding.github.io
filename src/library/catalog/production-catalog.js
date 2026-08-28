@@ -124,6 +124,7 @@ export function withProductionCatalog(Base) {
               wikiUrl: entry.wikiUrl + (anchor ? '#' + anchor : ''),
               anchor,
               title: entry.title,
+              searchText: this.markdownSection(entry.markdown, anchor),
             };
           });
         });
@@ -505,6 +506,7 @@ export function withProductionCatalog(Base) {
           source: 'plugin',
           title: record.name || record.id || 'Book',
           text: bookText,
+          searchText: bookText,
         } : null,
         detail: this.detailSourceRecord(raw),
         imported: true,

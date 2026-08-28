@@ -263,16 +263,19 @@ export function withLibraryRenderValues(Base) {
     ];
 
     // Text search applies on top of the filters. Special helpers are selected
-    // with the embedded mode dropdown so the input itself stays plain text.
+    // with the embedded mode dropdown; book text also accepts `text:` directly.
     const rawQuery = (this.state.query || '').trim();
-    const allowedSearchModes = this.allowedSearchModesForItems(typeFiltered);
+    const allowedSearchModes = this.allowedSearchModesForItems(typeFiltered, active);
     const selectedSearchMode = allowedSearchModes[this.state.searchMode] ? this.state.searchMode : '';
     const activeSearch = this.activeSearchMode(rawQuery, selectedSearchMode, allowedSearchModes);
+    const displayedSearchMode = activeSearch.explicit ? activeSearch.mode : selectedSearchMode;
     const normalQuery = activeSearch.mode ? '' : rawQuery;
     const q = normalQuery.toLowerCase();
     const qPath = q.replace(/\\/g, '/');
     const inventoryQuery = activeSearch.mode === 'inventory' ? activeSearch.term : '';
     const inventoryKey = inventoryQuery.toLowerCase();
+    const bookTextQuery = activeSearch.mode === 'text' ? activeSearch.term : '';
+    const bookTextKey = this.normalizeBookSearchText(bookTextQuery);
     const effectQuery = activeSearch.mode === 'effect' ? activeSearch.term : '';
     const effectKey = this.effectSearchKey(effectQuery);
     const ingredientEffectQuery = activeSearch.mode === 'ingredient' ? activeSearch.term : '';
@@ -294,6 +297,7 @@ export function withLibraryRenderValues(Base) {
       queryCache.query === q &&
       queryCache.colorKey === colorKey &&
       queryCache.inventoryKey === inventoryKey &&
+      queryCache.bookTextKey === bookTextKey &&
       queryCache.effectKey === effectKey &&
       queryCache.ingredientEffectKey === ingredientEffectKey &&
       queryCache.alchemyEffectKey === alchemyEffectKey &&
@@ -305,6 +309,8 @@ export function withLibraryRenderValues(Base) {
     } else {
       if (inventoryQuery) {
         filtered = this.inventorySearchItems(inventoryQuery, all);
+      } else if (bookTextQuery) {
+        filtered = this.bookTextSearchItems(bookTextQuery, relFiltered);
       } else if (ingredientEffectQuery) {
         filtered = this.ingredientEffectSearchItems(ingredientEffectKey, all);
       } else if (alchemyEffectQuery) {
@@ -332,7 +338,7 @@ export function withLibraryRenderValues(Base) {
           );
         });
       }
-      this._queryCache = { items: relFiltered, query: q, colorKey, inventoryKey, effectKey, ingredientEffectKey, alchemyEffectKey, enchantEffectKey, spellEffectKey, vanillaItems: this._vanillaItems, filtered };
+      this._queryCache = { items: relFiltered, query: q, colorKey, inventoryKey, bookTextKey, effectKey, ingredientEffectKey, alchemyEffectKey, enchantEffectKey, spellEffectKey, vanillaItems: this._vanillaItems, filtered };
     }
 
     const detailAvailable = active !== 'All';
@@ -486,7 +492,9 @@ export function withLibraryRenderValues(Base) {
       emptyCopy = 'Clear a table filter or broaden the filters above.';
     } else if (rawQuery) {
       emptyTitle = 'No matching records.';
-      emptyCopy = ingredientEffectQuery
+      emptyCopy = bookTextQuery
+        ? 'No book text matches "' + bookTextQuery + '".'
+        : (ingredientEffectQuery
         ? 'No ingredient effect matches "' + ingredientEffectQuery + '".'
         : (alchemyEffectQuery
           ? 'No alchemy effect matches "' + alchemyEffectQuery + '".'
@@ -496,7 +504,7 @@ export function withLibraryRenderValues(Base) {
               ? 'No enchantment effect matches "' + enchantEffectQuery + '".'
               : (effectQuery
                 ? 'No ingredient, alchemy, spell, or enchantment effect matches "' + effectQuery + '".'
-                : 'No object ID, name, mesh, or light color matches "' + rawQuery + '".'))));
+                : 'No object ID, name, mesh, or light color matches "' + rawQuery + '".')))));
     } else if (hasFilterWithoutSearch) {
       emptyTitle = 'No matching thumbnails.';
       emptyCopy = 'Try clearing a source, type, tag, release, or tileset filter.';
@@ -512,7 +520,7 @@ export function withLibraryRenderValues(Base) {
     const searchModeMenu = this.searchModeDefs()
       .filter(mode => mode.key === '' || allowedSearchModes[mode.key])
       .map(mode => {
-        const on = mode.key === selectedSearchMode;
+        const on = mode.key === displayedSearchMode;
         return {
           key: mode.key,
           label: mode.label,
@@ -531,8 +539,9 @@ export function withLibraryRenderValues(Base) {
       enchant: 'Search enchantment effect names',
       inventory: 'Search content owner IDs',
       color: 'Search light colors by hex',
+      text: 'Search book text',
     };
-    const searchPlaceholder = searchPlaceholderMap[selectedSearchMode] || 'Search ID, name, mesh, or light color';
+    const searchPlaceholder = searchPlaceholderMap[displayedSearchMode] || 'Search ID, name, mesh, or light color';
 
     const tilesetOptions = tilesets.map(set => ({ key: set.key, label: set.label }));
     const activeSubsetDef = activeTileset && validSubset !== 'all'
@@ -1026,7 +1035,7 @@ export function withLibraryRenderValues(Base) {
       query: this.state.query || '',
       hasQuery: !!(rawQuery || selectedSearchMode),
       searchPlaceholder,
-      searchModeLabel: this.searchModeLabel(selectedSearchMode),
+      searchModeLabel: this.searchModeLabel(displayedSearchMode),
       searchModeOpen: !!this.state.searchModeOpen,
       searchModeChevronDeg: this.state.searchModeOpen ? '180' : '0',
       searchModeMenu,

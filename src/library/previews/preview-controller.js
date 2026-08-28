@@ -94,9 +94,18 @@ export function withLibraryPreviews(Base) {
     if (!record || this.labelType(record.type).toLowerCase() !== 'book') return null;
     const key = String(record.id || '').trim().toLowerCase();
     const ref = key ? (wikiBooks || Object.create(null))[key] : null;
-    if (!ref) return null;
+    const searchText = String(record.text || '').trim();
+    if (!ref) {
+      return searchText ? {
+        source: 'record',
+        title: record.name || record.id || 'Book',
+        text: searchText,
+        searchText,
+      } : null;
+    }
     return Object.assign({}, ref, {
       title: record.name || ref.title || record.id || ref.file,
+      searchText: searchText || ref.searchText || '',
     });
   }
 
@@ -135,6 +144,7 @@ export function withLibraryPreviews(Base) {
       title: record.name || id,
       uespTitle: title,
       wikiUrl: this.uespPageUrl(title),
+      searchText: String(record.text || '').trim(),
     };
   }
 
@@ -597,7 +607,7 @@ export function withLibraryPreviews(Base) {
 
   fetchBookPreview(item) {
     const ref = item && item.bookRef;
-    if (ref && ref.source === 'plugin') {
+    if (ref && (ref.source === 'plugin' || ref.source === 'record')) {
       const blocks = this.pluginBookBlocks(ref.text || '');
       return Promise.resolve({
         id: item.id || '',
@@ -606,7 +616,7 @@ export function withLibraryPreviews(Base) {
         sourceUrl: '',
         loading: false,
         error: '',
-        blocks: blocks.length ? blocks : [{ isParagraph: true, text: 'No readable text was found in this plugin record.' }],
+        blocks: blocks.length ? blocks : [{ isParagraph: true, text: 'No readable text was found in this record.' }],
       });
     }
     if (ref && ref.source === 'uesp') return this.fetchUespBookPreview(item, ref);

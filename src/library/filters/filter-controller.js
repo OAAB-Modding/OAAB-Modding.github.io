@@ -199,6 +199,7 @@ export function withLibraryFilters(Base) {
       { key: 'spell', label: 'SpellEffect', kind: 'Effect' },
       { key: 'enchant', label: 'EnchantEffect', kind: 'Effect' },
       { key: 'inventory', label: 'Contents', kind: 'ID' },
+      { key: 'text', label: 'Text', kind: 'Text' },
     ];
   }
 
@@ -208,7 +209,7 @@ export function withLibraryFilters(Base) {
     return found ? found.label : defs[0].label;
   }
 
-  allowedSearchModesForItems(items) {
+  allowedSearchModesForItems(items, type) {
     const scope = Array.isArray(items) ? items : [];
     const allowed = { '': true };
     const hasIngredient = scope.some(x => x && Array.isArray(x.effects) && x.effects.length);
@@ -217,6 +218,9 @@ export function withLibraryFilters(Base) {
     const hasEnchant = scope.some(x => x && x.detailKind !== 'spell' && x.enchantment && Array.isArray(x.enchantment.effects) && x.enchantment.effects.length);
     const hasInventory = scope.some(x => x && x.hasContents && x.contentIds && x.contentIds.length);
     const hasColor = scope.some(x => x && (x.lightHex || x.lightRgb));
+    const bookScope = String(type || '').trim().toLowerCase() === 'book' || (
+      !type && scope.length > 0 && scope.every(x => x && String(x.type || '').trim().toLowerCase() === 'book')
+    );
     if (hasColor) allowed.color = true;
     if (hasIngredient || hasAlchemy || hasSpell || hasEnchant) allowed.effect = true;
     if (hasIngredient) allowed.ingredient = true;
@@ -224,6 +228,7 @@ export function withLibraryFilters(Base) {
     if (hasSpell) allowed.spell = true;
     if (hasEnchant) allowed.enchant = true;
     if (hasInventory) allowed.inventory = true;
+    if (bookScope) allowed.text = true;
     return allowed;
   }
 
@@ -231,13 +236,18 @@ export function withLibraryFilters(Base) {
     const d = this.state.data;
     const all = (d && d.items) || [];
     const scope = type === 'All' ? all : all.filter(x => x.type === type);
-    return this.allowedSearchModesForItems(scope);
+    return this.allowedSearchModesForItems(scope, type);
   }
 
   activeSearchMode(rawQuery, selectedMode, allowedModes) {
     const allowed = allowedModes || {};
     const mode = allowed[selectedMode] ? selectedMode : '';
-    return { mode, term: mode ? String(rawQuery || '').trim() : '', explicit: false };
+    const query = String(rawQuery || '').trim();
+    const explicitText = /^text\s*:\s*(.*)$/i.exec(query);
+    if (!mode && allowed.text && explicitText) {
+      return { mode: 'text', term: explicitText[1].trim(), explicit: true };
+    }
+    return { mode, term: mode ? query : '', explicit: false };
   }
 
   effectSuggestionLabels(items, mode) {
@@ -269,7 +279,9 @@ export function withLibraryFilters(Base) {
     const needle = term.toLowerCase();
     const source = Array.isArray(items) ? items : [];
     let values;
-    if (mode === 'effect' || mode === 'ingredient' || mode === 'alchemy' || mode === 'spell' || mode === 'enchant') {
+    if (mode === 'text') {
+      return [];
+    } else if (mode === 'effect' || mode === 'ingredient' || mode === 'alchemy' || mode === 'spell' || mode === 'enchant') {
       values = this.effectSuggestionLabels(source, mode);
     } else if (mode === 'color') {
       values = source
@@ -313,6 +325,48 @@ export function withLibraryFilters(Base) {
     const owner = byKey[String(ownerId || '').trim().toLowerCase()];
     if (!owner || !ownerSource[String(ownerId || '').trim().toLowerCase()]) return [];
     return [owner].concat((owner.contentIds || []).map(id => byKey[String(id || '').toLowerCase()]).filter(Boolean));
+  }
+
+  normalizeBookSearchText(value) {
+    const raw = String(value || '');
+    if (!raw) return '';
+    const withoutFrontmatter = raw.replace(/^---\s*\n[\s\S]*?\n---\s*(?:\n|$)/, ' ');
+    const plain = withoutFrontmatter
+      .replace(/!\[\[[^\]]+\]\]/g, ' ')
+      .replace(/!\[[^\]]*\]\([^)]+\)/g, ' ')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/<br\s*\/?>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/[*_~`>|]/g, ' ');
+    const decoded = typeof this.decodePluginBookEntities === 'function'
+      ? this.decodePluginBookEntities(plain)
+      : plain;
+    return decoded.replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  bookSearchText(item) {
+    if (!item) return '';
+    const cache = this._bookSearchTextCache || (this._bookSearchTextCache = new WeakMap());
+    if (cache.has(item)) return cache.get(item);
+    const ref = item.bookRef || {};
+    const recordRaw = item.record && item.record.raw ? item.record.raw : {};
+    const value = ref.searchText || ref.text || item.bookText || recordRaw.text || '';
+    const text = this.normalizeBookSearchText(value);
+    cache.set(item, text);
+    return text;
+  }
+
+  bookTextSearchItems(term, fallbackItems) {
+    const source = Array.isArray(fallbackItems)
+      ? fallbackItems
+      : (this._oaabItems || []).concat(this._vanillaItems || [], this._importedItems || []);
+    const needle = this.normalizeBookSearchText(term);
+    if (!needle) return source;
+    return source.filter(item => (
+      item && String(item.type || '').trim().toLowerCase() === 'book' &&
+      this.bookSearchText(item).indexOf(needle) !== -1
+    ));
   }
 
   effectSearchItems(effectKey, fallbackItems) {

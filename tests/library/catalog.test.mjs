@@ -33,3 +33,19 @@ test('built-in providers expose source-neutral records to production adapters', 
   assert.ok(requested.some(url => url.endsWith('Tribunal_filtered.json')));
   assert.ok(requested.some(url => url.endsWith('Bloodmoon_filtered.json')));
 });
+
+test('built-in providers preserve book text for text-mode search', async () => {
+  const fetchImpl = async (url) => responseFor([{
+    type: 'Book',
+    id: `${String(url).split('/').pop()}-book`,
+    name: 'Searchable Book',
+    text: 'Words preserved from the source plugin.',
+  }]);
+  const services = createLibraryServices({ fetchImpl });
+  const oaab = await services.providers.oaab.load();
+  const vanilla = await services.providers.vanilla.load();
+
+  assert.equal(oaab[0].raw.text, 'Words preserved from the source plugin.');
+  assert.equal(vanilla.length, 3);
+  assert.ok(vanilla.every(record => record.raw.text === 'Words preserved from the source plugin.'));
+});

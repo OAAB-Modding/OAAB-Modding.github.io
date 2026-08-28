@@ -175,7 +175,7 @@
           </button>
           <sc-if value="{{ searchModeOpen }}" hint-placeholder-val="{{ false }}">
             <div class="search-mode-menu">
-              <sc-for list="{{ searchModeMenu }}" as="mode" hint-placeholder-count="7">
+              <sc-for list="{{ searchModeMenu }}" as="mode" hint-placeholder-count="9">
                 <button type="button" data-search-mode="{{ mode.key }}" onClick="{{ pickSearchMode }}" class="search-mode-row">
                   <span style="color:{{ mode.labelColor }};" class="menu-label"><span style="background:{{ mode.checkBg }};border:1px solid {{ mode.checkBd }};" class="menu-check">{{ mode.mark }}</span>{{ mode.label }}</span>
                 </button>
