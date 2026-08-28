@@ -122,6 +122,12 @@ export class NifViewer {
     return result;
   }
 
+  cancelLoad(generation = this.loadGeneration) {
+    if (generation !== this.loadGeneration) return false;
+    this.loadGeneration += 1;
+    return true;
+  }
+
   setWireframe(visible) {
     this.wireframe = !!visible;
     this.modelRoot.traverse((object) => {

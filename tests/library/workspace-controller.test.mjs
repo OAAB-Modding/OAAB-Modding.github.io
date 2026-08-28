@@ -66,6 +66,151 @@ test('background thumbnails capture from their dedicated viewer', async () => {
   assert.equal(importedUrl, 'blob:background');
 });
 
+test('thumbnail persistence failures fall back to a session URL', async () => {
+  const workspace = workspaceWithoutConstructor();
+  const record = { id: 'demo', source: 'plugin:demo' };
+  let importedUrl = '';
+  let putAttempts = 0;
+  workspace.thumbnailCacheReadable = true;
+  workspace.thumbnailCacheWritable = true;
+  workspace.thumbnailCacheWarningLogged = false;
+  workspace.thumbnailCache = {
+    async get() { return null; },
+    async put() {
+      putAttempts += 1;
+      throw new DOMException('Storage quota exceeded', 'QuotaExceededError');
+    },
+    urlFor(entry) {
+      assert.match(entry.key, /^transient:grid:plugin:demo\0demo:/);
+      return 'blob:session';
+    },
+  };
+  workspace.component = {
+    setImportedThumbnail(value, url) {
+      assert.equal(value, record);
+      importedUrl = url;
+    },
+  };
+
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  try {
+    const committed = await workspace.cacheThumbnail(record, {
+      path: 'meshes/demo.nif',
+      asset: { source: 'local-files', lastModified: 42 },
+      assetFingerprint: 'asset-hash',
+      textureDiagnostics: [],
+    }, {
+      viewer: {
+        async captureThumbnail() { return new Blob(['session']); },
+      },
+    });
+    assert.equal(committed, true);
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.equal(putAttempts, 1);
+  assert.equal(workspace.thumbnailCacheWritable, false);
+  assert.equal(importedUrl, 'blob:session');
+});
+
+test('mounted viewport thumbnails jump ahead of previously revealed work', () => {
+  const workspace = workspaceWithoutConstructor();
+  const visibleRecord = { id: 'visible', source: 'plugin:demo', mesh: 'meshes/visible.nif' };
+  const nearRecord = { id: 'near', source: 'plugin:demo', mesh: 'meshes/near.nif' };
+  const staleRecord = { id: 'stale', source: 'plugin:demo', mesh: 'meshes/stale.nif' };
+  const visibleItem = { ...visibleRecord, imported: true, record: visibleRecord, thumbnailReady: false, thumbnailStatus: 'pending' };
+  const nearItem = { ...nearRecord, imported: true, record: nearRecord, thumbnailReady: false, thumbnailStatus: 'pending' };
+  const target = (id, top, bottom) => ({
+    isConnected: true,
+    dataset: { localThumbnailId: id },
+    getBoundingClientRect: () => ({ top, bottom, left: 0, right: 160 }),
+  });
+  const visibleTarget = target('visible', 220, 380);
+  const nearTarget = target('near', 700, 860);
+  const observed = [];
+  let disconnects = 0;
+  workspace.dialog = {};
+  workspace.doc = {
+    defaultView: { innerWidth: 1000, innerHeight: 600 },
+    documentElement: {},
+    querySelectorAll: () => [nearTarget, visibleTarget],
+  };
+  workspace.thumbnailGeneration = 4;
+  workspace.thumbnailQueueSequence = 1;
+  workspace.thumbnailQueue = [
+    { key: 'plugin:demo\0stale', record: staleRecord, generation: 4, attempts: 0, priority: 1, distance: 0, sequence: 0 },
+    { key: 'plugin:demo\0near', record: nearRecord, generation: 4, attempts: 0, priority: 1, distance: 100, sequence: 1 },
+  ];
+  workspace.thumbnailJobs = new Map([
+    ['plugin:demo\0stale', { record: staleRecord, status: 'queued', generation: 4, attempts: 0 }],
+    ['plugin:demo\0near', { record: nearRecord, status: 'queued', generation: 4, attempts: 0 }],
+  ]);
+  workspace.thumbnailObserver = {
+    disconnect() { disconnects += 1; },
+    observe(value) { observed.push(value); },
+  };
+  workspace.component = {
+    findCatalogItem(id) { return id === 'visible' ? visibleItem : id === 'near' ? nearItem : null; },
+    setImportedThumbnailStatus() {},
+  };
+  workspace.pumpThumbnailQueue = () => {};
+
+  workspace.syncImportedThumbnailTargets();
+
+  assert.equal(disconnects, 1);
+  assert.deepEqual(observed, [nearTarget]);
+  assert.deepEqual(workspace.thumbnailQueue.map(entry => entry.key), [
+    'plugin:demo\0visible',
+    'plugin:demo\0near',
+  ]);
+  assert.equal(workspace.thumbnailJobs.has('plugin:demo\0stale'), false);
+});
+
+test('an offscreen loading thumbnail loses commit priority when the viewport changes', () => {
+  const workspace = workspaceWithoutConstructor();
+  const cancelledGenerations = [];
+  const visibleRecord = { id: 'visible', source: 'plugin:demo', mesh: 'meshes/visible.nif' };
+  const offscreenRecord = { id: 'offscreen', source: 'plugin:demo', mesh: 'meshes/offscreen.nif' };
+  const items = new Map([
+    ['visible', { ...visibleRecord, imported: true, record: visibleRecord, thumbnailReady: false, thumbnailStatus: 'pending' }],
+    ['offscreen', { ...offscreenRecord, imported: true, record: offscreenRecord, thumbnailReady: false, thumbnailStatus: 'loading' }],
+  ]);
+  const target = (id, top, bottom) => ({
+    isConnected: true,
+    dataset: { localThumbnailId: id },
+    getBoundingClientRect: () => ({ top, bottom, left: 0, right: 160 }),
+  });
+  workspace.dialog = {};
+  workspace.doc = {
+    defaultView: { innerWidth: 1000, innerHeight: 600 },
+    documentElement: {},
+    querySelectorAll: () => [target('offscreen', 700, 860), target('visible', 100, 260)],
+  };
+  workspace.thumbnailGeneration = 2;
+  workspace.thumbnailQueue = [];
+  workspace.thumbnailJobs = new Map([[
+    'plugin:demo\0offscreen',
+    { record: offscreenRecord, status: 'loading', generation: 2, attempts: 0, viewerGeneration: 7 },
+  ]]);
+  workspace.thumbnailViewer = {
+    cancelLoad(generation) { cancelledGenerations.push(generation); },
+  };
+  workspace.thumbnailObserver = { disconnect() {}, observe() {} };
+  workspace.component = {
+    findCatalogItem(id) { return items.get(id); },
+    setImportedThumbnailStatus() {},
+  };
+  workspace.pumpThumbnailQueue = () => {};
+
+  workspace.syncImportedThumbnailTargets();
+
+  assert.equal(workspace.thumbnailJobs.has('plugin:demo\0offscreen'), false);
+  assert.equal(workspace.thumbnailJobs.get('plugin:demo\0visible').status, 'queued');
+  assert.deepEqual(cancelledGenerations, [7]);
+});
+
 test('background thumbnail jobs resolve textures before capture', async () => {
   const workspace = workspaceWithoutConstructor();
   const record = { id: 'demo', source: 'plugin:demo', mesh: 'meshes/demo.nif' };

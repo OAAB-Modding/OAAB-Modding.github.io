@@ -37,6 +37,10 @@ export class LibraryWorkspace {
     this.thumbnailPumpRunning = false;
     this.thumbnailGeneration = 0;
     this.thumbnailObserver = null;
+    this.thumbnailQueueSequence = 0;
+    this.thumbnailCacheReadable = true;
+    this.thumbnailCacheWritable = true;
+    this.thumbnailCacheWarningLogged = false;
     this.interactiveViewerActive = false;
     this.productionViewerActive = false;
     this.productionPreviewActive = false;
@@ -87,13 +91,19 @@ export class LibraryWorkspace {
       if (button) this.selectTab(button.dataset.workspaceTab);
     });
     this.thumbnailHost = this.dialog.querySelector('[data-thumbnail-render-host]');
-    if (globalThis.IntersectionObserver) {
-      this.thumbnailObserver = new IntersectionObserver(entries => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          this.thumbnailObserver.unobserve(entry.target);
-          this.queueImportedThumbnail(entry.target);
+    const ThumbnailObserver = this.doc.defaultView?.IntersectionObserver || globalThis.IntersectionObserver;
+    if (ThumbnailObserver) {
+      this.thumbnailObserver = new ThumbnailObserver(entries => {
+        const candidates = entries
+          .filter(entry => entry.isIntersecting && entry.target?.isConnected !== false)
+          .map(entry => ({ target: entry.target, ...this.thumbnailTargetMetrics(entry.target) }))
+          .sort(compareThumbnailPriority);
+        for (const candidate of candidates) {
+          const { target, ...priority } = candidate;
+          this.thumbnailObserver.unobserve(target);
+          this.queueImportedThumbnail(target, priority);
         }
+        this.prioritizeThumbnailQueue();
         this.pumpThumbnailQueue();
       }, { rootMargin: '240px' });
     }
@@ -695,7 +705,15 @@ export class LibraryWorkspace {
       rendererVersion: NIF_RENDERER_VERSION,
       variant,
     };
-    let cached = await this.thumbnailCache.get(identity);
+    let cached = null;
+    if (this.thumbnailCacheReadable !== false) {
+      try {
+        cached = await this.thumbnailCache.get(identity);
+      } catch (error) {
+        this.thumbnailCacheReadable = false;
+        this.reportThumbnailCacheFailure(error);
+      }
+    }
     if (!shouldCommit()) return null;
     if (!cached) {
       const options = captureOptions
@@ -703,13 +721,33 @@ export class LibraryWorkspace {
         : { includeGrid: false };
       const blob = await viewer.captureThumbnail(options);
       if (!shouldCommit()) return null;
-      cached = await this.thumbnailCache.put(identity, blob, {
-        recordId: record.id,
-        recordSource: record.source,
-        meshSourceFingerprint,
-      });
+      if (this.thumbnailCacheWritable !== false) {
+        try {
+          cached = await this.thumbnailCache.put(identity, blob, {
+            recordId: record.id,
+            recordSource: record.source,
+            meshSourceFingerprint,
+          });
+        } catch (error) {
+          // IndexedDB is only an acceleration layer. Quota pressure, private
+          // browsing restrictions, or a broken connection must not stop the
+          // renderer for every subsequent card in the session.
+          this.thumbnailCacheWritable = false;
+          this.reportThumbnailCacheFailure(error);
+        }
+      }
+      if (!cached) {
+        const key = `transient:${variant}:${thumbnailRecordKey(record)}:${identity.assetVersion}:${identity.sourceFingerprint}`;
+        cached = { ...identity, key, blob, url: this.thumbnailCache.urlFor({ key, blob }) };
+      }
     }
     return shouldCommit() ? cached : null;
+  }
+
+  reportThumbnailCacheFailure(error) {
+    if (this.thumbnailCacheWarningLogged) return;
+    this.thumbnailCacheWarningLogged = true;
+    console.warn('thumbnail persistence unavailable; using session thumbnails', error);
   }
 
   async cacheThumbnail(record, result, options = {}) {
@@ -725,54 +763,152 @@ export class LibraryWorkspace {
   }
 
   async findCachedThumbnail(record, variant = THUMBNAIL_VARIANT_GRID) {
+    if (this.thumbnailCacheReadable === false) return null;
     let path;
     try {
       path = normalizeAssetPath(record?.mesh, { root: 'meshes' });
     } catch {
       return null;
     }
-    const entries = await this.database.getThumbnailsByPath(path);
+    let entries;
+    try {
+      entries = await this.database.getThumbnailsByPath(path);
+    } catch (error) {
+      this.thumbnailCacheReadable = false;
+      this.reportThumbnailCacheFailure(error);
+      return null;
+    }
     const entry = newestThumbnailEntry(entries, record, path, variant);
     return entry ? { ...entry, url: this.thumbnailCache.urlFor(entry) } : null;
   }
 
   syncImportedThumbnailTargets() {
     if (!this.dialog) return;
-    const targets = [...this.doc.querySelectorAll('[data-local-thumbnail="true"]')];
-    let fallbackQueued = 0;
-    for (const target of targets) {
+    // Virtualized cards are frequently detached and replaced while scrolling.
+    // Rebuild observation from the mounted window so the observer cannot retain
+    // an ever-growing trail of old elements.
+    this.thumbnailObserver?.disconnect();
+    const candidatesByKey = new Map();
+    for (const target of this.doc.querySelectorAll('[data-local-thumbnail="true"]')) {
       const id = target.dataset.localThumbnailId || '';
       const item = this.component.findCatalogItem(id);
-      if (!item?.imported || !item.mesh || item.thumbnailReady) continue;
+      if (
+        !item?.imported
+        || !item.mesh
+        || item.thumbnailReady
+        || item.thumbnailStatus === 'failed'
+      ) continue;
       const record = item.record || item;
       const key = thumbnailRecordKey(record);
-      const job = this.thumbnailJobs.get(key);
-      const currentJob = job?.record === record && job.generation === this.thumbnailGeneration;
-      if (job && !currentJob) this.thumbnailJobs.delete(key);
-      if (currentJob && ['done', 'failed', 'loading'].includes(job.status)) continue;
-      if (this.thumbnailObserver) {
-        this.thumbnailObserver.observe(target);
-      } else if (fallbackQueued < 4) {
-        fallbackQueued += 1;
-        this.queueImportedThumbnail(target);
+      const candidate = { target, item, record, key, ...this.thumbnailTargetMetrics(target) };
+      const previous = candidatesByKey.get(key);
+      if (!previous || compareThumbnailPriority(candidate, previous) < 0) {
+        candidatesByKey.set(key, candidate);
       }
     }
+
+    const candidates = [...candidatesByKey.values()].sort(compareThumbnailPriority);
+    const activeKeys = new Set(candidates.map(candidate => candidate.key));
+    const visibleKeys = new Set(candidates.filter(candidate => candidate.priority === 0).map(candidate => candidate.key));
+
+    // Drop queued work that is no longer in the mounted virtual window. A
+    // loading job also loses permission to commit once it leaves the viewport;
+    // the current parse may finish, but its capture/cache work is skipped.
+    for (const [key, job] of this.thumbnailJobs) {
+      const candidate = candidatesByKey.get(key);
+      const currentJob = candidate
+        && job?.record === candidate.record
+        && job.generation === this.thumbnailGeneration;
+      const supersededByViewport = job?.status === 'loading'
+        && visibleKeys.size > 0
+        && !visibleKeys.has(key);
+      if (supersededByViewport && Number.isFinite(job.viewerGeneration)) {
+        this.thumbnailViewer?.cancelLoad?.(job.viewerGeneration);
+      }
+      if (
+        !currentJob
+        || !activeKeys.has(key)
+        || supersededByViewport
+        || job.status === 'done'
+        || job.status === 'failed'
+      ) this.thumbnailJobs.delete(key);
+    }
+    this.thumbnailQueue = this.thumbnailQueue.filter(entry => {
+      const job = this.thumbnailJobs.get(entry.key);
+      return activeKeys.has(entry.key)
+        && entry.generation === this.thumbnailGeneration
+        && job?.record === entry.record
+        && job?.status === 'queued';
+    });
+
+    const fallbackLimit = Math.max(4, visibleKeys.size);
+    let fallbackQueued = 0;
+    for (const candidate of candidates) {
+      this.updateThumbnailQueuePriority(candidate.key, candidate);
+      if (candidate.priority === 0) {
+        this.queueImportedThumbnail(candidate.target, candidate);
+      } else if (this.thumbnailObserver) {
+        this.thumbnailObserver.observe(candidate.target);
+      } else if (fallbackQueued < fallbackLimit) {
+        fallbackQueued += 1;
+        this.queueImportedThumbnail(candidate.target, candidate);
+      }
+    }
+    this.prioritizeThumbnailQueue();
     this.pumpThumbnailQueue();
   }
 
-  queueImportedThumbnail(target) {
+  thumbnailTargetMetrics(target) {
+    const rect = target?.getBoundingClientRect?.();
+    const win = this.doc?.defaultView || globalThis.window;
+    const width = Number(win?.innerWidth || this.doc?.documentElement?.clientWidth || 0);
+    const height = Number(win?.innerHeight || this.doc?.documentElement?.clientHeight || 0);
+    if (!rect || width <= 0 || height <= 0) return { priority: 0, distance: 0 };
+    const visible = rect.bottom > 0 && rect.right > 0 && rect.top < height && rect.left < width;
+    const center = (rect.top + rect.bottom) / 2;
+    const distance = visible
+      ? Math.abs(center - height / 2)
+      : rect.bottom <= 0 ? -rect.bottom : Math.max(0, rect.top - height);
+    return { priority: visible ? 0 : 1, distance };
+  }
+
+  updateThumbnailQueuePriority(key, { priority = 1, distance = Number.MAX_SAFE_INTEGER } = {}) {
+    const entry = this.thumbnailQueue.find(candidate => candidate.key === key);
+    if (!entry) return;
+    entry.priority = priority;
+    entry.distance = distance;
+  }
+
+  prioritizeThumbnailQueue() {
+    this.thumbnailQueue.sort(compareThumbnailPriority);
+  }
+
+  queueImportedThumbnail(target, priority = this.thumbnailTargetMetrics(target)) {
+    if (target?.isConnected === false) return;
     const id = target?.dataset?.localThumbnailId || '';
     if (!id) return;
     const item = this.component.findCatalogItem(id);
-    if (!item?.imported || !item.mesh || item.thumbnailReady) return;
+    if (!item?.imported || !item.mesh || item.thumbnailReady || item.thumbnailStatus === 'failed') return;
     const record = item.record || item;
     const key = thumbnailRecordKey(record);
     const existing = this.thumbnailJobs.get(key);
-    if (existing?.record === record && existing.generation === this.thumbnailGeneration) return;
+    if (existing?.record === record && existing.generation === this.thumbnailGeneration) {
+      if (existing.status === 'queued') this.updateThumbnailQueuePriority(key, priority);
+      return;
+    }
     if (existing) this.thumbnailJobs.delete(key);
     const generation = this.thumbnailGeneration;
+    this.thumbnailQueueSequence = (this.thumbnailQueueSequence || 0) + 1;
     this.thumbnailJobs.set(key, { record, status: 'queued', generation, attempts: 0 });
-    this.thumbnailQueue.push({ key, record, generation, attempts: 0 });
+    this.thumbnailQueue.push({
+      key,
+      record,
+      generation,
+      attempts: 0,
+      priority: priority.priority ?? 1,
+      distance: priority.distance ?? Number.MAX_SAFE_INTEGER,
+      sequence: this.thumbnailQueueSequence,
+    });
     this.component.setImportedThumbnailStatus?.(record, 'pending');
   }
 
@@ -784,9 +920,19 @@ export class LibraryWorkspace {
     this.thumbnailJobs.delete(key);
     this.thumbnailQueue = this.thumbnailQueue.filter(entry => entry.key !== key);
     const generation = this.thumbnailGeneration;
+    this.thumbnailQueueSequence = (this.thumbnailQueueSequence || 0) + 1;
     this.thumbnailJobs.set(key, { record, status: 'queued', generation, attempts: 0 });
-    this.thumbnailQueue.push({ key, record, generation, attempts: 0 });
+    this.thumbnailQueue.push({
+      key,
+      record,
+      generation,
+      attempts: 0,
+      priority: 0,
+      distance: 0,
+      sequence: this.thumbnailQueueSequence,
+    });
     this.component.setImportedThumbnailStatus?.(record, 'pending');
+    this.prioritizeThumbnailQueue();
     this.pumpThumbnailQueue();
   }
 
@@ -834,7 +980,13 @@ export class LibraryWorkspace {
         };
         try {
           const viewer = await this.ensureThumbnailViewer();
-          const result = await viewer.load(entry.record.mesh, { resolveTextures: true });
+          if (!isCurrent()) continue;
+          const loadPromise = viewer.load(entry.record.mesh, { resolveTextures: true });
+          const loadingJob = this.thumbnailJobs.get(entry.key);
+          if (loadingJob && isCurrent() && Number.isFinite(viewer.loadGeneration)) {
+            loadingJob.viewerGeneration = viewer.loadGeneration;
+          }
+          const result = await loadPromise;
           const committed = await this.cacheThumbnail(entry.record, result, { viewer, shouldCommit: isCurrent });
           if (committed && isCurrent()) {
             this.thumbnailJobs.set(entry.key, {
@@ -855,6 +1007,7 @@ export class LibraryWorkspace {
                 attempts,
               });
               this.thumbnailQueue.push({ ...entry, attempts });
+              this.prioritizeThumbnailQueue();
               this.component.setImportedThumbnailStatus?.(entry.record, 'pending', error.message);
             } else {
               this.thumbnailJobs.set(entry.key, {
@@ -1085,6 +1238,9 @@ export class LibraryWorkspace {
 
   async clearThumbnails() {
     await this.thumbnailCache.clear();
+    this.thumbnailCacheReadable = true;
+    this.thumbnailCacheWritable = true;
+    this.thumbnailCacheWarningLogged = false;
     this.refreshImportedThumbnailsForAssetChange();
     this.status('Generated thumbnail cache cleared.');
   }
@@ -1101,6 +1257,9 @@ export class LibraryWorkspace {
     }
     this.component.setLibrarySourceSelection?.(sourceSelection);
     this.thumbnailCache.revokeUrls();
+    this.thumbnailCacheReadable = true;
+    this.thumbnailCacheWritable = true;
+    this.thumbnailCacheWarningLogged = false;
     this.applyLoadOrder();
     this.render();
     this.status('All local Library cache data cleared; built-in static data is unchanged.');
@@ -1160,6 +1319,15 @@ function sourceName(record) {
 
 function thumbnailRecordKey(record) {
   return `${record?.source || ''}\0${String(record?.id || '').toLowerCase()}`;
+}
+
+function compareThumbnailPriority(left, right) {
+  const priority = (left?.priority ?? 1) - (right?.priority ?? 1);
+  if (priority) return priority;
+  const distance = (left?.distance ?? Number.MAX_SAFE_INTEGER)
+    - (right?.distance ?? Number.MAX_SAFE_INTEGER);
+  if (distance) return distance;
+  return (left?.sequence ?? 0) - (right?.sequence ?? 0);
 }
 
 function newestThumbnailEntry(entries, record, path, variant) {
