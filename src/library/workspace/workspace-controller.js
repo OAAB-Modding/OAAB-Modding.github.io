@@ -75,6 +75,10 @@ export class LibraryWorkspace {
     this.dialog.innerHTML = workspaceMarkup();
     this.doc.body.append(this.dialog);
     this.dialog.addEventListener('click', (event) => {
+      const cacheActions = this.dialog.querySelector('.library-cache-actions');
+      if (cacheActions?.open && !event.target.closest?.('.library-cache-actions')) {
+        cacheActions.open = false;
+      }
       if (event.target === this.dialog || event.target.closest('[data-workspace-close]')) this.close();
     });
     this.dialog.querySelector('[data-open-plugin]').addEventListener('click', () => this.pluginInput.click());
