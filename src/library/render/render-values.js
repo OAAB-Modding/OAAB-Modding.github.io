@@ -916,7 +916,6 @@ export function withLibraryRenderValues(Base) {
         const mode = e.currentTarget?.dataset?.liveMode || 'preview';
         if (!['preview', '3d', 'details'].includes(mode)) return;
         if (mode !== 'preview' && !this.state.renderPreview?.mesh) return;
-        if (mode === '3d' && this.state.renderPreview?.vanilla && !this._workspace?.assetSources?.length) return;
         this.setState({ renderPreviewMode: mode });
       },
       openEnchantmentDetails: (e) => {
@@ -1339,7 +1338,6 @@ export function withLibraryRenderValues(Base) {
       showRenderPreview: !!this.state.renderPreview,
       renderPreviewHasImage: !!renderPreview?.src,
       renderPreviewHasMesh: !!renderPreview?.mesh,
-      renderPreview3dDisabled: !!(renderPreview?.vanilla && !this._workspace?.assetSources?.length),
       renderPreview3dTitle: renderPreview?.vanilla && !this._workspace?.assetSources?.length
         ? 'Add a Morrowind Data Files folder or BSA through Local files to enable 3D'
         : 'Inspect this mesh in 3D',

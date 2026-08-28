@@ -360,6 +360,7 @@ export class NifViewer {
       if (meshPacket.colors.length / 4 === meshPacket.vertices.length / 3) {
         geometry.setAttribute('color', new THREE.BufferAttribute(meshPacket.colors, 4));
       }
+      const hasVertexColors = geometry.hasAttribute('color');
 
       const rawTexture = meshPacket.material.texture;
       let texturePath = null;
@@ -367,7 +368,12 @@ export class NifViewer {
         if (rawTexture) texturePath = normalizeAssetPath(rawTexture, { root: 'textures' });
       } catch {}
       const texture = texturePath ? textures.get(texturePath) : null;
-      const material = this.#createMaterial(meshPacket.material, texture, !!rawTexture);
+      const material = this.#createMaterial(
+        meshPacket.material,
+        texture,
+        !!rawTexture,
+        hasVertexColors,
+      );
       const mesh = new THREE.Mesh(geometry, material);
       mesh.name = meshPacket.name || meshPacket.blockType;
       mesh.matrix.fromArray(meshPacket.transform);
@@ -468,12 +474,21 @@ export class NifViewer {
     }
   }
 
-  #createMaterial(packet, texture, expectedTexture) {
+  #createMaterial(packet, texture, expectedTexture, hasVertexColors) {
     const diffuse = packet.diffuse || [1, 1, 1];
+    const vertexColorMode = hasVertexColors ? packet.vertexColorMode : 'Ignore';
+    const vertexColorLightingMode = packet.vertexColorLightingMode || 'EmissiveAmbientDiffuse';
+    const diffuseVertexColors = vertexColorMode === 'AmbientDiffuse'
+      && vertexColorLightingMode !== 'Emissive';
+    const emissiveVertexColors = vertexColorMode === 'Emissive';
+    const emissiveOnlyLighting = vertexColorMode === 'AmbientDiffuse'
+      && vertexColorLightingMode === 'Emissive';
     const material = new THREE.MeshPhongMaterial({
       color: expectedTexture && !texture
         ? FALLBACK_COLOR
-        : new THREE.Color().setRGB(diffuse[0], diffuse[1], diffuse[2], THREE.LinearSRGBColorSpace),
+        : emissiveOnlyLighting
+          ? 0x000000
+          : new THREE.Color().setRGB(diffuse[0], diffuse[1], diffuse[2], THREE.LinearSRGBColorSpace),
       emissive: new THREE.Color().setRGB(...(packet.emissive || [0, 0, 0]), THREE.LinearSRGBColorSpace),
       specular: new THREE.Color().setRGB(...(packet.specular || [0, 0, 0]), THREE.LinearSRGBColorSpace),
       shininess: THREE.MathUtils.clamp(packet.shininess || 0, 0, 100),
@@ -483,12 +498,13 @@ export class NifViewer {
       alphaTest: packet.alphaTest ? Math.max(packet.alphaThreshold || 0, 1 / 255) : 0,
       depthTest: packet.depthTest !== false,
       depthWrite: packet.depthWrite !== false,
-      vertexColors: packet.vertexColorMode !== 'Ignore',
+      vertexColors: diffuseVertexColors || emissiveVertexColors,
       wireframe: this.wireframe,
       side: sideForDrawMode(packet.drawMode),
     });
 
     if (texture) applyTextureMapSettings(texture, packet.clampMode, packet.filterMode);
+    if (emissiveVertexColors) applyEmissiveVertexColors(material);
     if (packet.alphaBlend) applyBlendMode(material, packet.sourceBlend, packet.destinationBlend);
     return material;
   }
@@ -557,6 +573,21 @@ function applyBlendMode(material, source, destination) {
   material.blendEquation = THREE.AddEquation;
   material.blendSrc = factors[source] ?? THREE.SrcAlphaFactor;
   material.blendDst = factors[destination] ?? THREE.OneMinusSrcAlphaFactor;
+}
+
+function applyEmissiveVertexColors(material) {
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <color_fragment>',
+      `#if defined( USE_COLOR ) || defined( USE_COLOR_ALPHA )
+        totalEmissiveRadiance = vColor.rgb;
+        #ifdef USE_COLOR_ALPHA
+          diffuseColor.a *= vColor.a;
+        #endif
+      #endif`,
+    );
+  };
+  material.customProgramCacheKey = () => 'nif-emissive-vertex-colors-v1';
 }
 
 function animationTime(animation, elapsed) {

@@ -47,3 +47,19 @@ test('falls through missing sources and reports all attempts', async () => {
     (error) => error instanceof AssetResolutionError && error.attempts.length === 2,
   );
 });
+
+test('resolves NIF tga references to installed dds replacements within source priority', async () => {
+  const resolver = new AssetResolver()
+    .addSource(new MemorySource('vanilla', {
+      'textures/tx_wood.tga': new Uint8Array([1]).buffer,
+    }), 1)
+    .addSource(new MemorySource('data-files', {
+      'textures/tx_wood.dds': new Uint8Array([2]).buffer,
+    }), 10);
+
+  const result = await resolver.resolve('textures\\tx_wood.tga');
+  assert.equal(result.path, 'textures/tx_wood.dds');
+  assert.equal(result.requestedPath, 'textures/tx_wood.tga');
+  assert.equal(result.source, 'data-files');
+  assert.deepEqual([...new Uint8Array(result.bytes)], [2]);
+});

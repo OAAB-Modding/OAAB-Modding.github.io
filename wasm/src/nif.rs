@@ -193,6 +193,7 @@ pub struct MaterialPacket {
     pub depth_test: bool,
     pub depth_write: bool,
     pub vertex_color_mode: String,
+    pub vertex_color_lighting_mode: String,
 }
 
 impl Default for MaterialPacket {
@@ -218,6 +219,7 @@ impl Default for MaterialPacket {
             depth_test: true,
             depth_write: true,
             vertex_color_mode: "Ignore".to_owned(),
+            vertex_color_lighting_mode: "EmissiveAmbientDiffuse".to_owned(),
         }
     }
 }
@@ -282,7 +284,15 @@ pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
     };
 
     for root in &stream.roots {
-        walk_object(&mut context, root.key, Affine3A::IDENTITY, false, 0, &[]);
+        walk_object(
+            &mut context,
+            root.key,
+            Affine3A::IDENTITY,
+            false,
+            0,
+            &[],
+            &[],
+        );
     }
     extract_animations(&mut context);
 
@@ -346,6 +356,7 @@ fn walk_object(
     parent_collision: bool,
     depth: usize,
     animation_targets: &[String],
+    inherited_properties: &[NiKey],
 ) {
     if depth > 256 {
         context
@@ -380,6 +391,8 @@ fn walk_object(
         if !node.name.is_empty() {
             child_targets.push(node.name.clone());
         }
+        let mut child_properties = inherited_properties.to_vec();
+        child_properties.extend(node.properties.iter().map(|property| property.key));
         for child in &node.children {
             walk_object(
                 context,
@@ -388,6 +401,7 @@ fn walk_object(
                 collision,
                 depth + 1,
                 &child_targets,
+                &child_properties,
             );
         }
         context.visited.remove(&key);
@@ -401,6 +415,7 @@ fn walk_object(
             parent_transform,
             parent_collision,
             animation_targets,
+            inherited_properties,
         );
         context.visited.remove(&key);
         return;
@@ -413,6 +428,7 @@ fn walk_object(
             parent_transform,
             parent_collision,
             animation_targets,
+            inherited_properties,
         );
         context.visited.remove(&key);
         return;
@@ -425,6 +441,7 @@ fn walk_object(
             "NiAutoNormalParticles",
             parent_transform,
             animation_targets,
+            inherited_properties,
         );
         context.visited.remove(&key);
         return;
@@ -437,6 +454,7 @@ fn walk_object(
             "NiRotatingParticles",
             parent_transform,
             animation_targets,
+            inherited_properties,
         );
         context.visited.remove(&key);
         return;
@@ -449,6 +467,7 @@ fn walk_object(
             "NiParticles",
             parent_transform,
             animation_targets,
+            inherited_properties,
         );
     }
     context.visited.remove(&key);
@@ -460,6 +479,7 @@ fn add_tri_shape(
     parent_transform: Affine3A,
     parent_collision: bool,
     animation_targets: &[String],
+    inherited_properties: &[NiKey],
 ) {
     let geometry: &NiGeometry = shape.as_ref();
     let Some(data) = context
@@ -486,6 +506,7 @@ fn add_tri_shape(
         parent_transform,
         parent_collision,
         animation_targets,
+        inherited_properties,
     );
 }
 
@@ -495,6 +516,7 @@ fn add_tri_strips(
     parent_transform: Affine3A,
     parent_collision: bool,
     animation_targets: &[String],
+    inherited_properties: &[NiKey],
 ) {
     let geometry: &NiGeometry = strips.as_ref();
     let Some(data) = context
@@ -541,6 +563,7 @@ fn add_tri_strips(
         parent_transform,
         parent_collision,
         animation_targets,
+        inherited_properties,
     );
 }
 
@@ -554,13 +577,14 @@ fn add_mesh<T>(
     parent_transform: Affine3A,
     parent_collision: bool,
     animation_targets: &[String],
+    inherited_properties: &[NiKey],
 ) where
     T: AsRef<NiAVObject> + AsRef<NiGeometry> + AsRef<NiObjectNET>,
 {
     let av_object: &NiAVObject = shape.as_ref();
     let geometry: &NiGeometry = shape.as_ref();
     let object_net: &NiObjectNET = shape.as_ref();
-    let material = material_packet(context, av_object);
+    let material = material_packet(context, av_object, inherited_properties);
     let requested_uv_set = material.uv_set;
     let uvs = data
         .uv_set(requested_uv_set)
@@ -625,6 +649,7 @@ fn add_particles<T>(
     block_type: &str,
     parent_transform: Affine3A,
     animation_targets: &[String],
+    inherited_properties: &[NiKey],
 ) where
     T: AsRef<NiAVObject> + AsRef<NiGeometry> + AsRef<NiObjectNET>,
 {
@@ -658,7 +683,7 @@ fn add_particles<T>(
     } else {
         data.sizes.iter().take(active).copied().collect()
     };
-    let material = material_packet(context, av_object);
+    let material = material_packet(context, av_object, inherited_properties);
     context.particles.push(ParticlePacket {
         name: object_net.name.clone(),
         block_type: block_type.to_owned(),
@@ -862,63 +887,86 @@ fn animation_target_names(ancestors: &[String], name: &str) -> Vec<String> {
     targets
 }
 
-fn material_packet(context: &mut ParseContext<'_>, object: &NiAVObject) -> MaterialPacket {
+fn material_packet(
+    context: &mut ParseContext<'_>,
+    object: &NiAVObject,
+    inherited_properties: &[NiKey],
+) -> MaterialPacket {
     let mut packet = MaterialPacket::default();
 
-    if let Some(material) = object.get_property::<NiMaterialProperty>(context.stream) {
-        packet.ambient = material.ambient_color.to_array();
-        packet.diffuse = material.diffuse_color.to_array();
-        packet.specular = material.specular_color.to_array();
-        packet.emissive = material.emissive_color.to_array();
-        packet.shininess = material.shine;
-        packet.opacity = material.alpha.clamp(0.0, 1.0);
-    }
-
-    if let Some(texturing) = object.get_property::<NiTexturingProperty>(context.stream)
-        && let Some(Some(texture_map)) = texturing.texture_maps.first()
-    {
-        let map: &NifTextureMap = match texture_map {
-            TextureMap::Map(map) => map,
-            TextureMap::BumpMap(map) => &map.base,
+    // NetImmerse properties cascade down the scene graph. Apply ancestors
+    // first and the geometry's own properties last, matching Morrowind's
+    // override behavior for drawable state.
+    let property_keys = inherited_properties
+        .iter()
+        .copied()
+        .chain(object.properties.iter().map(|property| property.key));
+    for key in property_keys {
+        let Some(property) = context.stream.objects.get(key) else {
+            continue;
         };
-        packet.uv_set = map.texture_index;
-        packet.clamp_mode = format!("{:?}", map.clamp_mode);
-        packet.filter_mode = format!("{:?}", map.filter_mode);
 
-        if let Some(texture) = context.stream.get(map.texture) {
-            match &texture.source {
-                TextureSource::External(path) if !path.trim().is_empty() => {
-                    packet.texture = Some(path.clone());
-                    context.textures.insert(path.clone());
-                }
-                TextureSource::Internal(_) => context
-                    .warnings
-                    .push("Embedded base textures are not rendered yet".to_owned()),
-                _ => {}
-            }
+        if let Ok(material) = <&NiMaterialProperty>::try_from(property) {
+            packet.ambient = material.ambient_color.to_array();
+            packet.diffuse = material.diffuse_color.to_array();
+            packet.specular = material.specular_color.to_array();
+            packet.emissive = material.emissive_color.to_array();
+            packet.shininess = material.shine;
+            packet.opacity = material.alpha.clamp(0.0, 1.0);
+            continue;
         }
-    }
 
-    if let Some(alpha) = object.get_property::<NiAlphaProperty>(context.stream) {
-        packet.alpha_blend = alpha.alpha_blending();
-        packet.source_blend = format!("{:?}", alpha.src_blend_mode());
-        packet.destination_blend = format!("{:?}", alpha.dst_blend_mode());
-        packet.alpha_test = alpha.alpha_testing();
-        packet.alpha_test_mode = format!("{:?}", alpha.test_mode());
-        packet.alpha_threshold = f32::from(alpha.test_ref) / 255.0;
-    }
+        if let Ok(texturing) = <&NiTexturingProperty>::try_from(property) {
+            if let Some(Some(texture_map)) = texturing.texture_maps.first() {
+                let map: &NifTextureMap = match texture_map {
+                    TextureMap::Map(map) => map,
+                    TextureMap::BumpMap(map) => &map.base,
+                };
+                packet.uv_set = map.texture_index;
+                packet.clamp_mode = format!("{:?}", map.clamp_mode);
+                packet.filter_mode = format!("{:?}", map.filter_mode);
 
-    if let Some(stencil) = object.get_property::<NiStencilProperty>(context.stream) {
-        packet.draw_mode = format!("{:?}", stencil.draw_mode);
-    }
+                if let Some(texture) = context.stream.get(map.texture) {
+                    match &texture.source {
+                        TextureSource::External(path) if !path.trim().is_empty() => {
+                            packet.texture = Some(path.clone());
+                            context.textures.insert(path.clone());
+                        }
+                        TextureSource::Internal(_) => context
+                            .warnings
+                            .push("Embedded base textures are not rendered yet".to_owned()),
+                        _ => {}
+                    }
+                }
+            }
+            continue;
+        }
 
-    if let Some(z_buffer) = object.get_property::<NiZBufferProperty>(context.stream) {
-        packet.depth_test = z_buffer.z_buffer_test();
-        packet.depth_write = z_buffer.z_buffer_write();
-    }
+        if let Ok(alpha) = <&NiAlphaProperty>::try_from(property) {
+            packet.alpha_blend = alpha.alpha_blending();
+            packet.source_blend = format!("{:?}", alpha.src_blend_mode());
+            packet.destination_blend = format!("{:?}", alpha.dst_blend_mode());
+            packet.alpha_test = alpha.alpha_testing();
+            packet.alpha_test_mode = format!("{:?}", alpha.test_mode());
+            packet.alpha_threshold = f32::from(alpha.test_ref) / 255.0;
+            continue;
+        }
 
-    if let Some(vertex_color) = object.get_property::<NiVertexColorProperty>(context.stream) {
-        packet.vertex_color_mode = format!("{:?}", vertex_color.source_vertex_mode);
+        if let Ok(stencil) = <&NiStencilProperty>::try_from(property) {
+            packet.draw_mode = format!("{:?}", stencil.draw_mode);
+            continue;
+        }
+
+        if let Ok(z_buffer) = <&NiZBufferProperty>::try_from(property) {
+            packet.depth_test = z_buffer.z_buffer_test();
+            packet.depth_write = z_buffer.z_buffer_write();
+            continue;
+        }
+
+        if let Ok(vertex_color) = <&NiVertexColorProperty>::try_from(property) {
+            packet.vertex_color_mode = format!("{:?}", vertex_color.source_vertex_mode);
+            packet.vertex_color_lighting_mode = format!("{:?}", vertex_color.lighting_mode);
+        }
     }
 
     packet
@@ -941,10 +989,11 @@ fn looks_like_collision(name: &str) -> bool {
 mod advanced_tests {
     use super::*;
     use tes3::nif::{
-        BoneData, NiAutoNormalParticlesData, NiFlipController, NiKeyframeData, NiLinFloatKey,
-        NiLinPosKey, NiLinRotKey, NiSkinData, NiSkinInstance, NiSkinPartition, NiSourceTexture,
-        NiTriShape, NiTriShapeData, NiUVData, NiVisData, NiVisKey, TextureSource,
-        glam::{Quat, vec3},
+        BoneData, LightingMode, NiAutoNormalParticlesData, NiFlipController, NiKeyframeData,
+        NiLinFloatKey, NiLinPosKey, NiLinRotKey, NiSkinData, NiSkinInstance, NiSkinPartition,
+        NiSourceTexture, NiTriShape, NiTriShapeData, NiUVData, NiVisData, NiVisKey,
+        SourceVertexMode, TextureSource,
+        glam::{Quat, vec3, vec4},
     };
 
     #[allow(clippy::field_reassign_with_default)]
@@ -953,6 +1002,16 @@ mod advanced_tests {
         let mut stream = NiStream::new();
         let node = stream.insert(NiNode::default());
         stream.get_mut(node).unwrap().name = "AnimatedRoot".to_owned();
+        let vertex_color_property = stream.insert(NiVertexColorProperty {
+            source_vertex_mode: SourceVertexMode::AmbientDiffuse,
+            lighting_mode: LightingMode::EmissiveAmbientDiffuse,
+            ..Default::default()
+        });
+        stream
+            .get_mut(node)
+            .unwrap()
+            .properties
+            .push(vertex_color_property.cast());
 
         let mut uv_data = NiUVData::default();
         uv_data.u_offset_data.keys = NiFloatKey::LinKey(vec![NiLinFloatKey {
@@ -1043,6 +1102,11 @@ mod advanced_tests {
             vec3(1.0, 0.0, 0.0),
             vec3(0.0, 1.0, 0.0),
         ];
+        shape_data.vertex_colors = vec![
+            vec4(1.0, 0.0, 0.0, 1.0),
+            vec4(0.0, 1.0, 0.0, 1.0),
+            vec4(0.0, 0.0, 1.0, 1.0),
+        ];
         shape_data.triangles = vec![[0, 1, 2]];
         let shape_data = stream.insert(shape_data);
         let mut shape = NiTriShape::default();
@@ -1063,6 +1127,15 @@ mod advanced_tests {
         assert!(packet.meshes[0].skinned);
         assert_eq!(packet.meshes[0].bone_count, 1);
         assert_eq!(packet.meshes[0].skin_partition_count, 1);
+        assert_eq!(packet.meshes[0].colors.len(), 12);
+        assert_eq!(
+            packet.meshes[0].material.vertex_color_mode,
+            "AmbientDiffuse"
+        );
+        assert_eq!(
+            packet.meshes[0].material.vertex_color_lighting_mode,
+            "EmissiveAmbientDiffuse"
+        );
         assert!(
             packet
                 .textures

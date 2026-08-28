@@ -9,8 +9,8 @@
 export function parse_nif(bytes: Uint8Array): string;
 
 /**
- * Parse a TES3 ESP/ESM into the source-neutral records and cells consumed by
- * the Library. The worker owns the input buffer so plugin bytes never leave
+ * Parse a TES3 ESP/ESM into the source-neutral object records consumed by the
+ * Library. The worker owns the input buffer so plugin bytes never leave
  * the browser or cross the main thread more than once.
  */
 export function parse_plugin(bytes: Uint8Array): string;

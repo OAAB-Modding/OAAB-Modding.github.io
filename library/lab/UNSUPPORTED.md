@@ -10,7 +10,7 @@ controller-heavy lights and a particle-only model.
 
 - Scene graph transforms from `NiNode` and derived node blocks
 - `NiTriShapeData` and `NiTriStripsData` vertices, indices, normals, UVs and
-  vertex colors
+  inherited, mode-aware vertex colors
 - Base diffuse textures through the shared `AssetResolver`
 - `NiMaterialProperty`, `NiAlphaProperty`, `NiVertexColorProperty`,
   `NiStencilProperty` and `NiZBufferProperty`

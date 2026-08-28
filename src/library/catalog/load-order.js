@@ -3,7 +3,6 @@ import { recordKey } from '../records/record-utils.js';
 /** Apply object-record override semantics in explicit low-to-high load order. */
 export function resolveLoadOrder(plugins) {
   const identities = new Map();
-  const cells = new Map();
   for (const [index, plugin] of (plugins || []).entries()) {
     for (const record of plugin.records || []) {
       const key = recordKey(record);
@@ -21,9 +20,6 @@ export function resolveLoadOrder(plugins) {
       };
       identity.overrides.push(occurrence);
       identity.winningRecord = occurrence;
-    }
-    for (const cell of plugin.cells || []) {
-      cells.set(String(cell.id || '').toLowerCase(), { ...cell, source: plugin.id });
     }
   }
 
@@ -45,7 +41,7 @@ export function resolveLoadOrder(plugins) {
     };
     if (!winner.record.raw?.deleted && !winner.record.metadata?.plugin?.deleted) records.push(winner.record);
   }
-  return { records, identities, cells: [...cells.values()] };
+  return { records, identities };
 }
 
 export function movePlugin(plugins, from, to) {

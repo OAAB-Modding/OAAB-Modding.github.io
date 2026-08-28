@@ -3,14 +3,13 @@ use std::collections::BTreeMap;
 use serde::Serialize;
 use serde_json::{Map, Value, json};
 use tes3::esp::{
-    Activator, Alchemy, Apparatus, Book, Cell, Container, Door, EditorId, Ingredient, Light,
-    Lockpick, MiscItem, ObjectFlags, Plugin, Probe, RepairItem, Static, TES3Object, TypeInfo,
-    Weapon,
+    Activator, Alchemy, Apparatus, Book, Container, Door, Ingredient, Light, Lockpick, MiscItem,
+    ObjectFlags, Plugin, Probe, RepairItem, Static, TES3Object, TypeInfo, Weapon,
 };
 
-const LIBRARY_TAGS: [[u8; 4]; 16] = [
+const LIBRARY_TAGS: [[u8; 4]; 15] = [
     *b"TES3", *b"STAT", *b"ACTI", *b"DOOR", *b"CONT", *b"LIGH", *b"MISC", *b"WEAP", *b"APPA",
-    *b"LOCK", *b"PROB", *b"INGR", *b"BOOK", *b"ALCH", *b"REPA", *b"CELL",
+    *b"LOCK", *b"PROB", *b"INGR", *b"BOOK", *b"ALCH", *b"REPA",
 ];
 
 #[derive(Debug, Serialize)]
@@ -19,7 +18,6 @@ pub struct PluginPacket {
     pub parser_version: String,
     pub masters: Vec<PluginMaster>,
     pub records: Vec<PluginRecord>,
-    pub cells: Vec<CellPacket>,
     pub stats: PluginStats,
 }
 
@@ -43,29 +41,6 @@ pub struct PluginRecord {
     pub raw: Value,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CellPacket {
-    pub id: String,
-    pub name: String,
-    pub interior: bool,
-    pub grid: Option<[i32; 2]>,
-    pub region: Option<String>,
-    pub references: Vec<ReferencePacket>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ReferencePacket {
-    pub master_index: u32,
-    pub reference_index: u32,
-    pub object_id: String,
-    pub translation: [f32; 3],
-    pub rotation: [f32; 3],
-    pub scale: f32,
-    pub deleted: bool,
-}
-
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PluginStats {
@@ -73,8 +48,6 @@ pub struct PluginStats {
     pub library_records: usize,
     pub mesh_records: usize,
     pub unique_meshes: usize,
-    pub cells: usize,
-    pub placed_references: usize,
     pub record_counts: BTreeMap<String, usize>,
 }
 
@@ -103,7 +76,6 @@ pub fn parse_plugin_packet(bytes: &[u8]) -> Result<PluginPacket, String> {
 
     let mut record_counts = BTreeMap::new();
     let mut records = Vec::new();
-    let mut cells = Vec::new();
     for object in &plugin.objects {
         *record_counts
             .entry(object.tag_str().to_owned())
@@ -123,7 +95,6 @@ pub fn parse_plugin_packet(bytes: &[u8]) -> Result<PluginPacket, String> {
             TES3Object::Book(value) => records.push(book_record(value)),
             TES3Object::Alchemy(value) => records.push(alchemy_record(value)),
             TES3Object::RepairItem(value) => records.push(repair_record(value)),
-            TES3Object::Cell(value) => cells.push(cell_packet(value)),
             _ => {}
         }
     }
@@ -134,7 +105,6 @@ pub fn parse_plugin_packet(bytes: &[u8]) -> Result<PluginPacket, String> {
         .map(str::to_ascii_lowercase)
         .collect::<std::collections::BTreeSet<_>>()
         .len();
-    let placed_references = cells.iter().map(|cell| cell.references.len()).sum();
     let total_records = record_counts.values().sum();
     let stats = PluginStats {
         total_records,
@@ -144,8 +114,6 @@ pub fn parse_plugin_packet(bytes: &[u8]) -> Result<PluginPacket, String> {
             .filter(|record| record.mesh.is_some())
             .count(),
         unique_meshes,
-        cells: cells.len(),
-        placed_references,
         record_counts,
     };
 
@@ -153,7 +121,6 @@ pub fn parse_plugin_packet(bytes: &[u8]) -> Result<PluginPacket, String> {
         parser_version: env!("CARGO_PKG_VERSION").to_owned(),
         masters,
         records,
-        cells,
         stats,
     })
 }
@@ -435,38 +402,13 @@ fn repair_record(value: &RepairItem) -> PluginRecord {
     )
 }
 
-fn cell_packet(value: &Cell) -> CellPacket {
-    let mut references = value
-        .references
-        .values()
-        .map(|reference| ReferencePacket {
-            master_index: reference.mast_index,
-            reference_index: reference.refr_index,
-            object_id: reference.id.clone(),
-            translation: reference.translation,
-            rotation: reference.rotation,
-            scale: reference.scale.unwrap_or(1.0),
-            deleted: reference.deleted(),
-        })
-        .collect::<Vec<_>>();
-    references.sort_by_key(|reference| (reference.master_index, reference.reference_index));
-    CellPacket {
-        id: value.editor_id().into_owned(),
-        name: value.name.clone(),
-        interior: value.is_interior(),
-        grid: value.exterior_coords().map(|(x, y)| [x, y]),
-        region: value.region.clone(),
-        references,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tes3::esp::{Header, Reference};
+    use tes3::esp::Header;
 
     #[test]
-    fn extracts_records_masters_and_cells() {
+    fn extracts_library_records_and_masters_without_cell_data() {
         let header = Header {
             masters: vec![("Morrowind.esm".to_owned(), 1_073_741_824)],
             ..Default::default()
@@ -476,21 +418,8 @@ mod tests {
             mesh: "oaab\\f\\test.nif".to_owned(),
             ..Default::default()
         };
-        let mut cell = Cell {
-            name: "Test Interior".to_owned(),
-            ..Default::default()
-        };
-        cell.references.insert(
-            (0, 7),
-            Reference {
-                refr_index: 7,
-                id: "oaab_test".to_owned(),
-                translation: [1.0, 2.0, 3.0],
-                ..Default::default()
-            },
-        );
         let mut plugin = Plugin {
-            objects: vec![header.into(), static_object.into(), cell.into()],
+            objects: vec![header.into(), static_object.into()],
         };
         let bytes = plugin.save_bytes().expect("serialize fixture plugin");
         let packet = parse_plugin_packet(&bytes).expect("parse fixture plugin");
@@ -499,8 +428,6 @@ mod tests {
         assert_eq!(packet.records.len(), 1);
         assert_eq!(packet.records[0].id, "oaab_test");
         assert_eq!(packet.records[0].mesh.as_deref(), Some("oaab\\f\\test.nif"));
-        assert_eq!(packet.cells[0].references[0].reference_index, 7);
-        assert_eq!(packet.stats.placed_references, 1);
     }
 
     #[test]

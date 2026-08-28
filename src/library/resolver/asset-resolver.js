@@ -37,20 +37,24 @@ export class AssetResolver {
   async resolve(path) {
     const normalized = normalizeAssetPath(path);
     const attempts = [];
+    const candidates = resolutionCandidates(normalized);
 
     for (const { source, priority } of this.#sources) {
-      try {
-        const asset = await source.get(normalized);
-        if (!asset) throw new AssetNotFoundError(normalized, source.id);
-        return {
-          ...asset,
-          path: normalized,
-          source: asset.source || source.id,
-          sourceLabel: asset.sourceLabel || source.label || source.id,
-          priority,
-        };
-      } catch (error) {
-        attempts.push({ source: source.id, error });
+      for (const candidate of candidates) {
+        try {
+          const asset = await source.get(candidate);
+          if (!asset) throw new AssetNotFoundError(candidate, source.id);
+          return {
+            ...asset,
+            path: candidate,
+            requestedPath: normalized,
+            source: asset.source || source.id,
+            sourceLabel: asset.sourceLabel || source.label || source.id,
+            priority,
+          };
+        } catch (error) {
+          attempts.push({ source: source.id, path: candidate, error });
+        }
       }
     }
 
@@ -66,4 +70,16 @@ export class AssetResolver {
       throw error;
     }
   }
+}
+
+// Morrowind assets frequently keep the authoring-time .tga reference in the
+// NIF while distributing the optimized replacement as .dds. Resolve that
+// replacement inside each source so normal source/load-order priority still
+// wins before falling through to a lower-priority source.
+function resolutionCandidates(path) {
+  const candidates = [path];
+  if (path.startsWith('textures/') && path.endsWith('.tga')) {
+    candidates.push(`${path.slice(0, -4)}.dds`);
+  }
+  return candidates;
 }

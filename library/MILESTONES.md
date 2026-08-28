@@ -27,7 +27,8 @@ uploading users' ESP, ESM, BSA, or loose asset files.
 | Phase 6 — Camera/preview | **Complete** | Framing, controls, debug toggles, and hidden-by-default collision are shared by lab and production. |
 | Phases 7–11 | **Complete** | Local plugins/assets, BSA indexes, source priority, and dependency diagnostics are integrated. |
 | Phases 12–17 | **Complete** | One live viewer, IndexedDB thumbnails/data, runtime HTTP cache, and OAAB enrichment are integrated. |
-| Phases 18–20 | **Complete** | Load order, cells, selected controller playback, particles, and bind-pose skin support are implemented. |
+| Phases 18 & 20 | **Complete** | Load order, selected controller playback, particles, and bind-pose skin support are implemented. |
+| Phase 19 — Cells | **Removed** | Cell/reference data is outside the object-focused Library scope. |
 
 ## Completed proof-of-concept milestone
 
@@ -191,7 +192,7 @@ Greatness7/tes3 at commit `44ea38ca389f5361229eef4800373b3df13f7063`
 and `wasm-bindgen` at `0.2.117`. `parse_nif(bytes)` returns JSON describing a
 render packet; the worker converts numeric arrays into transferable typed arrays
 before handing it to the UI. `parse_plugin(bytes)` extracts masters, statistics,
-cells/references, and Library-useful fields from `STAT`, `ACTI`, `DOOR`, `CONT`,
+and Library-useful fields from `STAT`, `ACTI`, `DOOR`, `CONT`,
 `LIGH`, `MISC`, `WEAP`, `APPA`, `LOCK`, `PROB`, `INGR`, `BOOK`, `ALCH`, and
 `REPA`. `PluginCatalog` converts this packet directly to generic records.
 
@@ -208,8 +209,9 @@ Exit criteria met:
 NIF texture paths return to `AssetResolver`; the renderer never constructs an
 OAAB URL. The lab uses pinned Three.js loaders for DDS and TGA plus browser-native
 PNG/JPEG loading. DDS DXT1, DXT3, and DXT5, alpha, and mipmaps are delegated to
-the Three.js DDS loader. Missing textures show a visible fallback material and
-remain listed separately from resolved textures.
+the Three.js DDS loader. Authoring-time TGA references also resolve installed
+DDS replacements using normal source priority. Missing textures show a visible
+fallback material and remain listed separately from resolved textures.
 
 OAAB NIFs may reference vanilla textures. Those paths now resolve through a
 selected loose-file/directory or BSA source when present and otherwise remain
@@ -517,23 +519,11 @@ Exit criteria:
 
 ### Phase 19 — Cells and placed objects
 
-**Status: Complete.**
+**Status: Removed from scope.**
 
-The workspace **Cells** tab lists interiors/exteriors and each placed
-reference's object ID, position, rotation, scale, and source. Base-object links
-resolve against imported load-order winners and enabled built-in catalogs. Full
-3D cell composition remains intentionally outside this data-view milestone.
-
-Add a data-oriented **Cells** view. Display cell name, exterior coordinates,
-placed references, object IDs, position, rotation, and scale. A selected
-reference should link to its resolved base object.
-
-Do not add full 3D cell rendering yet.
-
-Exit criteria:
-
-- Interior/exterior cells and references are inspectable as data.
-- Base-object links honor the active load order.
+The Library is an object catalogue, so cell placement/reference data is no
+longer parsed, cached, merged, or displayed. This keeps local plugin imports
+focused on the records that can appear in the catalogue.
 
 ### Phase 20 — Advanced NIF support
 

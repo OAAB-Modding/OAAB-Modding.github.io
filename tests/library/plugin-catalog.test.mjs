@@ -15,7 +15,6 @@ const packet = {
     deleted: false,
     raw: {},
   }],
-  cells: [],
 };
 
 test('plugin catalog produces generic normalized records with local provenance', async () => {

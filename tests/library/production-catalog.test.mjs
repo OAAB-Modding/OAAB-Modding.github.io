@@ -42,7 +42,7 @@ class CatalogBase {
 
 const ProductionCatalog = withProductionCatalog(CatalogBase);
 
-test('displayed load-order winner is the record returned for details and cell links', () => {
+test('displayed load-order winner is the record returned for detail lookups', () => {
   const catalog = new ProductionCatalog();
   const builtin = { id: 'shared_id', source: 'oaab-data' };
   const winner = { id: 'SHARED_ID', source: 'plugin:override' };

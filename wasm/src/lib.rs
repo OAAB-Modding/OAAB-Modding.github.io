@@ -27,8 +27,8 @@ pub fn parse_nif(bytes: &[u8]) -> Result<String, JsValue> {
     serde_json::to_string(&packet).map_err(|error| JsValue::from_str(&error.to_string()))
 }
 
-/// Parse a TES3 ESP/ESM into the source-neutral records and cells consumed by
-/// the Library. The worker owns the input buffer so plugin bytes never leave
+/// Parse a TES3 ESP/ESM into the source-neutral object records consumed by the
+/// Library. The worker owns the input buffer so plugin bytes never leave
 /// the browser or cross the main thread more than once.
 #[wasm_bindgen]
 pub fn parse_plugin(bytes: &[u8]) -> Result<String, JsValue> {

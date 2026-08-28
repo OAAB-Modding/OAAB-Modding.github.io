@@ -135,7 +135,6 @@ export class LibraryWorkspace {
           file,
           packet,
           records,
-          cells: packet.cells || [],
           enabled: true,
         });
         await this.persistPlugin(this.plugins.at(-1));
@@ -174,7 +173,6 @@ export class LibraryWorkspace {
         filename: plugin.filename,
         fingerprint: plugin.fingerprint,
         masters: plugin.packet.masters || [],
-        cells: plugin.cells || [],
         stats: plugin.packet.stats || {},
         importedAt: Date.now(),
       });
@@ -232,7 +230,6 @@ export class LibraryWorkspace {
         const recordEntry = await this.database.get('plugin-records', metadata.id);
         const packet = {
           masters: metadata.masters || [],
-          cells: metadata.cells || [],
           stats: metadata.stats || {},
           records: recordEntry?.records || [],
         };
@@ -246,7 +243,6 @@ export class LibraryWorkspace {
           ...metadata,
           packet,
           records: await provider.load(),
-          cells: packet.cells,
           enabled: enabledSources.has(metadata.id),
           restored: true,
         });
@@ -587,7 +583,6 @@ export class LibraryWorkspace {
       : `${records.length.toLocaleString()} winning records`;
     this.renderRecord();
     this.dialog.querySelector('[data-run-diagnostics]').disabled = !records.length;
-    this.renderCells();
     this.renderDiagnostics();
   }
 
@@ -1049,35 +1044,6 @@ export class LibraryWorkspace {
     }
   }
 
-  renderCells() {
-    const panel = this.dialog.querySelector('[data-workspace-panel="cells"]');
-    const cells = this.resolved?.cells || [];
-    if (!cells.length) {
-      panel.innerHTML = '<p class="library-workspace-empty">No CELL records are present in the active plugins.</p>';
-      return;
-    }
-    const recordsById = new Map((this.resolved?.records || []).map(record => [record.id.toLowerCase(), record]));
-    const findBaseRecord = id => recordsById.get(String(id || '').toLowerCase())
-      || this.component.findCatalogItem(id)?.record;
-    panel.innerHTML = `<div class="library-cell-list">${cells.map(cell => `
-      <details>
-        <summary><strong>${escapeHtml(cell.name || cell.id || 'Wilderness')}</strong><span>${cell.interior ? 'Interior' : `Exterior ${cell.grid?.join(', ') || ''}`} · ${(cell.references || []).length} references</span></summary>
-        <div class="library-cell-references">${(cell.references || []).map(reference => {
-          const base = findBaseRecord(reference.objectId);
-          return `<div><code>${escapeHtml(reference.objectId)}</code><span>${reference.translation.map(formatCoordinate).join(', ')}</span><span>${reference.rotation.map(formatCoordinate).join(', ')}</span><span>×${formatCoordinate(reference.scale)}</span><span>${base ? `<button type="button" data-base-id="${encodeURIComponent(base.id)}">${escapeHtml(base.name || base.type)}</button>` : 'Unresolved base object'}</span></div>`;
-        }).join('') || '<p>No placed references</p>'}</div>
-      </details>`).join('')}</div>`;
-    panel.querySelector('.library-cell-list').addEventListener('click', event => {
-      const button = event.target.closest('[data-base-id]');
-      if (!button) return;
-      const record = findBaseRecord(decodeURIComponent(button.dataset.baseId));
-      if (record) {
-        this.selectTab('records');
-        this.selectRecord(record);
-      }
-    });
-  }
-
   renderDiagnostics() {
     const panel = this.dialog.querySelector('[data-workspace-panel="diagnostics"]');
     if (!this.diagnostics) {
@@ -1170,14 +1136,12 @@ function workspaceMarkup() {
     </div>
     <nav data-workspace-tablist role="tablist" class="library-workspace-tabs">
       <button type="button" role="tab" data-workspace-tab="records" aria-selected="true">Records</button>
-      <button type="button" role="tab" data-workspace-tab="cells" aria-selected="false">Cells</button>
       <button type="button" role="tab" data-workspace-tab="diagnostics" aria-selected="false">Diagnostics</button>
     </nav>
     <div data-thumbnail-render-host class="library-thumbnail-render-host" aria-hidden="true"></div>
     <div class="library-workspace-grid">
       <aside><h3>Catalog sources and load order</h3><ul data-source-list class="library-source-list"></ul><h3 class="library-asset-source-heading">Asset resolver priority</h3><ul data-asset-source-list class="library-source-list"></ul></aside>
       <section data-workspace-panel="records" class="library-record-browser"><div><p data-record-count>0 winning records</p><div data-record-list class="library-imported-records"></div></div><article data-record-detail class="library-record-detail"></article></section>
-      <section data-workspace-panel="cells" hidden><p class="library-workspace-empty">Cell data appears here after a plugin containing CELL records is opened.</p></section>
       <section data-workspace-panel="diagnostics" hidden><p class="library-workspace-empty">Add asset sources, then scan records to trace record → NIF → texture resolution.</p></section>
     </div>
   </section>`;
@@ -1213,10 +1177,6 @@ function yieldToBrowser() {
 
 function slug(value) {
   return String(value || 'source').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-}
-
-function formatCoordinate(value) {
-  return Number(value || 0).toFixed(2).replace(/\.00$/, '');
 }
 
 function splitWords(value) {
