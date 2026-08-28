@@ -2,7 +2,7 @@
 
 The lab parses NetImmerse 4.0.0.2 with Greatness7/tes3 and renders static and
 selected animated `NiTriShape`, `NiTriStrips`, and particle geometry. The fixture
-corpus in `nif-fixtures.json` covers 15 OAAB_Data models: architecture, clutter,
+corpus in `nif-fixtures.json` covers 16 OAAB_Data models: architecture, clutter,
 ingredients, weapons, doors, markers, alpha-tested meshes, collision roots,
 controller-heavy lights and a particle-only model.
 
@@ -52,7 +52,7 @@ checks for representative animation and particle packets.
 
 ## Running the corpus
 
-Open `/library/lab/` over HTTP and choose **Run 15-fixture corpus**. Each model
+Open `/library/lab/` over HTTP and choose **Run 16-fixture corpus**. Each model
 is fetched from the public OAAB_Data repository, parsed in the Web Worker and
 checked for its expected minimum geometry and representative block types.
 

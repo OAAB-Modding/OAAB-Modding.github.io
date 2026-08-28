@@ -675,8 +675,17 @@ fn add_particles<T>(
         .controllers_of_type::<NiParticleSystemController>(context.stream)
         .next();
     let (active, radius) = if let Some(controller) = controller {
-        let active = if controller.particles.len() == capacity {
-            usize::from(controller.num_active_particles).min(capacity)
+        let active_emitter = controller.base.active()
+            && context.stream.get(controller.emitter).is_some()
+            && controller.emit_stop_time > controller.emit_start_time;
+        let active = if let Some(active) = preview_active_particle_count(
+            data.num_active,
+            controller.num_active_particles,
+            capacity,
+            controller.particles.len(),
+            active_emitter,
+        ) {
+            active
         } else {
             context.warnings.push(format!(
                 "{block_type} \"{}\" has mismatched particle pools; runtime active state was reset",
@@ -719,6 +728,35 @@ fn add_particles<T>(
         hidden: av_object.app_culled(),
         animation_targets: animation_target_names(animation_targets, &object_net.name),
     });
+}
+
+fn preview_active_particle_count(
+    saved_active: u16,
+    controller_active: u16,
+    capacity: usize,
+    controller_capacity: usize,
+    active_emitter: bool,
+) -> Option<usize> {
+    if controller_capacity != capacity {
+        return None;
+    }
+
+    let controller_active = usize::from(controller_active).min(capacity);
+    let saved_active = usize::from(saved_active).min(capacity);
+
+    // The game lets the controller replace NiParticlesData.num_active, then
+    // immediately pre-warms an active emitter. We do not simulate that
+    // controller yet, so an empty serialized controller would hide useful
+    // saved preview positions and leave only companion plane geometry visible.
+    // Use that dense saved prefix as the representative static state when the
+    // emitter would rebuild it on load.
+    Some(
+        if controller_active == 0 && saved_active > 0 && active_emitter {
+            saved_active
+        } else {
+            controller_active
+        },
+    )
 }
 
 fn extract_animations(context: &mut ParseContext<'_>) {
@@ -1019,6 +1057,14 @@ mod advanced_tests {
         NiTriShapeData, NiUVData, NiVisData, NiVisKey, SourceVertexMode, TextureSource,
         glam::{Quat, vec3, vec4},
     };
+
+    #[test]
+    fn active_empty_emitter_uses_saved_particles_as_its_static_preview() {
+        assert_eq!(preview_active_particle_count(7, 0, 9, 9, true), Some(7));
+        assert_eq!(preview_active_particle_count(7, 0, 9, 9, false), Some(0));
+        assert_eq!(preview_active_particle_count(7, 3, 9, 9, true), Some(3));
+        assert_eq!(preview_active_particle_count(7, 0, 9, 8, true), None);
+    }
 
     #[allow(clippy::field_reassign_with_default)]
     #[test]

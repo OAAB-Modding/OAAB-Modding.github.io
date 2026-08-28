@@ -1,4 +1,4 @@
-const CACHE_NAME = 'oaab-library-runtime-v1';
+const CACHE_NAME = 'oaab-library-runtime-v3';
 const CACHE_PREFIX = 'oaab-library-runtime-';
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -49,8 +49,7 @@ function isApplicationCode(url) {
   return url.origin === self.location.origin && (
     url.pathname.startsWith('/src/library/') ||
     url.pathname.startsWith('/wasm/pkg/') ||
-    url.pathname === '/library/' ||
-    url.pathname === '/library/index.html'
+    url.pathname.startsWith('/library/')
   );
 }
 

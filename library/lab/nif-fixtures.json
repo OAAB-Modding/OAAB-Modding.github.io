@@ -50,6 +50,11 @@
     "expect": { "minMeshes": 0, "minTriangles": 0, "minParticles": 1, "blocks": ["NiAutoNormalParticles", "NiParticleSystemController"] }
   },
   {
+    "label": "Dagoth mist (empty-controller pre-warm)",
+    "path": "oaab/e/rem_mist_dagoth.nif",
+    "expect": { "minMeshes": 2, "minParticles": 7, "blocks": ["NiAutoNormalParticles", "NiParticleSystemController", "NiBSParticleNode"] }
+  },
+  {
     "label": "Common bar shelf door (case map + collision)",
     "path": "oaab/d/combarshelfdoor.nif",
     "expect": { "minMeshes": 5, "blocks": ["NiStringExtraData", "RootCollisionNode"] }
