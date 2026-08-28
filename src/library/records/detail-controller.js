@@ -655,7 +655,7 @@ export function withLibraryRecordDetails(Base) {
         localThumbnail: generatedThumbnail && !thumbnailReady,
         thumbnailPending: generatedThumbnail && !thumbnailReady && !thumbnailFailed,
         thumbnailFailed,
-        thumbnailStatusLabel: thumbnailFailed ? 'Preview unavailable' : 'Generating preview…',
+        thumbnailStatusLabel: thumbnailFailed ? 'Preview unavailable' : 'Generating preview',
         lightTint: item.lightTint || '',
         lightMask: item.lightMask || '',
         render: (item.isSpell || item.isLeveledList || (generatedThumbnail && !thumbnailReady)) ? '' : (item.render || item.img || ''),

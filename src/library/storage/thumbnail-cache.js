@@ -1,22 +1,26 @@
 import { normalizeAssetPath } from '../resolver/path-utils.js';
 
-export const NIF_RENDERER_VERSION = '4';
+// Bump this whenever the rendered result changes. The cache key then leaves
+// older captures in IndexedDB without ever displaying them as current.
+export const NIF_RENDERER_VERSION = '5';
+export const THUMBNAIL_VARIANT_GRID = 'grid';
+export const THUMBNAIL_VARIANT_PREVIEW = 'preview';
 
 export class ThumbnailCache {
   constructor(database) {
     this.database = database;
-    this.urls = new Set();
+    this.urls = new Map();
   }
 
   async get(identity) {
     const key = thumbnailCacheKey(identity);
     const entry = await this.database.get('thumbnails', key);
     if (!entry?.blob) return null;
-    return { ...entry, url: this.#url(entry.blob) };
+    return { ...entry, url: this.#url(entry.key || key, entry.blob) };
   }
 
   urlFor(entry) {
-    return entry?.blob ? this.#url(entry.blob) : null;
+    return entry?.blob ? this.#url(entry.key || '', entry.blob) : null;
   }
 
   async put(identity, blob, metadata = {}) {
@@ -27,12 +31,13 @@ export class ThumbnailCache {
       sourceFingerprint: identity.sourceFingerprint,
       assetVersion: identity.assetVersion,
       rendererVersion: identity.rendererVersion || NIF_RENDERER_VERSION,
+      variant: identity.variant || THUMBNAIL_VARIANT_GRID,
       blob,
       createdAt: Date.now(),
       ...metadata,
     };
     await this.database.put('thumbnails', entry);
-    return { ...entry, url: this.#url(blob) };
+    return { ...entry, url: this.#url(key, blob) };
   }
 
   async clear() {
@@ -41,21 +46,28 @@ export class ThumbnailCache {
   }
 
   revokeUrls() {
-    for (const url of this.urls) URL.revokeObjectURL(url);
+    for (const url of this.urls.values()) URL.revokeObjectURL(url);
     this.urls.clear();
   }
 
-  #url(blob) {
+  #url(key, blob) {
+    if (key && this.urls.has(key)) return this.urls.get(key);
     const url = URL.createObjectURL(blob);
-    this.urls.add(url);
+    if (key) this.urls.set(key, url);
     return url;
   }
 }
 
-export function thumbnailCacheKey({ sourceFingerprint, path, assetVersion, rendererVersion = NIF_RENDERER_VERSION }) {
+export function thumbnailCacheKey({
+  sourceFingerprint,
+  path,
+  assetVersion,
+  rendererVersion = NIF_RENDERER_VERSION,
+  variant = THUMBNAIL_VARIANT_GRID,
+}) {
   if (!sourceFingerprint || !assetVersion) throw new TypeError('Thumbnail identity requires source and asset fingerprints');
   const normalized = normalizeAssetPath(path, { root: 'meshes' });
-  return `thumbnail:v3:${rendererVersion}:${encodeURIComponent(sourceFingerprint)}:${encodeURIComponent(normalized)}:${assetVersion}`;
+  return `thumbnail:v3:${rendererVersion}:${encodeURIComponent(variant)}:${encodeURIComponent(sourceFingerprint)}:${encodeURIComponent(normalized)}:${assetVersion}`;
 }
 
 export async function fingerprintBytes(bytes) {

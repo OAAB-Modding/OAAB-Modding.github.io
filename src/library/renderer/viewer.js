@@ -109,12 +109,15 @@ export class NifViewer {
 
     if (display) {
       this.#displayPacket(packet, textureDiagnostics);
-      this.frameModel();
+      const framed = this.frameModel();
+      this.#status('ready', framed
+        ? `Loaded ${normalized}`
+        : `Loaded ${normalized} · no visible geometry`);
     } else {
       for (const diagnostic of textureDiagnostics) diagnostic.texture?.dispose();
+      this.#status('ready', `Loaded ${normalized}`);
     }
 
-    this.#status('ready', `Loaded ${normalized}`);
     return result;
   }
 
@@ -164,18 +167,22 @@ export class NifViewer {
   }
 
   async captureThumbnail({
-    width = 384,
-    height = 384,
+    width = 160,
+    height = 160,
     type = 'image/webp',
     quality = 0.86,
     includeGrid = false,
   } = {}) {
-    const oldWidth = this.canvas.width;
-    const oldHeight = this.canvas.height;
+    const oldSize = this.renderer.getSize(new THREE.Vector2());
+    const oldPixelRatio = this.renderer.getPixelRatio();
     const oldAspect = this.camera.aspect;
     const oldGridVisible = this.grid.visible;
     try {
       if (!includeGrid) this.grid.visible = false;
+      // Capture the requested logical size exactly. The interactive viewer
+      // can use a high device-pixel ratio, but grid thumbnails should stay
+      // cheap and predictable on both desktop and mobile screens.
+      this.renderer.setPixelRatio(1);
       this.renderer.setSize(width, height, false);
       this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();
@@ -185,7 +192,8 @@ export class NifViewer {
       });
     } finally {
       this.grid.visible = oldGridVisible;
-      this.renderer.setSize(oldWidth, oldHeight, false);
+      this.renderer.setPixelRatio(oldPixelRatio);
+      this.renderer.setSize(oldSize.x, oldSize.y, false);
       this.camera.aspect = oldAspect;
       this.camera.updateProjectionMatrix();
       this.resize();
@@ -196,11 +204,25 @@ export class NifViewer {
     this.modelRoot.position.set(0, 0, 0);
     this.modelRoot.updateWorldMatrix(true, true);
 
-    const box = new THREE.Box3().setFromObject(this.modelRoot);
-    if (box.isEmpty()) return;
+    const box = new THREE.Box3();
+    this.modelRoot.traverse(object => {
+      if (!object.visible || !object.geometry) return;
+      const objectBox = new THREE.Box3().setFromObject(object);
+      if (objectBox.isEmpty()) return;
+      const values = [
+        objectBox.min.x, objectBox.min.y, objectBox.min.z,
+        objectBox.max.x, objectBox.max.y, objectBox.max.z,
+      ];
+      if (values.every(Number.isFinite)) box.union(objectBox);
+    });
+    if (box.isEmpty()) return false;
 
     const center = box.getCenter(new THREE.Vector3());
-    this.modelRoot.position.sub(center);
+    // modelRoot is rotated into Morrowind's coordinate system. Convert the
+    // world-space bounds center back to the group's local coordinates before
+    // translating, otherwise some meshes are framed well outside the camera.
+    const localCenter = this.modelRoot.worldToLocal(center.clone());
+    this.modelRoot.position.sub(localCenter);
     this.modelRoot.updateWorldMatrix(true, true);
 
     const centeredBox = new THREE.Box3().setFromObject(this.modelRoot);
@@ -226,6 +248,7 @@ export class NifViewer {
       near: this.camera.near,
       far: this.camera.far,
     };
+    return true;
   }
 
   resize() {

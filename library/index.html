@@ -717,14 +717,14 @@
 
 <sc-if value="{{ showRenderPreview }}" hint-placeholder-val="{{ false }}">
 <div class="library-render-backdrop" onClick="{{ closeRenderPreview }}">
-  <div class="library-render-dialog" role="dialog" aria-modal="true" aria-label="{{ renderPreviewTitle }}" onClick="{{ stopRenderPreviewClick }}" onPointerDown="{{ renderSwipeStart }}" onPointerMove="{{ renderSwipeMove }}" onPointerUp="{{ renderSwipeEnd }}" onPointerCancel="{{ renderSwipeCancel }}">
+  <div class="library-render-dialog" role="dialog" aria-modal="true" aria-label="{{ renderPreviewTitle }}" onClick="{{ stopRenderPreviewClick }}">
     <button type="button" data-render-control="1" class="library-render-close" onClick="{{ closeRenderPreview }}" onPointerDown="{{ stopRenderPreviewClick }}" onPointerUp="{{ stopRenderPreviewClick }}" aria-label="Close full size render" title="Close">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
     </button>
     <sc-if value="{{ renderPreviewHasMesh }}" hint-placeholder-val="{{ false }}">
       <div data-live-preview-controls="" data-render-control="1" class="library-live-preview-controls">
         <button type="button" data-live-mode="preview" onClick="{{ setRenderPreviewMode }}" aria-pressed="{{ renderPreviewModePreview }}">Preview</button>
-        <button type="button" data-live-mode="3d" onClick="{{ setRenderPreviewMode }}" aria-pressed="{{ renderPreviewMode3d }}">3D</button>
+        <button type="button" data-live-mode="3d" onClick="{{ setRenderPreviewMode }}" aria-pressed="{{ renderPreviewMode3d }}" disabled="{{ renderPreview3dDisabled }}" title="{{ renderPreview3dTitle }}">3D</button>
         <button type="button" data-live-mode="details" onClick="{{ setRenderPreviewMode }}" aria-pressed="{{ renderPreviewModeDetails }}">Details</button>
       </div>
     </sc-if>
@@ -741,7 +741,7 @@
       <sc-if value="{{ renderPreviewWaitingForThumbnail }}" hint-placeholder-val="{{ false }}">
         <div class="library-render-thumbnail-pending" role="status">
           <div class="asset-spinner library-render-spinner"></div>
-          <span>Generating textured preview…</span>
+          <span>Generating preview</span>
         </div>
       </sc-if>
       <sc-if value="{{ renderPreviewLightTint }}" hint-placeholder-val="{{ false }}">

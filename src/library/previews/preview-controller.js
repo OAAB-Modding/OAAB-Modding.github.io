@@ -651,6 +651,7 @@ export function withLibraryPreviews(Base) {
       hasEffects: !!(x && x.effects && x.effects.length),
       effects: (x && x.effects) || [],
       isSpell: isSpell,
+      vanilla: !!(x && x.vanilla),
       detailKind: (x && x.detailKind) || '',
       spellEffects: (x && x.spellEffects) || [],
       hasSpellThumb: !!(x && x.spellEffects && x.spellEffects.length),
@@ -670,56 +671,5 @@ export function withLibraryPreviews(Base) {
     this.setState({ renderPreview: next, renderPreviewLoaded: false, renderPreviewMode: 'preview' });
   }
 
-  renderSwipePoint(e) {
-    return e ? { x: e.clientX || 0, y: e.clientY || 0, t: Date.now() } : null;
-  }
-
-  beginRenderSwipe(e) {
-    if (!this.state.renderPreview) return;
-    const target = e && e.target;
-    if (target && target.closest && target.closest('[data-render-control]')) return;
-    this._renderSwipeStart = this.renderSwipePoint(e);
-    this._renderSwipeLast = this._renderSwipeStart;
-    try {
-      if (e && e.currentTarget && e.pointerId != null) e.currentTarget.setPointerCapture(e.pointerId);
-    } catch (err) {}
-  }
-
-  updateRenderSwipe(e) {
-    if (!this._renderSwipeStart) return;
-    const target = e && e.target;
-    if (target && target.closest && target.closest('[data-render-control]')) return;
-    this._renderSwipeLast = this.renderSwipePoint(e);
-    const dx = this._renderSwipeLast.x - this._renderSwipeStart.x;
-    const dy = this._renderSwipeLast.y - this._renderSwipeStart.y;
-    if (Math.abs(dx) > 14 && Math.abs(dx) > Math.abs(dy) * 1.15 && e && e.preventDefault) {
-      e.preventDefault();
-    }
-  }
-
-  finishRenderSwipe(e) {
-    const target = e && e.target;
-    if (target && target.closest && target.closest('[data-render-control]')) {
-      this.cancelRenderSwipe();
-      return;
-    }
-    const start = this._renderSwipeStart;
-    const end = this.renderSwipePoint(e) || this._renderSwipeLast;
-    this._renderSwipeStart = null;
-    this._renderSwipeLast = null;
-    if (!start || !end) return;
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const ax = Math.abs(dx);
-    if (ax < 55 || ax < Math.abs(dy) * 1.2 || (end.t - start.t) > 1100) return;
-    if (e && e.preventDefault) e.preventDefault();
-    if (e && e.stopPropagation) e.stopPropagation();
-    this.showAdjacentRenderPreview(dx < 0 ? 1 : -1);
-  }
-
-  cancelRenderSwipe() {
-    this._renderSwipeStart = null;
-    this._renderSwipeLast = null;
-  }
   };
 }

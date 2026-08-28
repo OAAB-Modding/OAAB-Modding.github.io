@@ -402,7 +402,7 @@ export function withLibraryRenderValues(Base) {
         localThumbnail: generatedThumbnail && !thumbnailReady,
         thumbnailPending,
         thumbnailFailed,
-        thumbnailStatusLabel: thumbnailFailed ? 'Preview unavailable · click to retry' : 'Generating textured preview…',
+        thumbnailStatusLabel: thumbnailFailed ? 'Preview unavailable · click to retry' : 'Generating preview',
         type: x.type,
         img: x.img,
         render: (x.isSpell || x.isLeveledList || (generatedThumbnail && !thumbnailReady)) ? '' : (x.render || x.img),
@@ -916,6 +916,7 @@ export function withLibraryRenderValues(Base) {
         const mode = e.currentTarget?.dataset?.liveMode || 'preview';
         if (!['preview', '3d', 'details'].includes(mode)) return;
         if (mode !== 'preview' && !this.state.renderPreview?.mesh) return;
+        if (mode === '3d' && this.state.renderPreview?.vanilla && !this._workspace?.assetSources?.length) return;
         this.setState({ renderPreviewMode: mode });
       },
       openEnchantmentDetails: (e) => {
@@ -991,10 +992,6 @@ export function withLibraryRenderValues(Base) {
       stopRenderPreviewClick: (e) => {
         if (e && e.stopPropagation) e.stopPropagation();
       },
-      renderSwipeStart: (e) => this.beginRenderSwipe(e),
-      renderSwipeMove: (e) => this.updateRenderSwipe(e),
-      renderSwipeEnd: (e) => this.finishRenderSwipe(e),
-      renderSwipeCancel: () => this.cancelRenderSwipe(),
       renderLoad: () => this.setState({ renderPreviewLoaded: true }),
       renderErr: () => this.setState({ renderPreviewLoaded: true }),
       onDrag: (e) => {
@@ -1342,6 +1339,10 @@ export function withLibraryRenderValues(Base) {
       showRenderPreview: !!this.state.renderPreview,
       renderPreviewHasImage: !!renderPreview?.src,
       renderPreviewHasMesh: !!renderPreview?.mesh,
+      renderPreview3dDisabled: !!(renderPreview?.vanilla && !this._workspace?.assetSources?.length),
+      renderPreview3dTitle: renderPreview?.vanilla && !this._workspace?.assetSources?.length
+        ? 'Add a Morrowind Data Files folder or BSA through Local files to enable 3D'
+        : 'Inspect this mesh in 3D',
       renderPreviewWaitingForThumbnail: !!renderPreview?.thumbnailPending,
       renderPreviewModePreview: renderPreviewMode === 'preview',
       renderPreviewMode3d: renderPreviewMode === '3d',

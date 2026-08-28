@@ -7,9 +7,12 @@ import { scanDependencies } from '../diagnostics/dependency-scanner.js';
 import { LibraryDatabase } from '../storage/library-db.js';
 import {
   NIF_RENDERER_VERSION,
+  THUMBNAIL_VARIANT_GRID,
+  THUMBNAIL_VARIANT_PREVIEW,
   ThumbnailCache,
   fingerprintBytes,
 } from '../storage/thumbnail-cache.js';
+import { normalizeAssetPath } from '../resolver/path-utils.js';
 
 const THUMBNAIL_MAX_ATTEMPTS = 2;
 
@@ -36,6 +39,8 @@ export class LibraryWorkspace {
     this.thumbnailObserver = null;
     this.interactiveViewerActive = false;
     this.productionViewerActive = false;
+    this.productionPreviewActive = false;
+    this.productionPreviewKey = null;
     this.productionLoadKey = null;
     this.productionViewerMessage = '';
     this.productionDetailsKey = null;
@@ -150,6 +155,7 @@ export class LibraryWorkspace {
     }
     await this.persistWorkspaceSettings();
     this.render();
+    this.restoreCachedThumbnails(this.resolved?.records || []);
     const total = this.plugins.reduce((sum, plugin) => sum + plugin.records.length, 0);
     this.status(`${this.plugins.length} plugin${this.plugins.length === 1 ? '' : 's'} loaded · ${total.toLocaleString()} supported records`);
     this.pluginInput.value = '';
@@ -248,7 +254,7 @@ export class LibraryWorkspace {
       this.applyLoadOrder();
       this.render();
       await this.restoreCachedThumbnails(this.resolved.records);
-      this.status(`${stored.length} cached plugin${stored.length === 1 ? '' : 's'} restored · reselect local asset sources when needed`);
+      this.status(`${stored.length} cached plugin${stored.length === 1 ? '' : 's'} restored · cached thumbnails available`);
     } catch (error) {
       console.warn('plugin cache restore failed', error);
     }
@@ -405,6 +411,9 @@ export class LibraryWorkspace {
     source.priority = priority;
     this.assetSources.push(source);
     this.component._libraryServices.resolver.addSource(source, priority);
+    this.component.setState({
+      assetSourceRevision: (this.component.state.assetSourceRevision || 0) + 1,
+    });
   }
 
   resetImportedThumbnailJobs() {
@@ -676,32 +685,59 @@ export class LibraryWorkspace {
     return this.thumbnailViewer;
   }
 
-  async cacheThumbnail(record, result, {
+  async getOrCreateThumbnail(record, result, {
     viewer = this.viewer,
+    variant = THUMBNAIL_VARIANT_GRID,
+    captureOptions = null,
     shouldCommit = () => true,
   } = {}) {
-    if (!viewer || !shouldCommit()) return false;
+    if (!viewer || !shouldCommit()) return null;
     const meshSourceFingerprint = assetSourceFingerprint(result.asset);
     const identity = {
       sourceFingerprint: thumbnailSourceFingerprint(result),
       path: result.path,
       assetVersion: result.assetFingerprint,
       rendererVersion: NIF_RENDERER_VERSION,
+      variant,
     };
     let cached = await this.thumbnailCache.get(identity);
-    if (!shouldCommit()) return false;
+    if (!shouldCommit()) return null;
     if (!cached) {
-      const blob = await viewer.captureThumbnail({ includeGrid: false });
-      if (!shouldCommit()) return false;
+      const options = captureOptions
+        ? { includeGrid: false, ...captureOptions }
+        : { includeGrid: false };
+      const blob = await viewer.captureThumbnail(options);
+      if (!shouldCommit()) return null;
       cached = await this.thumbnailCache.put(identity, blob, {
         recordId: record.id,
         recordSource: record.source,
         meshSourceFingerprint,
       });
     }
-    if (!shouldCommit()) return false;
-    this.component.setImportedThumbnail(record, cached.url);
+    return shouldCommit() ? cached : null;
+  }
+
+  async cacheThumbnail(record, result, options = {}) {
+    const {
+      variant = THUMBNAIL_VARIANT_GRID,
+      applyToItem = variant === THUMBNAIL_VARIANT_GRID,
+      shouldCommit = () => true,
+    } = options;
+    const cached = await this.getOrCreateThumbnail(record, result, options);
+    if (!cached || !shouldCommit()) return false;
+    if (applyToItem) this.component.setImportedThumbnail(record, cached.url);
     return true;
+  }
+
+  async findCachedThumbnail(record, variant) {
+    const entries = await this.database.getAll('thumbnails');
+    const entry = entries.find(value => (
+      value.rendererVersion === NIF_RENDERER_VERSION
+      && value.variant === variant
+      && value.recordSource === record.source
+      && String(value.recordId || '').toLowerCase() === String(record.id || '').toLowerCase()
+    ));
+    return entry ? { ...entry, url: this.thumbnailCache.urlFor(entry) } : null;
   }
 
   syncImportedThumbnailTargets() {
@@ -760,11 +796,11 @@ export class LibraryWorkspace {
 
   async pumpThumbnailQueue() {
     if (this.thumbnailPumpRunning) return;
-    if (!this.dialog || this.interactiveViewerActive || this.productionViewerActive || this.component.state.renderPreview) return;
+    if (!this.dialog || this.interactiveViewerActive || this.productionViewerActive || this.productionPreviewActive) return;
     this.thumbnailPumpRunning = true;
     try {
       while (this.thumbnailQueue.length) {
-        if (!this.dialog || this.interactiveViewerActive || this.productionViewerActive || this.component.state.renderPreview) break;
+        if (!this.dialog || this.interactiveViewerActive || this.productionViewerActive || this.productionPreviewActive) break;
         const entry = this.thumbnailQueue.shift();
         const queuedJob = entry && this.thumbnailJobs.get(entry.key);
         if (
@@ -774,6 +810,18 @@ export class LibraryWorkspace {
           || queuedJob?.generation !== entry.generation
           || queuedJob?.status !== 'queued'
         ) continue;
+        // A persisted thumbnail may have been restored while this job was
+        // waiting in the queue. Do not parse or render the mesh again.
+        const currentItem = this.component.findCatalogItem?.(entry.record.id);
+        if (currentItem?.thumbnailReady) {
+          this.thumbnailJobs.set(entry.key, {
+            record: entry.record,
+            status: 'done',
+            generation: entry.generation,
+            attempts: entry.attempts || 0,
+          });
+          continue;
+        }
         this.thumbnailJobs.set(entry.key, {
           record: entry.record,
           status: 'loading',
@@ -835,17 +883,18 @@ export class LibraryWorkspace {
     const entries = await this.database.getAll('thumbnails');
     const byRecord = new Map((records || []).map(record => [`${record.source}\0${record.id.toLowerCase()}`, record]));
     for (const entry of entries) {
+      if (entry.rendererVersion !== NIF_RENDERER_VERSION || (entry.variant || THUMBNAIL_VARIANT_GRID) !== THUMBNAIL_VARIANT_GRID) continue;
       const record = byRecord.get(`${entry.recordSource}\0${String(entry.recordId || '').toLowerCase()}`);
       if (!record?.mesh) continue;
       try {
-        const asset = await this.component._libraryServices.resolver.resolve(record.mesh);
-        const assetVersion = await fingerprintBytes(asset.bytes);
-        const meshSourceFingerprint = assetSourceFingerprint(asset);
-        if (
-          entry.rendererVersion === NIF_RENDERER_VERSION
-          && entry.assetVersion === assetVersion
-          && entry.meshSourceFingerprint === meshSourceFingerprint
-        ) this.component.setImportedThumbnail(record, this.thumbnailCache.urlFor(entry));
+        const path = normalizeAssetPath(record.mesh, { root: 'meshes' });
+        if (entry.path !== path) continue;
+        // The cache key already includes the mesh and texture fingerprints.
+        // Restore it immediately, even before the user reselects the local
+        // Data Files folder. A later asset-source change clears these items
+        // and schedules fresh captures, so stale local files cannot persist
+        // once the resolver has new input.
+        this.component.setImportedThumbnail(record, this.thumbnailCache.urlFor(entry));
       } catch {}
     }
   }
@@ -857,6 +906,8 @@ export class LibraryWorkspace {
       this.productionLoadKey = null;
       this.productionDetailsKey = null;
       this.productionViewerActive = false;
+      this.productionPreviewActive = false;
+      this.productionPreviewKey = null;
       this.syncImportedThumbnailTargets();
       return;
     }
@@ -866,7 +917,55 @@ export class LibraryWorkspace {
     else {
       this.productionLoadKey = null;
       if (mode === 'details') this.syncProductionDetails(preview, dialog);
+      else this.ensureHighResolutionPreview(preview);
       this.syncImportedThumbnailTargets();
+    }
+  }
+
+  async ensureHighResolutionPreview(preview) {
+    const item = this.component.findCatalogItem(preview?.id);
+    if (!preview?.mesh || !item?.imported || !item.record || !item.thumbnailReady) {
+      this.productionPreviewActive = false;
+      this.productionPreviewKey = null;
+      return;
+    }
+    const key = `${preview.source || ''}\0${preview.id || ''}\0${preview.mesh}`;
+    if (this.productionPreviewKey === key) return;
+    this.productionPreviewKey = key;
+    this.productionPreviewActive = true;
+    const isCurrent = () => {
+      const current = this.component.state.renderPreview;
+      return this.productionPreviewKey === key
+        && this.component.state.renderPreviewMode === 'preview'
+        && current?.id === preview.id
+        && current?.mesh === preview.mesh;
+    };
+    try {
+      const cached = await this.findCachedThumbnail(item.record, THUMBNAIL_VARIANT_PREVIEW);
+      if (cached) {
+        if (isCurrent()) this.component.setState({
+          renderPreview: { ...this.component.state.renderPreview, src: cached.url, thumbnailPending: false },
+          renderPreviewLoaded: true,
+        });
+        return;
+      }
+      const viewer = await this.ensureThumbnailViewer();
+      const result = await viewer.load(preview.mesh, { resolveTextures: true });
+      const generated = await this.getOrCreateThumbnail(item.record, result, {
+        viewer,
+        variant: THUMBNAIL_VARIANT_PREVIEW,
+        captureOptions: { width: 768, height: 768, quality: 0.9 },
+        shouldCommit: isCurrent,
+      });
+      if (generated && isCurrent()) this.component.setState({
+        renderPreview: { ...this.component.state.renderPreview, src: generated.url, thumbnailPending: false },
+        renderPreviewLoaded: true,
+      });
+    } catch (error) {
+      if (isCurrent()) console.warn('high-resolution preview generation failed', item.record.id, error);
+    } finally {
+      if (this.productionPreviewKey === key) this.productionPreviewActive = false;
+      this.pumpThumbnailQueue();
     }
   }
 
@@ -876,6 +975,12 @@ export class LibraryWorkspace {
     const host = dialog?.querySelector('[data-live-preview-host]');
     const status = host?.querySelector('[data-live-status]');
     if (!preview || !host || !status) return;
+    if (preview.vanilla && !this.assetSources.length) {
+      this.productionViewerMessage = 'Add a Morrowind Data Files folder or BSA through Local files to enable 3D.';
+      status.textContent = this.productionViewerMessage;
+      status.dataset.error = 'true';
+      return;
+    }
     const key = `${preview.source || ''}\0${preview.id || ''}\0${preview.mesh}`;
     if (this.productionLoadKey === key && this.viewer) {
       await this.ensureViewer(host, status);

@@ -96,6 +96,7 @@ export function createProductionLibraryState({
     renderPreview: null,
     renderPreviewLoaded: false,
     renderPreviewMode: 'preview',
+    assetSourceRevision: 0,
     aot: false,
     enchantmentPreview: null,
     contentsPreview: null,
