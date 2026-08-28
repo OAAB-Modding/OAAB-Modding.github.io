@@ -250,6 +250,20 @@ export class NifViewer {
     }
   }
 
+  async capturePng() {
+    // WebGLRenderer is created with alpha disabled and the scene always has a
+    // color background, so the encoded PNG is opaque while matching the
+    // current interactive camera, zoom, and visible render modes exactly.
+    this.controls.update();
+    this.renderer.render(this.scene, this.camera);
+    return new Promise((resolve, reject) => {
+      this.canvas.toBlob(
+        value => value ? resolve(value) : reject(new Error('Unable to encode PNG')),
+        'image/png',
+      );
+    });
+  }
+
   #applyCameraView(view) {
     const target = this.cameraHome?.target?.clone() || this.controls.target.clone();
     const referencePosition = this.cameraHome?.position || this.camera.position;

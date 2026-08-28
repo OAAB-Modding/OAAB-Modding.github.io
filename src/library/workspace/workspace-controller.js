@@ -56,6 +56,9 @@ export class LibraryWorkspace {
     this.productionViewerMessage = '';
     this.productionDetailsKey = null;
     this.productionDetailsSource = '';
+    this.viewerDownloadReady = false;
+    this.viewerDownloadPending = false;
+    this.viewerDownloadName = '';
   }
 
   mount() {
@@ -657,10 +660,13 @@ export class LibraryWorkspace {
     const status = live.querySelector('[data-record-viewer-status]');
     try {
       const viewer = await this.ensureViewer(live, status);
+      this.setViewerDownloadState(false, record.id);
       const result = await viewer.load(record.mesh);
       status.textContent = `${record.mesh} · drag to rotate · middle/right drag to pan · wheel to zoom`;
+      this.setViewerDownloadState(true, record.id);
       await this.cacheThumbnail(record, result);
     } catch (error) {
+      this.setViewerDownloadState(false, record.id);
       status.textContent = error.message;
       status.dataset.error = 'true';
     }
@@ -690,16 +696,22 @@ export class LibraryWorkspace {
     if (!this.viewerControls) {
       this.viewerControls = element('div', { className: 'library-viewer-controls' }, this.doc);
       this.viewerControls.setAttribute('role', 'toolbar');
-      this.viewerControls.setAttribute('aria-label', '3D render modes');
+      this.viewerControls.setAttribute('aria-label', '3D viewer controls');
       this.viewerControls.innerHTML = `
         <button type="button" data-viewer-toggle="markers" title="Show or hide shapes named EditorMarker">Markers</button>
         <button type="button" data-viewer-toggle="wireframe" title="Show triangle edges">Wireframe</button>
         <button type="button" data-viewer-toggle="collision" title="Show or hide RootCollisionNode geometry">Collision</button>
-        <button type="button" data-viewer-toggle="normals" title="Color surfaces by their normals">Normals</button>`;
+        <button type="button" data-viewer-toggle="normals" title="Color surfaces by their normals">Normals</button>
+        <button type="button" data-viewer-download disabled title="Download the current camera view with an opaque background">Download PNG</button>`;
       this.viewerControls.addEventListener('pointerdown', event => event.stopPropagation());
       this.viewerControls.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
+        const downloadButton = event.target.closest('[data-viewer-download]');
+        if (downloadButton) {
+          this.downloadViewerPng(viewer, downloadButton);
+          return;
+        }
         const button = event.target.closest('[data-viewer-toggle]');
         const toggle = VIEWER_TOGGLES[button?.dataset.viewerToggle];
         if (!toggle) return;
@@ -709,6 +721,7 @@ export class LibraryWorkspace {
     }
     if (this.viewerControls.parentElement !== host) host.append(this.viewerControls);
     this.syncViewerControls(viewer);
+    this.syncViewerDownloadControl();
   }
 
   syncViewerControls(viewer = this.viewer) {
@@ -716,6 +729,38 @@ export class LibraryWorkspace {
     for (const button of this.viewerControls.querySelectorAll('[data-viewer-toggle]')) {
       const toggle = VIEWER_TOGGLES[button.dataset.viewerToggle];
       if (toggle) button.setAttribute('aria-pressed', String(!!viewer[toggle.property]));
+    }
+  }
+
+  setViewerDownloadState(ready, name = this.viewerDownloadName) {
+    this.viewerDownloadReady = !!ready;
+    this.viewerDownloadName = String(name || 'oaab-3d-view');
+    this.syncViewerDownloadControl();
+  }
+
+  syncViewerDownloadControl() {
+    const button = this.viewerControls?.querySelector('[data-viewer-download]');
+    if (!button) return;
+    button.disabled = !this.viewerDownloadReady || this.viewerDownloadPending;
+    button.textContent = this.viewerDownloadPending ? 'Preparing…' : 'Download PNG';
+    button.setAttribute('aria-busy', String(this.viewerDownloadPending));
+  }
+
+  async downloadViewerPng(viewer = this.viewer, button = null) {
+    if (!viewer || !this.viewerDownloadReady || this.viewerDownloadPending) return false;
+    this.viewerDownloadPending = true;
+    this.syncViewerDownloadControl();
+    try {
+      const blob = await viewer.capturePng();
+      triggerBlobDownload(this.doc, blob, pngFilenameForView(this.viewerDownloadName));
+      return true;
+    } catch (error) {
+      console.warn('3D PNG download failed', error);
+      if (button) button.title = `PNG download failed: ${error.message}`;
+      return false;
+    } finally {
+      this.viewerDownloadPending = false;
+      this.syncViewerDownloadControl();
     }
   }
 
@@ -1111,6 +1156,7 @@ export class LibraryWorkspace {
       this.productionViewerActive = false;
       this.productionPreviewActive = false;
       this.productionPreviewKey = null;
+      if (!this.interactiveViewerActive) this.setViewerDownloadState(false);
       this.syncImportedThumbnailTargets();
       return;
     }
@@ -1179,6 +1225,7 @@ export class LibraryWorkspace {
     const status = host?.querySelector('[data-live-status]');
     if (!preview || !host || !status) return;
     if (preview.vanilla && !this.assetSources.length) {
+      this.setViewerDownloadState(false, preview.id);
       this.productionViewerMessage = 'Add a Morrowind Data Files folder or BSA through Local files to enable 3D.';
       status.textContent = this.productionViewerMessage;
       status.dataset.error = 'true';
@@ -1187,10 +1234,12 @@ export class LibraryWorkspace {
     const key = `${preview.source || ''}\0${preview.id || ''}\0${preview.mesh}`;
     if (this.productionLoadKey === key && this.viewer) {
       await this.ensureViewer(host, status);
+      this.setViewerDownloadState(this.viewerDownloadName === preview.id && this.viewerDownloadReady, preview.id);
       status.textContent = this.productionViewerMessage || `${preview.mesh} · drag to rotate · middle/right drag to pan · wheel to zoom`;
       return;
     }
     this.productionLoadKey = key;
+    this.setViewerDownloadState(false, preview.id);
     this.productionViewerMessage = `Loading ${preview.mesh}…`;
     status.textContent = this.productionViewerMessage;
     status.removeAttribute('data-error');
@@ -1212,9 +1261,11 @@ export class LibraryWorkspace {
         if (!isCurrent()) return;
       }
       this.productionViewerMessage = `${preview.mesh} · drag to rotate · middle/right drag to pan · wheel to zoom`;
+      this.setViewerDownloadState(true, preview.id);
       if (status.isConnected) status.textContent = this.productionViewerMessage;
     } catch (error) {
       if (!isCurrent()) return;
+      this.setViewerDownloadState(false, preview.id);
       this.productionViewerMessage = error.message;
       if (status.isConnected) {
         status.textContent = error.message;
@@ -1327,6 +1378,25 @@ export class LibraryWorkspace {
     this.dialog?.remove();
     this.button?.remove();
   }
+}
+
+export function pngFilenameForView(value) {
+  const stem = String(value || 'oaab-3d-view')
+    .trim()
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-')
+    .replace(/[. ]+$/g, '');
+  return `${stem || 'oaab-3d-view'}.png`;
+}
+
+function triggerBlobDownload(doc, blob, filename) {
+  const urlApi = doc.defaultView?.URL || globalThis.URL;
+  const url = urlApi.createObjectURL(blob);
+  const link = element('a', { href: url, download: filename, hidden: true }, doc);
+  doc.body.append(link);
+  link.click();
+  link.remove();
+  const defer = doc.defaultView?.setTimeout?.bind(doc.defaultView) || globalThis.setTimeout;
+  defer(() => urlApi.revokeObjectURL(url), 0);
 }
 
 function workspaceMarkup() {

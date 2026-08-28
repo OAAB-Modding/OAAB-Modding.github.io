@@ -1,12 +1,69 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { LibraryWorkspace } from '../../src/library/workspace/workspace-controller.js';
+import {
+  LibraryWorkspace,
+  pngFilenameForView,
+} from '../../src/library/workspace/workspace-controller.js';
 import { NIF_RENDERER_VERSION } from '../../src/library/storage/thumbnail-cache.js';
 
 function workspaceWithoutConstructor() {
   return Object.create(LibraryWorkspace.prototype);
 }
+
+test('PNG download filenames are safe and retain the record ID', () => {
+  assert.equal(pngFilenameForView('oaab_de_chair_01'), 'oaab_de_chair_01.png');
+  assert.equal(pngFilenameForView('bad:name / view. '), 'bad-name - view.png');
+  assert.equal(pngFilenameForView(''), 'oaab-3d-view.png');
+});
+
+test('3D PNG downloads capture the current viewer frame and revoke the temporary URL', async () => {
+  const workspace = workspaceWithoutConstructor();
+  const events = [];
+  const anchor = {
+    click() { events.push(['click', this.download]); },
+    remove() { events.push(['remove']); },
+  };
+  workspace.doc = {
+    body: { append(node) { events.push(['append', node.href]); } },
+    createElement(tag) {
+      assert.equal(tag, 'a');
+      return anchor;
+    },
+    defaultView: {
+      URL: {
+        createObjectURL(blob) {
+          assert.equal(blob.type, 'image/png');
+          events.push(['create']);
+          return 'blob:current-view';
+        },
+        revokeObjectURL(url) { events.push(['revoke', url]); },
+      },
+      setTimeout(callback) { callback(); },
+    },
+  };
+  workspace.viewerDownloadReady = true;
+  workspace.viewerDownloadPending = false;
+  workspace.viewerDownloadName = 'oaab_chair_01';
+  workspace.syncViewerDownloadControl = () => {};
+  let captures = 0;
+  const downloaded = await workspace.downloadViewerPng({
+    async capturePng() {
+      captures += 1;
+      return new Blob(['png'], { type: 'image/png' });
+    },
+  });
+
+  assert.equal(downloaded, true);
+  assert.equal(captures, 1);
+  assert.deepEqual(events, [
+    ['create'],
+    ['append', 'blob:current-view'],
+    ['click', 'oaab_chair_01.png'],
+    ['remove'],
+    ['revoke', 'blob:current-view'],
+  ]);
+});
 
 test('background thumbnails capture from their dedicated viewer', async () => {
   const workspace = workspaceWithoutConstructor();

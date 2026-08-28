@@ -163,6 +163,8 @@
 .library-viewer-controls button { padding: 7px 10px; border: 1px solid rgba(184,128,69,.3); border-radius: 3px; color: #bcae9f; background: rgba(37,27,21,.9); font: 500 10px/1 "JetBrains Mono", monospace; cursor: pointer; backdrop-filter: blur(4px); }
 .library-viewer-controls button:hover { border-color: rgba(211,147,80,.68); color: #ead7c3; }
 .library-viewer-controls button[aria-pressed="true"] { color: #1c120a; background: #d39350; }
+.library-viewer-controls button:disabled { opacity: .45; cursor: not-allowed; }
+.library-viewer-controls button[aria-busy="true"] { cursor: wait; }
 .library-viewer-controls button:focus-visible { outline: 2px solid #f0ba79; outline-offset: 2px; }
 .library-live-preview-host { height: min(76vh, 760px); }
 .library-live-details { height: 100%; padding: 64px 28px 28px; overflow: auto; color: #d5c5b5; }
