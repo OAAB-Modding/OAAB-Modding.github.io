@@ -268,7 +268,6 @@ export class NifViewer {
 
   animate() {
     this.animationFrame = requestAnimationFrame(this.animate);
-    this.#applyAnimations((performance.now() - (this.animationEpoch || performance.now())) / 1000);
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
@@ -344,10 +343,6 @@ export class NifViewer {
         .map((entry) => [entry.path, entry.texture]),
     );
     this.loadedTextures = new Set(textures.values());
-    this.resolvedTextureMap = textures;
-    this.animationTargets = new Map();
-    this.animations = packet.animations || [];
-    this.animationEpoch = performance.now();
 
     for (const meshPacket of packet.meshes || []) {
       if (!meshPacket.vertices.length || !meshPacket.indices.length) continue;
@@ -386,10 +381,8 @@ export class NifViewer {
       mesh.matrixAutoUpdate = false;
       mesh.userData.collision = !!meshPacket.collision;
       mesh.userData.hidden = !!meshPacket.hidden;
-      mesh.userData.animationBaseMatrix = mesh.matrix.clone();
       mesh.visible = !meshPacket.hidden && (!meshPacket.collision || this.collisionVisible);
       this.modelRoot.add(mesh);
-      this.#registerAnimationTargets(mesh, meshPacket.animationTargets, mesh.name);
     }
 
     for (const particlePacket of packet.particles || []) {
@@ -411,72 +404,8 @@ export class NifViewer {
       particleMesh.matrixAutoUpdate = false;
       particleMesh.frustumCulled = false;
       particleMesh.userData.hidden = !!particlePacket.hidden;
-      particleMesh.userData.animationBaseMatrix = particleMesh.matrix.clone();
       particleMesh.visible = !particlePacket.hidden;
       this.modelRoot.add(particleMesh);
-      this.#registerAnimationTargets(
-        particleMesh,
-        particlePacket.animationTargets,
-        particleMesh.name,
-      );
-    }
-  }
-
-  #registerAnimationTargets(object, targets, name) {
-    for (const target of [...(targets || []), name].filter(Boolean)) {
-      const key = String(target).toLowerCase();
-      if (!this.animationTargets.has(key)) this.animationTargets.set(key, []);
-      const objects = this.animationTargets.get(key);
-      if (!objects.includes(object)) objects.push(object);
-    }
-  }
-
-  #applyAnimations(elapsed) {
-    if (!this.animations?.length || !this.animationTargets) return;
-    for (const animation of this.animations) {
-      if (!animation.active || !animation.target) continue;
-      const objects = this.animationTargets.get(animation.target.toLowerCase()) || [];
-      if (!objects.length) continue;
-      const time = animationTime(animation, elapsed);
-      const data = animation.data || {};
-      if (data.kind === 'visibility') {
-        const visible = sampleStep(data.keys, time, true);
-        for (const object of objects) {
-          object.visible = visible && !object.userData.hidden && (!object.userData.collision || this.collisionVisible);
-        }
-      } else if (data.kind === 'uv') {
-        const uOffset = sampleScalar(data.uOffset, time, 0);
-        const vOffset = sampleScalar(data.vOffset, time, 0);
-        const uTiling = sampleScalar(data.uTiling, time, 1);
-        const vTiling = sampleScalar(data.vTiling, time, 1);
-        for (const object of objects) {
-          // Morrowind's particle draw path emits literal quad UVs and ignores
-          // serialized particle UV sets, including NiUVController mutations.
-          if (object.material?.userData?.nifParticle) continue;
-          const map = object.material?.map;
-          if (!map) continue;
-          map.offset.set(uOffset, vOffset);
-          map.repeat.set(uTiling, vTiling);
-        }
-      } else if (data.kind === 'flip' && data.textures?.length && data.secsPerFrame > 0) {
-        const index = Math.floor(Math.max(0, time - (data.flipStartTime || 0)) / data.secsPerFrame) % data.textures.length;
-        let path = null;
-        try { path = normalizeAssetPath(data.textures[index], { root: 'textures' }); } catch {}
-        const texture = path ? this.resolvedTextureMap?.get(path) : null;
-        if (texture) {
-          for (const object of objects) {
-            if (object.material) setMaterialMap(object.material, texture);
-          }
-        }
-      } else if (data.kind === 'keyframe') {
-        const transform = sampledTransform(data, time);
-        const origin = sampledTransform(data, animation.startTime || 0);
-        const delta = transform.multiply(origin.invert());
-        for (const object of objects) {
-          object.matrix.copy(delta).multiply(object.userData.animationBaseMatrix);
-          object.matrixWorldNeedsUpdate = true;
-        }
-      }
     }
   }
 
@@ -537,9 +466,6 @@ export class NifViewer {
     });
     for (const texture of this.loadedTextures || []) texture.dispose();
     this.loadedTextures = null;
-    this.resolvedTextureMap = null;
-    this.animationTargets = null;
-    this.animations = null;
     this.modelRoot.clear();
   }
 
@@ -714,21 +640,6 @@ function alphaTestMode(packet) {
   }[packet.alphaTestMode] ?? 1;
 }
 
-function setMaterialMap(material, texture) {
-  material.map = texture;
-  if (material.uniforms?.particleMap) {
-    material.uniforms.particleMap.value = texture;
-    material.uniforms.hasParticleMap.value = true;
-  } else {
-    material.needsUpdate = true;
-  }
-  applyTextureMapSettings(
-    texture,
-    material.userData?.clampMode,
-    material.userData?.filterMode,
-  );
-}
-
 function sideForDrawMode(mode) {
   if (mode === 'Both') return THREE.DoubleSide;
   if (mode === 'Clockwise') return THREE.BackSide;
@@ -785,71 +696,6 @@ function applyEmissiveVertexColors(material) {
     );
   };
   material.customProgramCacheKey = () => 'nif-emissive-vertex-colors-v1';
-}
-
-function animationTime(animation, elapsed) {
-  const start = Number(animation.startTime) || 0;
-  const stop = Number(animation.stopTime);
-  const duration = Number.isFinite(stop) && stop > start ? stop - start : 0;
-  let value = elapsed * (Number(animation.frequency) || 1) + (Number(animation.phase) || 0);
-  if (!duration) return start + value;
-  if (animation.cycleType === 'Clamp') return THREE.MathUtils.clamp(value, start, stop);
-  value = ((value - start) % duration + duration) % duration;
-  if (animation.cycleType === 'Reverse') {
-    const doubled = ((elapsed * (Number(animation.frequency) || 1) + (Number(animation.phase) || 0) - start) % (duration * 2) + duration * 2) % (duration * 2);
-    return doubled > duration ? stop - (doubled - duration) : start + doubled;
-  }
-  return start + value;
-}
-
-function keyInterval(keys, time) {
-  const values = keys || [];
-  if (!values.length) return null;
-  if (time <= values[0].time) return [values[0], values[0], 0];
-  for (let index = 1; index < values.length; index += 1) {
-    if (time <= values[index].time) {
-      const before = values[index - 1];
-      const after = values[index];
-      const span = after.time - before.time;
-      return [before, after, span > 0 ? (time - before.time) / span : 0];
-    }
-  }
-  return [values.at(-1), values.at(-1), 0];
-}
-
-function sampleScalar(keys, time, fallback) {
-  const interval = keyInterval(keys, time);
-  if (!interval) return fallback;
-  return THREE.MathUtils.lerp(interval[0].value, interval[1].value, interval[2]);
-}
-
-function sampleVector(keys, time, fallback) {
-  const interval = keyInterval(keys, time);
-  if (!interval) return fallback.clone();
-  return new THREE.Vector3(...interval[0].value).lerp(new THREE.Vector3(...interval[1].value), interval[2]);
-}
-
-function sampleQuaternion(keys, time) {
-  const interval = keyInterval(keys, time);
-  if (!interval) return new THREE.Quaternion();
-  return new THREE.Quaternion(...interval[0].value).slerp(new THREE.Quaternion(...interval[1].value), interval[2]);
-}
-
-function sampleStep(keys, time, fallback) {
-  const values = keys || [];
-  let result = fallback;
-  for (const key of values) {
-    if (key.time > time) break;
-    result = !!key.value;
-  }
-  return result;
-}
-
-function sampledTransform(data, time) {
-  const position = sampleVector(data.translations, time, new THREE.Vector3());
-  const rotation = sampleQuaternion(data.rotations, time);
-  const scaleValue = sampleScalar(data.scales, time, 1);
-  return new THREE.Matrix4().compose(position, rotation, new THREE.Vector3(scaleValue, scaleValue, scaleValue));
 }
 
 async function mapLimit(values, limit, mapper) {
