@@ -2,7 +2,7 @@ import { normalizeAssetPath } from '../resolver/path-utils.js';
 
 // Bump this whenever the rendered result changes. The cache key then leaves
 // older captures in IndexedDB without ever displaying them as current.
-export const NIF_RENDERER_VERSION = '6';
+export const NIF_RENDERER_VERSION = '7';
 export const THUMBNAIL_VARIANT_GRID = 'grid';
 export const THUMBNAIL_VARIANT_PREVIEW = 'preview';
 

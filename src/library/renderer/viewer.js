@@ -40,6 +40,7 @@ export class NifViewer {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
     this.controls.screenSpacePanning = true;
+    this.controls.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
 
     this.modelRoot = new THREE.Group();
     this.modelRoot.name = 'Morrowind NIF';
@@ -218,11 +219,10 @@ export class NifViewer {
     if (box.isEmpty()) return false;
 
     const center = box.getCenter(new THREE.Vector3());
-    // modelRoot is rotated into Morrowind's coordinate system. Convert the
-    // world-space bounds center back to the group's local coordinates before
-    // translating, otherwise some meshes are framed well outside the camera.
-    const localCenter = this.modelRoot.worldToLocal(center.clone());
-    this.modelRoot.position.sub(localCenter);
+    // Box3 reports the center in the modelRoot parent's coordinate space, which
+    // is also the space used by modelRoot.position. Offset by that world-space
+    // center directly so the root's Morrowind orientation cannot skew framing.
+    this.modelRoot.position.copy(center).multiplyScalar(-1);
     this.modelRoot.updateWorldMatrix(true, true);
 
     const centeredBox = new THREE.Box3().setFromObject(this.modelRoot);

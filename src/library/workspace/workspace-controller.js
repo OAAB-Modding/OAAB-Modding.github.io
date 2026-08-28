@@ -637,7 +637,7 @@ export class LibraryWorkspace {
     try {
       const viewer = await this.ensureViewer(live, status);
       const result = await viewer.load(record.mesh);
-      status.textContent = `${record.mesh} · drag to rotate · wheel to zoom`;
+      status.textContent = `${record.mesh} · drag to rotate · middle/right drag to pan · wheel to zoom`;
       await this.cacheThumbnail(record, result);
     } catch (error) {
       status.textContent = error.message;
@@ -979,7 +979,7 @@ export class LibraryWorkspace {
     const key = `${preview.source || ''}\0${preview.id || ''}\0${preview.mesh}`;
     if (this.productionLoadKey === key && this.viewer) {
       await this.ensureViewer(host, status);
-      status.textContent = this.productionViewerMessage || `${preview.mesh} · drag to rotate · wheel to zoom`;
+      status.textContent = this.productionViewerMessage || `${preview.mesh} · drag to rotate · middle/right drag to pan · wheel to zoom`;
       return;
     }
     this.productionLoadKey = key;
@@ -1003,7 +1003,7 @@ export class LibraryWorkspace {
         await this.cacheThumbnail(item.record, result, { viewer, shouldCommit: isCurrent });
         if (!isCurrent()) return;
       }
-      this.productionViewerMessage = `${preview.mesh} · drag to rotate · wheel to zoom`;
+      this.productionViewerMessage = `${preview.mesh} · drag to rotate · middle/right drag to pan · wheel to zoom`;
       if (status.isConnected) status.textContent = this.productionViewerMessage;
     } catch (error) {
       if (!isCurrent()) return;
