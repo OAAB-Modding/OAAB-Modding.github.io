@@ -551,8 +551,64 @@ export function withLibraryPreviews(Base) {
     return blocks;
   }
 
+  decodePluginBookEntities(value) {
+    const named = {
+      amp: '&', apos: "'", gt: '>', lt: '<', nbsp: ' ', quot: '"',
+    };
+    const codePoint = (code, fallback) => (
+      Number.isFinite(code) && code >= 0 && code <= 0x10ffff
+        ? String.fromCodePoint(code)
+        : fallback
+    );
+    return String(value || '').replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, entity) => {
+      if (/^#x/i.test(entity)) {
+        return codePoint(parseInt(entity.slice(2), 16), match);
+      }
+      if (/^#/.test(entity)) {
+        return codePoint(parseInt(entity.slice(1), 10), match);
+      }
+      return Object.prototype.hasOwnProperty.call(named, entity.toLowerCase())
+        ? named[entity.toLowerCase()]
+        : match;
+    });
+  }
+
+  pluginBookBlocks(value) {
+    const ruleMarker = '__OAAB_BOOK_RULE__';
+    const text = this.decodePluginBookEntities(String(value || '')
+      .replace(/<hr\b[^>]*>/gi, '\n\n' + ruleMarker + '\n\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<img\b[^>]*>/gi, '\n')
+      .replace(/<\/(?:div|p|center|h[1-6])\s*>/gi, '\n\n')
+      .replace(/<(?:div|p|center|h[1-6])\b[^>]*>/gi, '\n\n')
+      .replace(/<[^>]+>/g, ''))
+      .replace(/\r\n?/g, '\n')
+      .replace(/[ \t\f\v]+/g, ' ')
+      .replace(/[ \t]*\n[ \t]*/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    if (!text) return [];
+    return text.split(/\n{2,}/).map(section => section.trim()).filter(Boolean).map(section => (
+      section === ruleMarker
+        ? { isRule: true, text: '' }
+        : { isParagraph: true, text: section }
+    ));
+  }
+
   fetchBookPreview(item) {
     const ref = item && item.bookRef;
+    if (ref && ref.source === 'plugin') {
+      const blocks = this.pluginBookBlocks(ref.text || '');
+      return Promise.resolve({
+        id: item.id || '',
+        title: item.name || item.id || ref.title || 'Book',
+        meta: '',
+        sourceUrl: '',
+        loading: false,
+        error: '',
+        blocks: blocks.length ? blocks : [{ isParagraph: true, text: 'No readable text was found in this plugin record.' }],
+      });
+    }
     if (ref && ref.source === 'uesp') return this.fetchUespBookPreview(item, ref);
     if (!ref || !ref.rawUrl) return Promise.reject(new Error('No wiki book text found.'));
     return fetch(ref.rawUrl)

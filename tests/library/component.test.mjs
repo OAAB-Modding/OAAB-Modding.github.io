@@ -103,6 +103,67 @@ test('component factory composes the production behavior modules', () => {
   assert.equal(snapshot.query, 'ash');
 });
 
+test('imported plugins reuse built-in book, magic, light, and record-type features', async () => {
+  const Component = createLibraryComponent(TestLogic);
+  const component = new Component();
+  const effect = {
+    magic_effect: 'FireDamage',
+    skill: 'None',
+    attribute: 'None',
+    range: 'OnTarget',
+    area: 0,
+    duration: 5,
+    min_magnitude: 2,
+    max_magnitude: 4,
+  };
+  const imported = (id, type, raw = {}, mesh = null, name = '') => ({
+    id,
+    type,
+    name,
+    mesh,
+    source: 'plugin:demo',
+    raw: { id, type, name, mesh, ...raw },
+  });
+  const records = [
+    imported('enchant_test', 'Enchanting', {
+      effects: [effect],
+      data: { enchant_type: 'CastWhenUsed', cost: 12, max_charge: 40, flags: '' },
+    }),
+    imported('armor_test', 'Armor', { enchanting: 'enchant_test', data: { armor_rating: 8 } }, 'meshes/a/test.nif', 'Test Armor'),
+    imported('body_test', 'Bodypart', { data: { bodypart_type: 'Skin' } }, 'meshes/b/test.nif'),
+    imported('clothing_test', 'Clothing', { data: { clothing_type: 'Robe' } }, 'meshes/c/test.nif', 'Test Robe'),
+    imported('creature_test', 'Creature', { inventory: [[1, 'armor_test']], spells: ['spell_test'] }, 'meshes/r/test.nif', 'Test Creature'),
+    imported('potion_test', 'Alchemy', { effects: [effect], data: { value: 25, weight: 0.5, flags: '' } }, 'meshes/m/potion.nif', 'Test Potion'),
+    imported('spell_test', 'Spell', { effects: [effect], data: { spell_type: 'Spell', cost: 7, flags: '' } }, null, 'Test Spell'),
+    imported('items_test', 'LeveledItem', { items: [['armor_test', 1]], chance_none: 0 }),
+    imported('creatures_test', 'LeveledCreature', { creatures: [['creature_test', 2]], chance_none: 5 }),
+    imported('book_test', 'Book', { text: '<DIV ALIGN="CENTER">Title &amp; Text</DIV><BR>Second line' }, 'meshes/m/book.nif', 'Test Book'),
+    imported('light_test', 'Light', { data: { color: [10, 20, 30, 0], flags: '' } }),
+  ];
+
+  component.setImportedRecords(records);
+  const byId = new Map(component._importedItems.map(item => [item.id, item]));
+
+  assert.equal(byId.has('enchant_test'), false);
+  assert.equal(byId.get('armor_test').enchantment.effects[0].label, 'Fire Damage');
+  assert.equal(byId.get('body_test').type, 'Bodypart');
+  assert.equal(byId.get('clothing_test').type, 'Clothing');
+  assert.deepEqual(byId.get('creature_test').spells, ['spell_test']);
+  assert.equal(byId.get('potion_test').alchemy.effects[0].label, 'Fire Damage');
+  assert.equal(byId.get('spell_test').isSpell, true);
+  assert.match(byId.get('spell_test').img, /fire_damage\.webp$/);
+  assert.equal(byId.get('items_test').type, 'Leveled List');
+  assert.deepEqual(byId.get('creatures_test').leveledCreatures, [['creature_test', 2]]);
+  assert.equal(byId.get('book_test').bookRef.source, 'plugin');
+  assert.equal(byId.get('light_test').lightHex, '#0a141e');
+  assert.equal(byId.get('light_test').lightTint, 'rgb(10, 20, 30)');
+  assert.match(byId.get('light_test').img, /marker_light\.webp$/);
+
+  const preview = await component.fetchBookPreview(byId.get('book_test'));
+  assert.equal(preview.loading, false);
+  assert.deepEqual(preview.blocks.map(block => block.text), ['Title & Text', 'Second line']);
+});
+
 test('catalog source changes participate in filter history', () => {
   const Component = createLibraryComponent(TestLogic);
   const component = new Component();

@@ -11,14 +11,14 @@ export function withLibraryMagic(Base) {
   }
 
   lightColorRgb(r) {
-    const c = r && r.data && r.data.color;
+    const c = r && ((r.data && r.data.color) || r.color);
     if (!Array.isArray(c) || c.length < 3) return null;
     const rgb = c.slice(0, 3).map(v => Math.max(0, Math.min(255, parseInt(v, 10) || 0)));
     return this.isNegativeLight(r) ? rgb.map(v => 255 - v) : rgb;
   }
 
   isNegativeLight(r) {
-    return /\bNEGATIVE\b/i.test(String((r && r.data && r.data.flags) || ''));
+    return /\bNEGATIVE\b/i.test(String((r && ((r.data && r.data.flags) || r.flags)) || ''));
   }
 
   rgbToHex(rgb) {

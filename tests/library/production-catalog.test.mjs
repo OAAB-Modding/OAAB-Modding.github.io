@@ -21,6 +21,34 @@ class CatalogBase {
     return String(type || '');
   }
 
+  labelType(type) {
+    return String(type || '');
+  }
+
+  isSpellRecord() { return false; }
+
+  isLeveledListType() { return false; }
+
+  isMeshlessLight() { return false; }
+
+  enchantmentMap() { return {}; }
+
+  spellThumbnailEffects() { return []; }
+
+  lightColorCss() { return ''; }
+
+  lightColorHex() { return ''; }
+
+  lightColorRgb() { return null; }
+
+  alchemyDetails() { return null; }
+
+  ingredientEffects() { return []; }
+
+  spellDetails() { return null; }
+
+  itemEnchantment() { return null; }
+
   tagWordMatches(id, word) {
     return id.includes(String(word).toLowerCase());
   }

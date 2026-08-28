@@ -698,7 +698,7 @@ export function withLibraryRecordDetails(Base) {
         hasNoBookText: !ref,
         bookTitle: ref ? ('Read ' + (item.name || item.id || 'book')) : '',
         value: ref ? 'Read' : '',
-        title: ref ? (ref.file + (ref.anchor ? '#' + ref.anchor : '')) : '',
+        title: ref ? ((ref.file || ref.title || item.id || '') + (ref.anchor ? '#' + ref.anchor : '')) : '',
       };
     }
     const value = this.detailDisplayValue(item, key);

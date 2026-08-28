@@ -3,13 +3,15 @@ use std::collections::BTreeMap;
 use serde::Serialize;
 use serde_json::{Map, Value, json};
 use tes3::esp::{
-    Activator, Alchemy, Apparatus, Book, Container, Door, Ingredient, Light, Lockpick, MiscItem,
-    ObjectFlags, Plugin, Probe, RepairItem, Static, TES3Object, TypeInfo, Weapon,
+    Activator, Alchemy, Apparatus, Armor, Bodypart, Book, Clothing, Container, Creature, Door,
+    Effect, Enchanting, Ingredient, LeveledCreature, LeveledItem, Light, Lockpick, MiscItem,
+    ObjectFlags, Plugin, Probe, RepairItem, Spell, Static, TES3Object, TypeInfo, Weapon,
 };
 
-const LIBRARY_TAGS: [[u8; 4]; 15] = [
+const LIBRARY_TAGS: [[u8; 4]; 23] = [
     *b"TES3", *b"STAT", *b"ACTI", *b"DOOR", *b"CONT", *b"LIGH", *b"MISC", *b"WEAP", *b"APPA",
-    *b"LOCK", *b"PROB", *b"INGR", *b"BOOK", *b"ALCH", *b"REPA",
+    *b"LOCK", *b"PROB", *b"INGR", *b"BOOK", *b"ALCH", *b"REPA", *b"ARMO", *b"BODY", *b"CLOT",
+    *b"CREA", *b"SPEL", *b"ENCH", *b"LEVI", *b"LEVC",
 ];
 
 #[derive(Debug, Serialize)]
@@ -95,6 +97,14 @@ pub fn parse_plugin_packet(bytes: &[u8]) -> Result<PluginPacket, String> {
             TES3Object::Book(value) => records.push(book_record(value)),
             TES3Object::Alchemy(value) => records.push(alchemy_record(value)),
             TES3Object::RepairItem(value) => records.push(repair_record(value)),
+            TES3Object::Armor(value) => records.push(armor_record(value)),
+            TES3Object::Bodypart(value) => records.push(bodypart_record(value)),
+            TES3Object::Clothing(value) => records.push(clothing_record(value)),
+            TES3Object::Creature(value) => records.push(creature_record(value)),
+            TES3Object::Spell(value) => records.push(spell_record(value)),
+            TES3Object::Enchanting(value) => records.push(enchanting_record(value)),
+            TES3Object::LeveledItem(value) => records.push(leveled_item_record(value)),
+            TES3Object::LeveledCreature(value) => records.push(leveled_creature_record(value)),
             _ => {}
         }
     }
@@ -155,6 +165,38 @@ fn common_raw(script: &str) -> Map<String, Value> {
         raw.insert("script".to_owned(), json!(script));
     }
     raw
+}
+
+fn enum_name(value: impl std::fmt::Debug) -> String {
+    format!("{value:?}")
+}
+
+fn flags_name(value: impl std::fmt::Debug) -> String {
+    let debug = format!("{value:?}");
+    debug
+        .split_once('(')
+        .and_then(|(_, rest)| rest.strip_suffix(')'))
+        .filter(|inner| *inner != "0x0")
+        .unwrap_or("")
+        .to_owned()
+}
+
+fn magic_effects(effects: &[Effect]) -> Vec<Value> {
+    effects
+        .iter()
+        .map(|effect| {
+            json!({
+                "magic_effect": enum_name(effect.magic_effect),
+                "skill": enum_name(effect.skill),
+                "attribute": enum_name(effect.attribute),
+                "range": enum_name(effect.range),
+                "area": effect.area,
+                "duration": effect.duration,
+                "min_magnitude": effect.min_magnitude,
+                "max_magnitude": effect.max_magnitude,
+            })
+        })
+        .collect()
 }
 
 fn static_record(value: &Static) -> PluginRecord {
@@ -224,12 +266,18 @@ fn container_record(value: &Container) -> PluginRecord {
 
 fn light_record(value: &Light) -> PluginRecord {
     let mut raw = common_raw(&value.script);
-    raw.insert("weight".to_owned(), json!(value.data.weight));
-    raw.insert("value".to_owned(), json!(value.data.value));
-    raw.insert("duration".to_owned(), json!(value.data.time));
-    raw.insert("radius".to_owned(), json!(value.data.radius));
-    raw.insert("color".to_owned(), json!(value.data.color));
     raw.insert("sound".to_owned(), json!(value.sound));
+    raw.insert(
+        "data".to_owned(),
+        json!({
+            "weight": value.data.weight,
+            "value": value.data.value,
+            "time": value.data.time,
+            "radius": value.data.radius,
+            "color": value.data.color,
+            "flags": flags_name(value.data.flags),
+        }),
+    );
     record(
         &value.id,
         "Light",
@@ -335,11 +383,15 @@ fn probe_record(value: &Probe) -> PluginRecord {
 
 fn ingredient_record(value: &Ingredient) -> PluginRecord {
     let mut raw = common_raw(&value.script);
-    raw.insert("weight".to_owned(), json!(value.data.weight));
-    raw.insert("value".to_owned(), json!(value.data.value));
     raw.insert(
-        "effects".to_owned(),
-        json!(value.data.effects.map(|effect| effect as i32)),
+        "data".to_owned(),
+        json!({
+            "weight": value.data.weight,
+            "value": value.data.value,
+            "effects": value.data.effects.map(enum_name),
+            "skills": value.data.skills.map(enum_name),
+            "attributes": value.data.attributes.map(enum_name),
+        }),
     );
     record(
         &value.id,
@@ -354,10 +406,18 @@ fn ingredient_record(value: &Ingredient) -> PluginRecord {
 
 fn book_record(value: &Book) -> PluginRecord {
     let mut raw = common_raw(&value.script);
-    raw.insert("weight".to_owned(), json!(value.data.weight));
-    raw.insert("value".to_owned(), json!(value.data.value));
     raw.insert("text".to_owned(), json!(value.text));
     raw.insert("enchanting".to_owned(), json!(value.enchanting));
+    raw.insert(
+        "data".to_owned(),
+        json!({
+            "weight": value.data.weight,
+            "value": value.data.value,
+            "book_type": enum_name(value.data.book_type),
+            "skill": enum_name(value.data.skill),
+            "enchantment": value.data.enchantment,
+        }),
+    );
     record(
         &value.id,
         "Book",
@@ -371,9 +431,15 @@ fn book_record(value: &Book) -> PluginRecord {
 
 fn alchemy_record(value: &Alchemy) -> PluginRecord {
     let mut raw = common_raw(&value.script);
-    raw.insert("weight".to_owned(), json!(value.data.weight));
-    raw.insert("value".to_owned(), json!(value.data.value));
-    raw.insert("effectCount".to_owned(), json!(value.effects.len()));
+    raw.insert("effects".to_owned(), json!(magic_effects(&value.effects)));
+    raw.insert(
+        "data".to_owned(),
+        json!({
+            "weight": value.data.weight,
+            "value": value.data.value,
+            "flags": flags_name(value.data.flags),
+        }),
+    );
     record(
         &value.id,
         "Alchemy",
@@ -402,10 +468,183 @@ fn repair_record(value: &RepairItem) -> PluginRecord {
     )
 }
 
+fn armor_record(value: &Armor) -> PluginRecord {
+    let mut raw = common_raw(&value.script);
+    raw.insert("enchanting".to_owned(), json!(value.enchanting));
+    raw.insert(
+        "data".to_owned(),
+        json!({
+            "armor_type": enum_name(value.data.armor_type),
+            "weight": value.data.weight,
+            "value": value.data.value,
+            "health": value.data.health,
+            "enchantment": value.data.enchantment,
+            "armor_rating": value.data.armor_rating,
+        }),
+    );
+    record(
+        &value.id,
+        "Armor",
+        &value.name,
+        &value.mesh,
+        &value.icon,
+        value.flags,
+        raw,
+    )
+}
+
+fn bodypart_record(value: &Bodypart) -> PluginRecord {
+    let mut raw = Map::new();
+    raw.insert("race".to_owned(), json!(value.race));
+    raw.insert(
+        "data".to_owned(),
+        json!({
+            "part": enum_name(value.data.part),
+            "vampire": value.data.vampire,
+            "flags": flags_name(value.data.flags),
+            "bodypart_type": enum_name(value.data.bodypart_type),
+        }),
+    );
+    record(&value.id, "Bodypart", "", &value.mesh, "", value.flags, raw)
+}
+
+fn clothing_record(value: &Clothing) -> PluginRecord {
+    let mut raw = common_raw(&value.script);
+    raw.insert("enchanting".to_owned(), json!(value.enchanting));
+    raw.insert(
+        "data".to_owned(),
+        json!({
+            "clothing_type": enum_name(value.data.clothing_type),
+            "weight": value.data.weight,
+            "value": value.data.value,
+            "enchantment": value.data.enchantment,
+        }),
+    );
+    record(
+        &value.id,
+        "Clothing",
+        &value.name,
+        &value.mesh,
+        &value.icon,
+        value.flags,
+        raw,
+    )
+}
+
+fn creature_record(value: &Creature) -> PluginRecord {
+    let mut raw = common_raw(&value.script);
+    raw.insert(
+        "inventory".to_owned(),
+        json!(
+            value
+                .inventory
+                .iter()
+                .map(|(count, id)| json!([count, id.to_string()]))
+                .collect::<Vec<_>>()
+        ),
+    );
+    raw.insert("spells".to_owned(), json!(value.spells));
+    raw.insert("sound".to_owned(), json!(value.sound));
+    if let Some(scale) = value.scale {
+        raw.insert("scale".to_owned(), json!(scale));
+    }
+    raw.insert(
+        "creature_flags".to_owned(),
+        json!(flags_name(value.creature_flags)),
+    );
+    raw.insert("blood_type".to_owned(), json!(value.blood_type));
+    raw.insert(
+        "data".to_owned(),
+        json!({
+            "creature_type": enum_name(value.data.creature_type),
+            "level": value.data.level,
+            "strength": value.data.strength,
+            "intelligence": value.data.intelligence,
+            "willpower": value.data.willpower,
+            "agility": value.data.agility,
+            "speed": value.data.speed,
+            "endurance": value.data.endurance,
+            "personality": value.data.personality,
+            "luck": value.data.luck,
+            "health": value.data.health,
+            "magicka": value.data.magicka,
+            "fatigue": value.data.fatigue,
+            "soul": value.data.soul,
+            "combat": value.data.combat,
+            "magic": value.data.magic,
+            "stealth": value.data.stealth,
+            "attack1": value.data.attack1,
+            "attack2": value.data.attack2,
+            "attack3": value.data.attack3,
+            "gold": value.data.gold,
+        }),
+    );
+    record(
+        &value.id,
+        "Creature",
+        &value.name,
+        &value.mesh,
+        "",
+        value.flags,
+        raw,
+    )
+}
+
+fn spell_record(value: &Spell) -> PluginRecord {
+    let mut raw = Map::new();
+    raw.insert("effects".to_owned(), json!(magic_effects(&value.effects)));
+    raw.insert(
+        "data".to_owned(),
+        json!({
+            "spell_type": enum_name(value.data.spell_type),
+            "cost": value.data.cost,
+            "flags": flags_name(value.data.flags),
+        }),
+    );
+    record(&value.id, "Spell", &value.name, "", "", value.flags, raw)
+}
+
+fn enchanting_record(value: &Enchanting) -> PluginRecord {
+    let mut raw = Map::new();
+    raw.insert("effects".to_owned(), json!(magic_effects(&value.effects)));
+    raw.insert(
+        "data".to_owned(),
+        json!({
+            "enchant_type": enum_name(value.data.enchant_type),
+            "cost": value.data.cost,
+            "max_charge": value.data.max_charge,
+            "flags": flags_name(value.data.flags),
+        }),
+    );
+    record(&value.id, "Enchanting", "", "", "", value.flags, raw)
+}
+
+fn leveled_item_record(value: &LeveledItem) -> PluginRecord {
+    let mut raw = Map::new();
+    raw.insert(
+        "leveled_item_flags".to_owned(),
+        json!(flags_name(value.leveled_item_flags)),
+    );
+    raw.insert("chance_none".to_owned(), json!(value.chance_none));
+    raw.insert("items".to_owned(), json!(value.items));
+    record(&value.id, "LeveledItem", "", "", "", value.flags, raw)
+}
+
+fn leveled_creature_record(value: &LeveledCreature) -> PluginRecord {
+    let mut raw = Map::new();
+    raw.insert(
+        "leveled_creature_flags".to_owned(),
+        json!(flags_name(value.leveled_creature_flags)),
+    );
+    raw.insert("chance_none".to_owned(), json!(value.chance_none));
+    raw.insert("creatures".to_owned(), json!(value.creatures));
+    record(&value.id, "LeveledCreature", "", "", "", value.flags, raw)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tes3::esp::Header;
+    use tes3::esp::{EffectId2, Header};
 
     #[test]
     fn extracts_library_records_and_masters_without_cell_data() {
@@ -434,5 +673,132 @@ mod tests {
     fn invalid_plugin_returns_a_diagnostic_error() {
         let error = parse_plugin_packet(b"not a plugin").unwrap_err();
         assert!(error.contains("TES3 plugin parse failed") || error.contains("records"));
+    }
+
+    #[test]
+    fn extracts_extended_library_records_and_magic_metadata() {
+        let effect = Effect {
+            magic_effect: EffectId2::FireDamage,
+            duration: 5,
+            min_magnitude: 2,
+            max_magnitude: 4,
+            ..Default::default()
+        };
+        let armor = Armor {
+            id: "armor_test".to_owned(),
+            name: "Test Armor".to_owned(),
+            mesh: "a\\test.nif".to_owned(),
+            enchanting: "enchant_test".to_owned(),
+            ..Default::default()
+        };
+        let bodypart = Bodypart {
+            id: "body_test".to_owned(),
+            mesh: "b\\test.nif".to_owned(),
+            ..Default::default()
+        };
+        let clothing = Clothing {
+            id: "clothing_test".to_owned(),
+            name: "Test Clothing".to_owned(),
+            mesh: "c\\test.nif".to_owned(),
+            enchanting: "enchant_test".to_owned(),
+            ..Default::default()
+        };
+        let leveled_item = LeveledItem {
+            id: "items_test".to_owned(),
+            items: vec![("armor_test".to_owned(), 1)],
+            ..Default::default()
+        };
+        let leveled_creature = LeveledCreature {
+            id: "creatures_test".to_owned(),
+            creatures: vec![("creature_test".to_owned(), 2)],
+            ..Default::default()
+        };
+        let creature = Creature {
+            id: "creature_test".to_owned(),
+            name: "Test Creature".to_owned(),
+            mesh: "r\\test.nif".to_owned(),
+            spells: vec!["spell_test".to_owned()],
+            ..Default::default()
+        };
+        let spell = Spell {
+            id: "spell_test".to_owned(),
+            name: "Test Spell".to_owned(),
+            effects: vec![effect.clone()],
+            ..Default::default()
+        };
+        let enchanting = Enchanting {
+            id: "enchant_test".to_owned(),
+            effects: vec![effect.clone()],
+            ..Default::default()
+        };
+        let alchemy = Alchemy {
+            id: "potion_test".to_owned(),
+            name: "Test Potion".to_owned(),
+            mesh: "m\\potion.nif".to_owned(),
+            effects: vec![effect],
+            ..Default::default()
+        };
+        let book = Book {
+            id: "book_test".to_owned(),
+            name: "Test Book".to_owned(),
+            mesh: "m\\book.nif".to_owned(),
+            text: "<DIV ALIGN=\"CENTER\">A book</DIV><BR>Second line".to_owned(),
+            ..Default::default()
+        };
+        let mut light = Light {
+            id: "light_test".to_owned(),
+            ..Default::default()
+        };
+        light.data.color = [10, 20, 30, 0];
+
+        let mut plugin = Plugin {
+            objects: vec![
+                Header::default().into(),
+                armor.into(),
+                bodypart.into(),
+                clothing.into(),
+                leveled_item.into(),
+                leveled_creature.into(),
+                creature.into(),
+                spell.into(),
+                enchanting.into(),
+                alchemy.into(),
+                book.into(),
+                light.into(),
+            ],
+        };
+        let bytes = plugin
+            .save_bytes()
+            .expect("serialize extended plugin fixture");
+        let packet = parse_plugin_packet(&bytes).expect("parse extended plugin fixture");
+        let record = |id: &str| {
+            packet
+                .records
+                .iter()
+                .find(|record| record.id == id)
+                .unwrap()
+        };
+
+        assert_eq!(packet.records.len(), 11);
+        assert_eq!(record("armor_test").record_type, "Armor");
+        assert_eq!(record("body_test").record_type, "Bodypart");
+        assert_eq!(record("clothing_test").record_type, "Clothing");
+        assert_eq!(record("items_test").record_type, "LeveledItem");
+        assert_eq!(record("creatures_test").record_type, "LeveledCreature");
+        assert_eq!(record("creature_test").record_type, "Creature");
+        assert_eq!(
+            record("spell_test").raw["effects"][0]["magic_effect"],
+            "FireDamage"
+        );
+        assert_eq!(record("enchant_test").raw["effects"][0]["duration"], 5);
+        assert_eq!(record("potion_test").raw["effects"][0]["max_magnitude"], 4);
+        assert_eq!(
+            record("book_test").raw["text"],
+            "<DIV ALIGN=\"CENTER\">A book</DIV><BR>Second line"
+        );
+        assert_eq!(
+            record("light_test").raw["data"]["color"],
+            json!([10, 20, 30, 0])
+        );
     }
 }

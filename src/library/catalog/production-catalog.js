@@ -451,35 +451,72 @@ export function withProductionCatalog(Base) {
       `${item.source}\0${String(item.id || '').toLowerCase()}`,
       item,
     ]));
+    const rawRecords = (records || []).map(record => record.raw || {});
+    const enchantmentsByKey = this.enchantmentMap(rawRecords);
     this._importedItems = (records || []).map(record => {
       const raw = record.raw || {};
       const old = previous.get(`${record.source}\0${String(record.id || '').toLowerCase()}`);
+      const spell = this.isSpellRecord(raw);
+      const leveledList = this.isLeveledListType(raw.type);
+      const markerLight = this.isMeshlessLight(raw);
+      const hasMesh = !!record.mesh;
+      if (!spell && !leveledList && !markerLight && !hasMesh) return null;
       const preserveThumbnail = preserveThumbnails && old?.record === record;
-      const thumbnailReady = !!(preserveThumbnail && old.thumbnailReady);
+      const specialThumbnail = spell || leveledList || markerLight;
+      const thumbnailReady = specialThumbnail || !!(preserveThumbnail && old.thumbnailReady);
+      const spellEffects = spell ? this.spellThumbnailEffects(raw) : [];
+      const lightColor = this.labelType(raw.type).toLowerCase() === 'light' ? this.lightColorCss(raw) : '';
+      const lightHex = lightColor ? this.lightColorHex(raw) : '';
+      const lightRgb = lightColor ? this.lightColorRgb(raw) : null;
+      const alchemy = spell ? null : this.alchemyDetails(raw);
+      const bookText = this.labelType(raw.type).toLowerCase() === 'book' ? String(raw.text || '').trim() : '';
+      const fallbackImage = '/assets/images/general/icon.png';
+      const markerImage = (this._THUMB || '/assets/images/library/thumbnails/meshes/') + 'marker_light.webp';
+      const markerRender = (this._RENDER || '/assets/images/library/renders/meshes/') + 'marker_light.webp';
+      const img = spell
+        ? (spellEffects[0] ? spellEffects[0].img : '')
+        : (leveledList ? '' : (markerLight ? markerImage : (preserveThumbnail ? old.img : fallbackImage)));
       return {
         record,
         source: record.source,
         id: record.id,
         name: record.name || '',
         type: this.displayType(record.type),
-        img: preserveThumbnail ? old.img : '/assets/images/general/icon.png',
-        render: preserveThumbnail ? old.render : '',
+        img,
+        render: markerLight ? markerRender : (preserveThumbnail ? old.render : ''),
         mesh: record.mesh || '',
-        inventory: Array.isArray(raw.contents) ? raw.contents : null,
-        spells: null,
-        effects: [],
-        enchantment: null,
-        alchemy: null,
-        bookRef: null,
+        isSpell: spell,
+        isLeveledList: leveledList,
+        detailKind: spell ? 'spell' : (alchemy ? 'alchemy' : ''),
+        spellEffects,
+        lightTint: markerLight ? lightColor : '',
+        lightColor,
+        lightHex,
+        lightRgb,
+        lightMask: markerLight ? this._LIGHT_MASK : '',
+        inventory: Array.isArray(raw.inventory) ? raw.inventory : (Array.isArray(raw.contents) ? raw.contents : null),
+        spells: Array.isArray(raw.spells) ? raw.spells : null,
+        leveledItems: Array.isArray(raw.items) ? raw.items : null,
+        leveledCreatures: Array.isArray(raw.creatures) ? raw.creatures : null,
+        effects: spell || alchemy ? [] : this.ingredientEffects(raw),
+        enchantment: spell ? this.spellDetails(raw) : this.itemEnchantment(raw, enchantmentsByKey),
+        alchemy,
+        bookRef: bookText ? {
+          source: 'plugin',
+          title: record.name || record.id || 'Book',
+          text: bookText,
+        } : null,
         detail: this.detailSourceRecord(raw),
         imported: true,
         thumbnailReady,
-        thumbnailStatus: thumbnailReady
+        thumbnailStatus: specialThumbnail
           ? 'ready'
-          : (record.mesh ? (preserveThumbnail ? old.thumbnailStatus || 'pending' : 'pending') : 'unavailable'),
+          : (thumbnailReady
+            ? 'ready'
+            : (hasMesh ? (preserveThumbnail ? old.thumbnailStatus || 'pending' : 'pending') : 'unavailable')),
         thumbnailError: preserveThumbnail ? old.thumbnailError || '' : '',
       };
-    });
+    }).filter(Boolean);
     this.setState({ data: this.buildData() });
   }
 
