@@ -3243,6 +3243,20 @@ button {
   height:16px;
   border-width:2px;
 }
+.library-detail-thumbnail-status {
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#dfa660;
+  font:600 14px/1 "JetBrains Mono",monospace;
+}
+.library-detail-thumbnail-status .asset-spinner {
+  width:16px;
+  height:16px;
+  border-width:2px;
+}
 .library-detail-light-tint {
   --asset-light-inset:3px;
   z-index:3;
@@ -3368,6 +3382,31 @@ button {
   align-items:center;
   justify-content:center;
   animation:oaabThumbPulse 1.3s ease-in-out infinite;
+}
+.asset-thumbnail-status {
+  position:absolute;
+  inset:0;
+  z-index:3;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  padding:20%;
+  border:0;
+  color:#bfae9d;
+  background:transparent;
+  font:500 10px/1.45 "JetBrains Mono",monospace;
+  text-align:center;
+}
+.asset-thumbnail-retry {
+  width:100%;
+  cursor:pointer;
+}
+.asset-thumbnail-retry > span:first-child {
+  color:#dfa660;
+  font-size:24px;
+  line-height:1;
 }
 .asset-spinner {
   width:24px;
@@ -3922,6 +3961,17 @@ button {
   padding:var(--library-render-pad);
   object-fit:contain;
   transition:opacity .24s ease;
+}
+.library-render-thumbnail-pending {
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  color:#bfae9d;
+  font:500 12px/1.4 "JetBrains Mono",monospace;
 }
 .library-render-light-tint {
   --asset-light-inset:var(--library-render-pad);

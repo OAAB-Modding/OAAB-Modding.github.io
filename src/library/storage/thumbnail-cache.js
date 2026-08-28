@@ -1,6 +1,6 @@
 import { normalizeAssetPath } from '../resolver/path-utils.js';
 
-export const NIF_RENDERER_VERSION = '3';
+export const NIF_RENDERER_VERSION = '4';
 
 export class ThumbnailCache {
   constructor(database) {

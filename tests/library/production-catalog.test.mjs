@@ -31,6 +31,10 @@ class CatalogBase {
 
   refreshLeveledListThumbnails() {}
 
+  detailSourceRecord(raw) {
+    return raw || {};
+  }
+
   objectContentIds() {
     return [];
   }
@@ -88,4 +92,35 @@ test('catalog source selection controls built-in and imported records', () => {
     'vanilla',
     'plugin:demo',
   ]);
+});
+
+test('imported thumbnail state distinguishes pending, failed, and ready previews', () => {
+  const catalog = new ProductionCatalog();
+  catalog._oaabItems = [];
+  catalog._vanillaItems = [];
+  const record = {
+    id: 'mod_object',
+    name: 'Mod object',
+    type: 'Static',
+    source: 'plugin:demo',
+    mesh: 'meshes/demo.nif',
+    raw: {},
+  };
+
+  catalog.setImportedRecords([record]);
+  const item = catalog._importedItems[0];
+  assert.equal(item.thumbnailStatus, 'pending');
+  assert.equal(item.thumbnailReady, false);
+
+  catalog.setImportedThumbnailStatus(record, 'failed', 'parse error');
+  assert.equal(item.thumbnailStatus, 'failed');
+  assert.equal(item.thumbnailError, 'parse error');
+
+  catalog.state.renderPreview = { id: record.id, src: '', thumbnailPending: true };
+  catalog.setImportedThumbnail(record, 'blob:textured');
+  assert.equal(item.thumbnailStatus, 'ready');
+  assert.equal(item.thumbnailReady, true);
+  assert.equal(item.img, 'blob:textured');
+  assert.equal(catalog.state.renderPreview.src, 'blob:textured');
+  assert.equal(catalog.state.renderPreview.thumbnailPending, false);
 });

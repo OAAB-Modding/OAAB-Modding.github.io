@@ -641,6 +641,9 @@ export function withLibraryRecordDetails(Base) {
   detailCell(item, column) {
     const key = column.key;
     if (key === 'thumb') {
+      const generatedThumbnail = !!(item.imported && item.mesh);
+      const thumbnailReady = !!item.thumbnailReady;
+      const thumbnailFailed = generatedThumbnail && !thumbnailReady && item.thumbnailStatus === 'failed';
       return {
         key,
         className: 'library-detail-cell-thumb',
@@ -648,10 +651,14 @@ export function withLibraryRecordDetails(Base) {
         isId: false,
         isContents: false,
         isPlain: false,
-        img: item.img || '',
+        img: generatedThumbnail && !thumbnailReady ? '' : (item.img || ''),
+        localThumbnail: generatedThumbnail && !thumbnailReady,
+        thumbnailPending: generatedThumbnail && !thumbnailReady && !thumbnailFailed,
+        thumbnailFailed,
+        thumbnailStatusLabel: thumbnailFailed ? 'Preview unavailable' : 'Generating preview…',
         lightTint: item.lightTint || '',
         lightMask: item.lightMask || '',
-        render: (item.isSpell || item.isLeveledList) ? '' : (item.render || item.img || ''),
+        render: (item.isSpell || item.isLeveledList || (generatedThumbnail && !thumbnailReady)) ? '' : (item.render || item.img || ''),
         renderId: item.id || '',
         renderTitle: item.id || '',
         renderMeta: item.mesh || item.name || item.type || '',

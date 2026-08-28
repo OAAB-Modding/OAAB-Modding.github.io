@@ -455,6 +455,7 @@ export function withProductionCatalog(Base) {
       const raw = record.raw || {};
       const old = previous.get(`${record.source}\0${String(record.id || '').toLowerCase()}`);
       const preserveThumbnail = preserveThumbnails && old?.record === record;
+      const thumbnailReady = !!(preserveThumbnail && old.thumbnailReady);
       return {
         record,
         source: record.source,
@@ -472,7 +473,11 @@ export function withProductionCatalog(Base) {
         bookRef: null,
         detail: this.detailSourceRecord(raw),
         imported: true,
-        thumbnailReady: !!(preserveThumbnail && old.thumbnailReady),
+        thumbnailReady,
+        thumbnailStatus: thumbnailReady
+          ? 'ready'
+          : (record.mesh ? (preserveThumbnail ? old.thumbnailStatus || 'pending' : 'pending') : 'unavailable'),
+        thumbnailError: preserveThumbnail ? old.thumbnailError || '' : '',
       };
     });
     this.setState({ data: this.buildData() });
@@ -484,6 +489,25 @@ export function withProductionCatalog(Base) {
     item.img = url;
     item.render = url;
     item.thumbnailReady = true;
+    item.thumbnailStatus = 'ready';
+    item.thumbnailError = '';
+    const currentPreview = this.state.renderPreview;
+    this.setState({
+      data: this.buildData(),
+      ...(currentPreview?.id === item.id
+        ? { renderPreview: { ...currentPreview, src: url, thumbnailPending: false } }
+        : {}),
+    });
+  }
+
+  setImportedThumbnailStatus(record, status, error = '') {
+    const item = (this._importedItems || []).find(value => value.record === record);
+    if (!item || item.thumbnailReady) return;
+    const nextStatus = String(status || 'pending');
+    const nextError = String(error || '');
+    if (item.thumbnailStatus === nextStatus && item.thumbnailError === nextError) return;
+    item.thumbnailStatus = nextStatus;
+    item.thumbnailError = nextError;
     this.setState({ data: this.buildData() });
   }
 

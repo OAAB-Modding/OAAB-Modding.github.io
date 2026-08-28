@@ -625,13 +625,15 @@ export function withLibraryPreviews(Base) {
     const contentCount = x && x.contentIds && x.contentIds.length ? x.contentIds.length : 0;
     const isSpell = !!(x && x.isSpell);
     const isLeveledList = !!(x && x.isLeveledList);
+    const thumbnailPending = !!(x && x.imported && x.mesh && !x.thumbnailReady);
     return {
       id: x && x.id ? String(x.id) : '',
-      src: (isSpell || isLeveledList) ? '' : ((x && (x.render || x.img)) || ''),
+      src: (isSpell || isLeveledList || thumbnailPending) ? '' : ((x && (x.render || x.img)) || ''),
       title: (x && x.id) || '',
       meta: (x && (x.mesh || x.name || x.type)) || '',
       mesh: (x && x.mesh) || '',
       source: (x && x.source) || '',
+      thumbnailPending,
       lightTint: (x && x.lightTint) || '',
       lightColor: (x && x.lightColor) || '',
       lightHex: (x && x.lightHex) || '',
@@ -664,8 +666,8 @@ export function withLibraryPreviews(Base) {
     if (idx < 0) idx = list.findIndex(x => x.src === cur.src && x.title === cur.title);
     if (idx < 0) return;
     const next = list[(idx + step + list.length) % list.length];
-    if (!next || !next.src) return;
-    this.setState({ renderPreview: next, renderPreviewLoaded: false });
+    if (!next || (!next.src && !next.mesh)) return;
+    this.setState({ renderPreview: next, renderPreviewLoaded: false, renderPreviewMode: 'preview' });
   }
 
   renderSwipePoint(e) {

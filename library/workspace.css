@@ -149,6 +149,8 @@
 .library-live-preview-controls button[aria-pressed="true"] { color: #1c120a; background: #d39350; }
 .library-record-modes button:disabled { opacity: .35; cursor: default; }
 .library-record-preview { display: grid; min-height: 360px; place-items: center; background: #100d0b; }
+.library-record-preview[hidden],
+.library-record-live[hidden] { display: none !important; }
 .library-record-preview img { max-width: 100%; max-height: 480px; object-fit: contain; }
 .library-record-live,
 .library-live-preview-host { position: relative; width: 100%; min-height: 440px; overflow: hidden; background: #100d0b; }

@@ -367,7 +367,9 @@ export function withLibraryRenderValues(Base) {
     );
     const startIndex = startRow * metrics.columns;
     const endIndex = Math.min(filtered.length, endRow * metrics.columns);
-    this._renderPreviewItems = (detailView ? detailItems : filtered).map(x => this.renderPreviewPayload(x)).filter(x => x && x.src);
+    this._renderPreviewItems = (detailView ? detailItems : filtered)
+      .map(x => this.renderPreviewPayload(x))
+      .filter(x => x && (x.src || x.mesh));
     this._bookPreviewItems = (detailView ? detailItems : filtered).filter(x => x && x.bookRef);
     const REL_ADDED = { bg: 'rgba(210,130,63,0.94)', fg: '#1a120a', bd: 'rgba(210,130,63,0.94)', glyph: '+' };
     const REL_UPD = light
@@ -389,18 +391,25 @@ export function withLibraryRenderValues(Base) {
         }
       }
       const sty = prov ? (prov.status === 'added' ? REL_ADDED : REL_UPD) : REL_UPD;
+      const generatedThumbnail = !!(x.imported && x.mesh);
+      const thumbnailReady = !!x.thumbnailReady;
+      const thumbnailFailed = generatedThumbnail && !thumbnailReady && x.thumbnailStatus === 'failed';
+      const thumbnailPending = generatedThumbnail && !thumbnailReady && !thumbnailFailed;
       return {
         id: x.id,
         name: x.name || '',
         hasName: !!(x.name && x.name.length),
-        localThumbnail: !!(x.imported && x.mesh && !x.thumbnailReady),
+        localThumbnail: generatedThumbnail && !thumbnailReady,
+        thumbnailPending,
+        thumbnailFailed,
+        thumbnailStatusLabel: thumbnailFailed ? 'Preview unavailable · click to retry' : 'Generating textured preview…',
         type: x.type,
         img: x.img,
-        render: (x.isSpell || x.isLeveledList) ? '' : (x.render || x.img),
+        render: (x.isSpell || x.isLeveledList || (generatedThumbnail && !thumbnailReady)) ? '' : (x.render || x.img),
         renderId: x.id || '',
         renderTitle: x.id || '',
         renderMeta: x.mesh || x.name || x.type || '',
-        thumbKey: x.id + '|' + (x.img || '') + '|' + ((x.collageThumbs || []).map(t => t.src).join(',')) + '|' + (x.lightTint || '') + '|' + (x.lightColor || '') + '|' + (x.lightHex || '') + '|' + (x.lightMask || ''),
+        thumbKey: x.id + '|' + (x.img || '') + '|' + (x.thumbnailStatus || '') + '|' + ((x.collageThumbs || []).map(t => t.src).join(',')) + '|' + (x.lightTint || '') + '|' + (x.lightColor || '') + '|' + (x.lightHex || '') + '|' + (x.lightMask || ''),
         lightTint: x.lightTint || '',
         lightColor: x.lightColor || '',
         lightHex: x.lightHex || '',
@@ -422,7 +431,7 @@ export function withLibraryRenderValues(Base) {
         isSpell: !!x.isSpell,
         isNotSpell: !x.isSpell,
         isLeveledList: !!x.isLeveledList,
-        hasSingleImage: !!(x.img && !(x.hasCollage || x.hasListPlaceholder)),
+        hasSingleImage: !!(x.img && !(x.hasCollage || x.hasListPlaceholder) && (!generatedThumbnail || thumbnailReady)),
         hasCollage: !!x.hasCollage,
         collageThumbs: x.collageThumbs || [],
         collageClass: x.collageClass || '',
@@ -570,6 +579,11 @@ export function withLibraryRenderValues(Base) {
     const tilesetResultLabel = activeTileset
       ? [activeTileset.label, activeSubsetDef ? activeSubsetDef.label : '', pieceDefinition ? pieceDefinition.label : ''].filter(Boolean).join(' \u00b7 ')
       : '';
+    const renderPreview = this.state.renderPreview;
+    const renderPreviewMode = renderPreview?.mesh ? (this.state.renderPreviewMode || 'preview') : 'preview';
+    const renderPreviewItem = renderPreview?.id ? this.findCatalogItem(renderPreview.id) : null;
+    const renderPreviewRecord = renderPreviewItem?.record;
+    const renderPreviewDetails = renderPreviewRecord?.raw || renderPreviewItem?.detail || {};
 
     return {
       yes: true,
@@ -859,10 +873,13 @@ export function withLibraryRenderValues(Base) {
       openRenderPreview: (e) => {
         const el = e.currentTarget;
         const src = el && el.dataset ? (el.dataset.render || '') : '';
-        if (!src) return;
         const id = (el.dataset.renderId || '').trim();
         const list = this._renderPreviewItems || [];
-        const item = (id && list.find(x => x.id === id)) || list.find(x => x.src === src) || {
+        const catalogItem = id ? this.findCatalogItem(id) : null;
+        const item = (id && list.find(x => x.id === id))
+          || (src && list.find(x => x.src === src))
+          || (catalogItem && this.renderPreviewPayload(catalogItem))
+          || (src ? {
           id,
           src,
           title: (el.dataset.renderTitle || '').trim(),
@@ -879,11 +896,27 @@ export function withLibraryRenderValues(Base) {
           alchemyTitle: '',
           hasEffects: false,
           effects: [],
-        };
+        } : null);
+        if (!item || (!item.src && !item.mesh)) return;
         this.setState({
           renderPreview: item,
           renderPreviewLoaded: false,
+          renderPreviewMode: 'preview',
         });
+      },
+      retryImportedThumbnail: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        const id = e.currentTarget?.dataset?.thumbnailId || '';
+        if (id) this._workspace?.retryImportedThumbnail(id);
+      },
+      setRenderPreviewMode: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        const mode = e.currentTarget?.dataset?.liveMode || 'preview';
+        if (!['preview', '3d', 'details'].includes(mode)) return;
+        if (mode !== 'preview' && !this.state.renderPreview?.mesh) return;
+        this.setState({ renderPreviewMode: mode });
       },
       openEnchantmentDetails: (e) => {
         if (e && e.preventDefault) e.preventDefault();
@@ -953,7 +986,7 @@ export function withLibraryRenderValues(Base) {
       closeRenderPreview: (e) => {
         if (e && e.preventDefault) e.preventDefault();
         if (e && e.stopPropagation) e.stopPropagation();
-        this.setState({ renderPreview: null, renderPreviewLoaded: false });
+        this.setState({ renderPreview: null, renderPreviewLoaded: false, renderPreviewMode: 'preview' });
       },
       stopRenderPreviewClick: (e) => {
         if (e && e.stopPropagation) e.stopPropagation();
@@ -1307,6 +1340,15 @@ export function withLibraryRenderValues(Base) {
       isLight: light,
       isDark: !light,
       showRenderPreview: !!this.state.renderPreview,
+      renderPreviewHasImage: !!renderPreview?.src,
+      renderPreviewHasMesh: !!renderPreview?.mesh,
+      renderPreviewWaitingForThumbnail: !!renderPreview?.thumbnailPending,
+      renderPreviewModePreview: renderPreviewMode === 'preview',
+      renderPreviewMode3d: renderPreviewMode === '3d',
+      renderPreviewModeDetails: renderPreviewMode === 'details',
+      renderPreviewMesh: renderPreview?.mesh || '',
+      renderPreviewRecordSource: renderPreviewItem?.source || renderPreview?.source || 'Unknown',
+      renderPreviewDetailsJson: JSON.stringify(renderPreviewDetails, null, 2),
       renderPreviewId: this.state.renderPreview ? this.state.renderPreview.id : '',
       renderPreviewSrc: this.state.renderPreview ? this.state.renderPreview.src : '',
       renderPreviewTitle: this.state.renderPreview ? this.state.renderPreview.title : '',

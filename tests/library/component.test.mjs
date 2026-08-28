@@ -47,6 +47,7 @@ test('production state restores persisted display preferences', () => {
   assert.equal(state.scale, 1.75);
   assert.equal(state.theme, 'light');
   assert.equal(state.narrow, true);
+  assert.equal(state.renderPreviewMode, 'preview');
 });
 
 test('stored preference readers use safe defaults', () => {
@@ -79,6 +80,17 @@ test('component factory composes the production behavior modules', () => {
   assert.equal(typeof component.openBookPreviewForItem, 'function');
   assert.equal(typeof component.magicEffectEntries, 'function');
   assert.equal(component.naturalCompareStrings('item9', 'item10') < 0, true);
+
+  const pendingPreview = component.renderPreviewPayload({
+    id: 'demo',
+    imported: true,
+    mesh: 'meshes/demo.nif',
+    img: '/assets/images/general/icon.png',
+    thumbnailReady: false,
+  });
+  assert.equal(pendingPreview.src, '');
+  assert.equal(pendingPreview.mesh, 'meshes/demo.nif');
+  assert.equal(pendingPreview.thumbnailPending, true);
 
   const snapshot = component.filterSnapshot({
     ...component.state,

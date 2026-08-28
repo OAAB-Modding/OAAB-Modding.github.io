@@ -141,7 +141,7 @@ export function createLibraryComponent(DCLogic) {
       }
       if (this.state.renderPreview) {
         if (e.key === 'Escape') {
-          this.setState({ renderPreview: null, renderPreviewLoaded: false });
+          this.setState({ renderPreview: null, renderPreviewLoaded: false, renderPreviewMode: 'preview' });
           return;
         }
         if (!e.metaKey && !e.ctrlKey && !e.altKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {

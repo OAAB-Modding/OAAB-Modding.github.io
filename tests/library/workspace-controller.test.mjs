@@ -14,10 +14,17 @@ test('background thumbnails capture from their dedicated viewer', async () => {
     path: 'meshes/demo.nif',
     asset: { source: 'local-files', lastModified: 42 },
     assetFingerprint: 'asset-hash',
+    textureDiagnostics: [{
+      path: 'textures/demo.dds',
+      status: 'resolved',
+      asset: { source: 'plugin-folder:data-files', lastModified: 84 },
+    }],
   };
   let backgroundCaptures = 0;
   let interactiveCaptures = 0;
   let importedUrl = '';
+  let cacheIdentity;
+  let captureOptions;
   workspace.viewer = {
     async captureThumbnail() {
       interactiveCaptures += 1;
@@ -25,15 +32,20 @@ test('background thumbnails capture from their dedicated viewer', async () => {
     },
   };
   const backgroundViewer = {
-    async captureThumbnail() {
+    async captureThumbnail(options) {
       backgroundCaptures += 1;
+      captureOptions = options;
       return new Blob(['background']);
     },
   };
   workspace.thumbnailCache = {
-    async get() { return null; },
+    async get(identity) { cacheIdentity = identity; return null; },
     async put(_identity, _blob, metadata) {
-      assert.deepEqual(metadata, { recordId: 'demo', recordSource: 'plugin:demo' });
+      assert.deepEqual(metadata, {
+        recordId: 'demo',
+        recordSource: 'plugin:demo',
+        meshSourceFingerprint: 'local-files:42',
+      });
       return { url: 'blob:background' };
     },
   };
@@ -48,7 +60,74 @@ test('background thumbnails capture from their dedicated viewer', async () => {
   assert.equal(committed, true);
   assert.equal(backgroundCaptures, 1);
   assert.equal(interactiveCaptures, 0);
+  assert.deepEqual(captureOptions, { includeGrid: false });
+  assert.match(cacheIdentity.sourceFingerprint, /textures\/demo\.dds:plugin-folder:data-files:84/);
   assert.equal(importedUrl, 'blob:background');
+});
+
+test('background thumbnail jobs resolve textures before capture', async () => {
+  const workspace = workspaceWithoutConstructor();
+  const record = { id: 'demo', source: 'plugin:demo', mesh: 'meshes/demo.nif' };
+  const key = 'plugin:demo\0demo';
+  let loadOptions;
+  const statuses = [];
+  workspace.dialog = {};
+  workspace.interactiveViewerActive = false;
+  workspace.productionViewerActive = false;
+  workspace.thumbnailPumpRunning = false;
+  workspace.thumbnailGeneration = 3;
+  workspace.thumbnailQueue = [{ key, record, generation: 3, attempts: 0 }];
+  workspace.thumbnailJobs = new Map([[key, { record, status: 'queued', generation: 3, attempts: 0 }]]);
+  workspace.component = {
+    state: { renderPreview: null },
+    setImportedThumbnailStatus(_record, status) { statuses.push(status); },
+  };
+  workspace.ensureThumbnailViewer = async () => ({
+    async load(_path, options) {
+      loadOptions = options;
+      return {};
+    },
+  });
+  workspace.cacheThumbnail = async () => true;
+
+  await workspace.pumpThumbnailQueue();
+
+  assert.deepEqual(loadOptions, { resolveTextures: true });
+  assert.deepEqual(statuses, ['loading']);
+  assert.equal(workspace.thumbnailJobs.get(key).status, 'done');
+});
+
+test('background thumbnail failures retry once and then expose a failed state', async () => {
+  const workspace = workspaceWithoutConstructor();
+  const record = { id: 'broken', source: 'plugin:demo', mesh: 'meshes/broken.nif' };
+  const key = 'plugin:demo\0broken';
+  const statuses = [];
+  workspace.dialog = {};
+  workspace.interactiveViewerActive = false;
+  workspace.productionViewerActive = false;
+  workspace.thumbnailPumpRunning = false;
+  workspace.thumbnailGeneration = 2;
+  workspace.thumbnailQueue = [{ key, record, generation: 2, attempts: 0 }];
+  workspace.thumbnailJobs = new Map([[key, { record, status: 'queued', generation: 2, attempts: 0 }]]);
+  workspace.component = {
+    state: { renderPreview: null },
+    setImportedThumbnailStatus(_record, status) { statuses.push(status); },
+  };
+  workspace.ensureThumbnailViewer = async () => ({
+    async load() { throw new Error('parse failed'); },
+  });
+
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  try {
+    await workspace.pumpThumbnailQueue();
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.deepEqual(statuses, ['loading', 'pending', 'loading', 'failed']);
+  assert.equal(workspace.thumbnailJobs.get(key).status, 'failed');
+  assert.equal(workspace.thumbnailJobs.get(key).attempts, 2);
 });
 
 test('stale thumbnail generations cannot capture or commit', async () => {

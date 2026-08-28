@@ -28,10 +28,16 @@ test('indexes multi-file selections by case-insensitive Data Files paths', async
 test('directory handles are indexed without reading file payloads', async () => {
   let reads = 0;
   const file = localFile('lazy.nif', '', 'lazy');
+  const texture = localFile('wood.dds', '', 'texture');
   const root = {
     async *entries() {
       yield ['Meshes', { kind: 'directory', async *entries() {
         yield ['lazy.nif', { kind: 'file', async getFile() { reads += 1; return file; } }];
+      } }];
+      yield ['Textures', { kind: 'directory', async *entries() {
+        yield ['OAAB', { kind: 'directory', async *entries() {
+          yield ['wood.dds', { kind: 'file', async getFile() { reads += 1; return texture; } }];
+        } }];
       } }];
     },
   };
@@ -39,7 +45,10 @@ test('directory handles are indexed without reading file payloads', async () => 
   await source.indexDirectory(root);
   assert.equal(reads, 0);
   await source.get('meshes/lazy.nif');
-  assert.equal(reads, 2); // stat and get preserve lazy File System Access reads
+  assert.equal(await source.has('textures/oaab/wood.dds'), true);
+  const textureAsset = await source.get('textures/oaab/wood.dds');
+  assert.equal(new TextDecoder().decode(textureAsset.bytes), 'texture');
+  assert.equal(reads, 5); // has, stat, and get preserve lazy File System Access reads
 });
 
 test('selected files can be indexed in paint-friendly batches with progress', async () => {

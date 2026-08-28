@@ -163,22 +163,33 @@ export class NifViewer {
     return this;
   }
 
-  async captureThumbnail({ width = 384, height = 384, type = 'image/webp', quality = 0.86 } = {}) {
+  async captureThumbnail({
+    width = 384,
+    height = 384,
+    type = 'image/webp',
+    quality = 0.86,
+    includeGrid = false,
+  } = {}) {
     const oldWidth = this.canvas.width;
     const oldHeight = this.canvas.height;
     const oldAspect = this.camera.aspect;
-    this.renderer.setSize(width, height, false);
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
-    this.renderer.render(this.scene, this.camera);
-    const blob = await new Promise((resolve, reject) => {
-      this.canvas.toBlob(value => value ? resolve(value) : reject(new Error('Unable to encode thumbnail')), type, quality);
-    });
-    this.renderer.setSize(oldWidth, oldHeight, false);
-    this.camera.aspect = oldAspect;
-    this.camera.updateProjectionMatrix();
-    this.resize();
-    return blob;
+    const oldGridVisible = this.grid.visible;
+    try {
+      if (!includeGrid) this.grid.visible = false;
+      this.renderer.setSize(width, height, false);
+      this.camera.aspect = width / height;
+      this.camera.updateProjectionMatrix();
+      this.renderer.render(this.scene, this.camera);
+      return await new Promise((resolve, reject) => {
+        this.canvas.toBlob(value => value ? resolve(value) : reject(new Error('Unable to encode thumbnail')), type, quality);
+      });
+    } finally {
+      this.grid.visible = oldGridVisible;
+      this.renderer.setSize(oldWidth, oldHeight, false);
+      this.camera.aspect = oldAspect;
+      this.camera.updateProjectionMatrix();
+      this.resize();
+    }
   }
 
   frameModel() {

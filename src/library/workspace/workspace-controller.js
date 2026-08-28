@@ -9,8 +9,9 @@ import {
   NIF_RENDERER_VERSION,
   ThumbnailCache,
   fingerprintBytes,
-  thumbnailCacheKey,
 } from '../storage/thumbnail-cache.js';
+
+const THUMBNAIL_MAX_ATTEMPTS = 2;
 
 export function initializeLibraryWorkspace(component) {
   const workspace = new LibraryWorkspace(component);
@@ -35,6 +36,10 @@ export class LibraryWorkspace {
     this.thumbnailObserver = null;
     this.interactiveViewerActive = false;
     this.productionViewerActive = false;
+    this.productionLoadKey = null;
+    this.productionViewerMessage = '';
+    this.productionDetailsKey = null;
+    this.productionDetailsSource = '';
   }
 
   mount() {
@@ -667,6 +672,7 @@ export class LibraryWorkspace {
       this.thumbnailViewer = await this.thumbnailViewerCreationPromise;
     }
     this.thumbnailViewer.attachTo(this.thumbnailHost);
+    this.thumbnailViewer.setGridVisible(false);
     return this.thumbnailViewer;
   }
 
@@ -675,9 +681,9 @@ export class LibraryWorkspace {
     shouldCommit = () => true,
   } = {}) {
     if (!viewer || !shouldCommit()) return false;
-    const sourceFingerprint = `${result.asset.source}:${result.asset.lastModified || result.asset.url || result.asset.size || 'asset'}`;
+    const meshSourceFingerprint = assetSourceFingerprint(result.asset);
     const identity = {
-      sourceFingerprint,
+      sourceFingerprint: thumbnailSourceFingerprint(result),
       path: result.path,
       assetVersion: result.assetFingerprint,
       rendererVersion: NIF_RENDERER_VERSION,
@@ -685,11 +691,12 @@ export class LibraryWorkspace {
     let cached = await this.thumbnailCache.get(identity);
     if (!shouldCommit()) return false;
     if (!cached) {
-      const blob = await viewer.captureThumbnail();
+      const blob = await viewer.captureThumbnail({ includeGrid: false });
       if (!shouldCommit()) return false;
       cached = await this.thumbnailCache.put(identity, blob, {
         recordId: record.id,
         recordSource: record.source,
+        meshSourceFingerprint,
       });
     }
     if (!shouldCommit()) return false;
@@ -732,8 +739,23 @@ export class LibraryWorkspace {
     if (existing?.record === record && existing.generation === this.thumbnailGeneration) return;
     if (existing) this.thumbnailJobs.delete(key);
     const generation = this.thumbnailGeneration;
-    this.thumbnailJobs.set(key, { record, status: 'queued', generation });
-    this.thumbnailQueue.push({ key, record, generation });
+    this.thumbnailJobs.set(key, { record, status: 'queued', generation, attempts: 0 });
+    this.thumbnailQueue.push({ key, record, generation, attempts: 0 });
+    this.component.setImportedThumbnailStatus?.(record, 'pending');
+  }
+
+  retryImportedThumbnail(id) {
+    const item = this.component.findCatalogItem(id);
+    if (!item?.imported || !item.mesh || item.thumbnailReady) return;
+    const record = item.record || item;
+    const key = thumbnailRecordKey(record);
+    this.thumbnailJobs.delete(key);
+    this.thumbnailQueue = this.thumbnailQueue.filter(entry => entry.key !== key);
+    const generation = this.thumbnailGeneration;
+    this.thumbnailJobs.set(key, { record, status: 'queued', generation, attempts: 0 });
+    this.thumbnailQueue.push({ key, record, generation, attempts: 0 });
+    this.component.setImportedThumbnailStatus?.(record, 'pending');
+    this.pumpThumbnailQueue();
   }
 
   async pumpThumbnailQueue() {
@@ -756,7 +778,9 @@ export class LibraryWorkspace {
           record: entry.record,
           status: 'loading',
           generation: entry.generation,
+          attempts: entry.attempts || 0,
         });
+        this.component.setImportedThumbnailStatus?.(entry.record, 'loading');
         const isCurrent = () => {
           const job = this.thumbnailJobs.get(entry.key);
           return entry.generation === this.thumbnailGeneration
@@ -766,26 +790,38 @@ export class LibraryWorkspace {
         };
         try {
           const viewer = await this.ensureThumbnailViewer();
-          // Background cards only need the mesh silhouette. Skipping texture
-          // reads keeps local thumbnail generation bounded for large mod data
-          // folders; the interactive 3D mode still resolves textures normally.
-          const result = await viewer.load(entry.record.mesh, { resolveTextures: false });
+          const result = await viewer.load(entry.record.mesh, { resolveTextures: true });
           const committed = await this.cacheThumbnail(entry.record, result, { viewer, shouldCommit: isCurrent });
           if (committed && isCurrent()) {
             this.thumbnailJobs.set(entry.key, {
               record: entry.record,
               status: 'done',
               generation: entry.generation,
+              attempts: entry.attempts || 0,
             });
           }
         } catch (error) {
           if (isCurrent()) {
-            this.thumbnailJobs.set(entry.key, {
-              record: entry.record,
-              status: 'failed',
-              generation: entry.generation,
-            });
-            console.warn('local thumbnail generation failed', entry.record.id, error);
+            const attempts = (entry.attempts || 0) + 1;
+            if (attempts < THUMBNAIL_MAX_ATTEMPTS) {
+              this.thumbnailJobs.set(entry.key, {
+                record: entry.record,
+                status: 'queued',
+                generation: entry.generation,
+                attempts,
+              });
+              this.thumbnailQueue.push({ ...entry, attempts });
+              this.component.setImportedThumbnailStatus?.(entry.record, 'pending', error.message);
+            } else {
+              this.thumbnailJobs.set(entry.key, {
+                record: entry.record,
+                status: 'failed',
+                generation: entry.generation,
+                attempts,
+              });
+              this.component.setImportedThumbnailStatus?.(entry.record, 'failed', error.message);
+              console.warn('local thumbnail generation failed', entry.record.id, error);
+            }
           }
         }
         await yieldToBrowser();
@@ -804,14 +840,12 @@ export class LibraryWorkspace {
       try {
         const asset = await this.component._libraryServices.resolver.resolve(record.mesh);
         const assetVersion = await fingerprintBytes(asset.bytes);
-        const sourceFingerprint = `${asset.source}:${asset.lastModified || asset.url || asset.size || 'asset'}`;
-        const key = thumbnailCacheKey({
-          sourceFingerprint,
-          path: record.mesh,
-          assetVersion,
-          rendererVersion: NIF_RENDERER_VERSION,
-        });
-        if (key === entry.key) this.component.setImportedThumbnail(record, this.thumbnailCache.urlFor(entry));
+        const meshSourceFingerprint = assetSourceFingerprint(asset);
+        if (
+          entry.rendererVersion === NIF_RENDERER_VERSION
+          && entry.assetVersion === assetVersion
+          && entry.meshSourceFingerprint === meshSourceFingerprint
+        ) this.component.setImportedThumbnail(record, this.thumbnailCache.urlFor(entry));
       } catch {}
     }
   }
@@ -820,71 +854,94 @@ export class LibraryWorkspace {
     const preview = this.component.state.renderPreview;
     const dialog = this.doc.querySelector('.library-render-dialog');
     if (!preview || !dialog || !preview.mesh) {
-      this.productionPreviewId = null;
+      this.productionLoadKey = null;
+      this.productionDetailsKey = null;
       this.productionViewerActive = false;
       this.syncImportedThumbnailTargets();
       return;
     }
-    let controls = dialog.querySelector('[data-live-preview-controls]');
-    if (!controls) {
-      controls = element('div', { className: 'library-live-preview-controls', dataset: { livePreviewControls: '' } }, this.doc);
-      controls.innerHTML = '<button type="button" data-live-mode="preview" aria-pressed="true">Preview</button><button type="button" data-live-mode="3d" aria-pressed="false">3D</button><button type="button" data-live-mode="details" aria-pressed="false">Details</button>';
-      controls.addEventListener('click', event => {
-        const button = event.target.closest('[data-live-mode]');
-        if (button) this.showProductionMode(button.dataset.liveMode);
-      });
-      dialog.append(controls);
+    const mode = this.component.state.renderPreviewMode || 'preview';
+    this.productionViewerActive = mode === '3d';
+    if (mode === '3d') this.showProductionMode(mode, preview);
+    else {
+      this.productionLoadKey = null;
+      if (mode === 'details') this.syncProductionDetails(preview, dialog);
+      this.syncImportedThumbnailTargets();
     }
-    if (this.productionPreviewId !== preview.id) {
-      this.productionPreviewId = preview.id;
-      this.showProductionMode('preview');
-    }
-    this.syncImportedThumbnailTargets();
   }
 
-  async showProductionMode(mode) {
-    const preview = this.component.state.renderPreview;
+  async showProductionMode(mode, preview = this.component.state.renderPreview) {
+    if (mode !== '3d') return;
     const dialog = this.doc.querySelector('.library-render-dialog');
-    const media = dialog?.querySelector('.library-render-media');
-    if (!preview || !dialog || !media) return;
-    this.productionViewerActive = mode === '3d';
-    for (const button of dialog.querySelectorAll('[data-live-mode]')) {
-      button.setAttribute('aria-pressed', String(button.dataset.liveMode === mode));
+    const host = dialog?.querySelector('[data-live-preview-host]');
+    const status = host?.querySelector('[data-live-status]');
+    if (!preview || !host || !status) return;
+    const key = `${preview.source || ''}\0${preview.id || ''}\0${preview.mesh}`;
+    if (this.productionLoadKey === key && this.viewer) {
+      await this.ensureViewer(host, status);
+      status.textContent = this.productionViewerMessage || `${preview.mesh} · drag to rotate · wheel to zoom`;
+      return;
     }
-    for (const child of media.children) {
-      if (!child.matches('[data-live-preview-host]')) child.hidden = mode !== 'preview';
-    }
-    let host = media.querySelector('[data-live-preview-host]');
-    if (!host) {
-      host = element('div', { className: 'library-live-preview-host', dataset: { livePreviewHost: '' } }, this.doc);
-      media.append(host);
-    }
-    host.hidden = mode === 'preview';
-    if (mode === 'details') {
+    this.productionLoadKey = key;
+    this.productionViewerMessage = `Loading ${preview.mesh}…`;
+    status.textContent = this.productionViewerMessage;
+    status.removeAttribute('data-error');
+    const isCurrent = () => {
+      const current = this.component.state.renderPreview;
+      return this.productionLoadKey === key
+        && this.component.state.renderPreviewMode === '3d'
+        && current?.id === preview.id
+        && current?.mesh === preview.mesh;
+    };
+    try {
+      const viewer = await this.ensureViewer(host, status);
+      if (!isCurrent()) return;
+      const result = await viewer.load(preview.mesh);
+      if (!isCurrent()) return;
       const item = this.component.findCatalogItem(preview.id);
-      const record = item?.record;
-      host.innerHTML = `<div class="library-live-details"><h3>${escapeHtml(preview.id)}</h3><dl><dt>Mesh</dt><dd><code>${escapeHtml(preview.mesh)}</code></dd><dt>Record source</dt><dd>${escapeHtml(item?.source || preview.source || 'Unknown')}</dd><dt>Asset source</dt><dd data-live-asset-source>Resolving…</dd></dl><pre>${escapeHtml(JSON.stringify(record?.raw || item?.detail || {}, null, 2))}</pre></div>`;
-      try {
-        const asset = await this.component._libraryServices.resolver.resolve(preview.mesh);
-        host.querySelector('[data-live-asset-source]').textContent = asset.sourceLabel || asset.source;
-      } catch {
-        host.querySelector('[data-live-asset-source]').textContent = 'Missing';
+      if (item?.imported && item.record) {
+        await this.cacheThumbnail(item.record, result, { viewer, shouldCommit: isCurrent });
+        if (!isCurrent()) return;
       }
-    } else if (mode === '3d') {
-      host.innerHTML = '<div data-live-status class="library-viewer-status"></div>';
-      const status = host.querySelector('[data-live-status]');
-      try {
-        const viewer = await this.ensureViewer(host, status);
-        const result = await viewer.load(preview.mesh);
-        status.textContent = `${preview.mesh} · drag to rotate · wheel to zoom`;
-        const item = this.component.findCatalogItem(preview.id);
-        if (item?.imported && item.record) await this.cacheThumbnail(item.record, result);
-      } catch (error) {
+      this.productionViewerMessage = `${preview.mesh} · drag to rotate · wheel to zoom`;
+      if (status.isConnected) status.textContent = this.productionViewerMessage;
+    } catch (error) {
+      if (!isCurrent()) return;
+      this.productionViewerMessage = error.message;
+      if (status.isConnected) {
         status.textContent = error.message;
         status.dataset.error = 'true';
       }
     }
-    if (mode !== '3d') this.syncImportedThumbnailTargets();
+  }
+
+  async syncProductionDetails(preview, dialog) {
+    const target = dialog.querySelector('[data-live-asset-source]');
+    if (!target) return;
+    const key = `${preview.source || ''}\0${preview.id || ''}\0${preview.mesh}`;
+    if (this.productionDetailsKey === key && this.productionDetailsSource) {
+      target.textContent = this.productionDetailsSource;
+      return;
+    }
+    this.productionDetailsKey = key;
+    this.productionDetailsSource = '';
+    target.textContent = 'Resolving…';
+    try {
+      const asset = await this.component._libraryServices.resolver.resolve(preview.mesh);
+      this.productionDetailsSource = asset.sourceLabel || asset.source;
+    } catch {
+      this.productionDetailsSource = 'Missing';
+    }
+    const current = this.component.state.renderPreview;
+    if (
+      this.productionDetailsKey === key
+      && this.component.state.renderPreviewMode === 'details'
+      && current?.id === preview.id
+      && current?.mesh === preview.mesh
+    ) {
+      const currentTarget = this.doc.querySelector('.library-render-dialog [data-live-asset-source]');
+      if (currentTarget) currentTarget.textContent = this.productionDetailsSource;
+    }
   }
 
   renderCells() {
@@ -1027,6 +1084,19 @@ function sourceName(record) {
 
 function thumbnailRecordKey(record) {
   return `${record?.source || ''}\0${String(record?.id || '').toLowerCase()}`;
+}
+
+function assetSourceFingerprint(asset) {
+  const version = asset?.lastModified ?? asset?.url ?? asset?.size ?? 'asset';
+  return `${asset?.source || 'unknown'}:${version}`;
+}
+
+function thumbnailSourceFingerprint(result) {
+  const textures = (result.textureDiagnostics || [])
+    .filter(entry => entry.status === 'resolved' && entry.asset)
+    .map(entry => `${entry.path}:${assetSourceFingerprint(entry.asset)}`)
+    .sort();
+  return [assetSourceFingerprint(result.asset), ...textures].join('|');
 }
 
 function yieldToBrowser() {
