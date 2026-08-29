@@ -84,13 +84,9 @@ export class NifViewer {
     this.axes.visible = false;
     this.scene.add(this.axes);
 
-    this.scene.add(new THREE.HemisphereLight(0xfff0d5, 0x392d28, 2.25));
-    const keyLight = new THREE.DirectionalLight(0xffdec0, 3.2);
-    keyLight.position.set(3, 5, 4);
-    this.scene.add(keyLight);
-    const fillLight = new THREE.DirectionalLight(0xa9c7ff, 1.1);
-    fillLight.position.set(-4, 2, -3);
-    this.scene.add(fillLight);
+    // Keep preview lighting diffuse and restrained. Directional key/fill lights
+    // created localized hot spots that made some bright models look self-lit.
+    this.scene.add(new THREE.HemisphereLight(0xfff0d5, 0x392d28, 0.75));
 
     this.ddsLoader = new DDSLoader();
     this.tgaLoader = new TGALoader();
