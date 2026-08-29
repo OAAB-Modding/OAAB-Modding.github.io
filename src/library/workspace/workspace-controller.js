@@ -9,8 +9,10 @@ import {
   NIF_RENDERER_VERSION,
   THUMBNAIL_VARIANT_GRID,
   THUMBNAIL_VARIANT_PREVIEW,
+  THUMBNAIL_ORIENTATION_VERSION,
   ThumbnailCache,
   fingerprintBytes,
+  thumbnailOrientationCacheKey,
 } from '../storage/thumbnail-cache.js';
 import { normalizeAssetPath } from '../resolver/path-utils.js';
 import { thumbnailViewForRecord } from '../renderer/viewer-modes.js';
@@ -48,6 +50,11 @@ export class LibraryWorkspace {
     this.thumbnailCacheReadable = true;
     this.thumbnailCacheWritable = true;
     this.thumbnailCacheWarningLogged = false;
+    this.thumbnailOrientationMetadata = new Map();
+    this.thumbnailOrientationCacheReadable = true;
+    this.thumbnailOrientationCacheWritable = true;
+    this.thumbnailOrientationCacheWarningLogged = false;
+    this.thumbnailOrientationDebug = thumbnailOrientationDebugEnabled(this.doc);
     this.interactiveViewerActive = false;
     this.productionViewerActive = false;
     this.productionPreviewActive = false;
@@ -444,6 +451,7 @@ export class LibraryWorkspace {
 
   refreshImportedThumbnailsForAssetChange() {
     this.resetImportedThumbnailJobs();
+    this.thumbnailOrientationMetadata?.clear();
     this.component.setImportedRecords(this.resolved?.records || [], { preserveThumbnails: false });
     this.syncImportedThumbnailTargets();
   }
@@ -806,20 +814,36 @@ export class LibraryWorkspace {
     }
     if (!shouldCommit()) return null;
     if (!cached) {
-      const view = thumbnailViewForRecord(record);
+      const view = captureOptions?.view ?? thumbnailViewForRecord(record);
+      const orientation = await this.getOrDetectThumbnailOrientation(result, {
+        viewer,
+        view,
+        shouldCommit,
+        debug: this.thumbnailOrientationDebug,
+      });
+      if (!shouldCommit()) return null;
       const options = {
         includeGrid: false,
         ...(view ? { view } : {}),
+        ...(orientation?.thumbnailRotationY ? {
+          thumbnailRotationY: orientation.thumbnailRotationY,
+        } : {}),
         ...(captureOptions || {}),
       };
       const blob = await viewer.captureThumbnail(options);
       if (!shouldCommit()) return null;
+      const orientationMetadata = {
+        thumbnailRotationY: orientation?.thumbnailRotationY || 0,
+        thumbnailFlip180: !!orientation?.thumbnailFlip180,
+        thumbnailOrientationKey: orientation?.key || '',
+      };
       if (this.thumbnailCacheWritable !== false) {
         try {
           cached = await this.thumbnailCache.put(identity, blob, {
             recordId: record.id,
             recordSource: record.source,
             meshSourceFingerprint,
+            ...orientationMetadata,
           });
         } catch (error) {
           // IndexedDB is only an acceleration layer. Quota pressure, private
@@ -831,16 +855,100 @@ export class LibraryWorkspace {
       }
       if (!cached) {
         const key = `transient:${variant}:${thumbnailRecordKey(record)}:${identity.assetVersion}:${identity.sourceFingerprint}`;
-        cached = { ...identity, key, blob, url: this.thumbnailCache.urlFor({ key, blob }) };
+        cached = {
+          ...identity,
+          ...orientationMetadata,
+          key,
+          blob,
+          url: this.thumbnailCache.urlFor({ key, blob }),
+        };
       }
     }
     return shouldCommit() ? cached : null;
+  }
+
+  async getOrDetectThumbnailOrientation(result, {
+    viewer = this.viewer,
+    view = '',
+    shouldCommit = () => true,
+    debug = false,
+  } = {}) {
+    const identity = {
+      sourceFingerprint: assetSourceFingerprint(result.asset),
+      path: result.path,
+      assetVersion: result.assetFingerprint,
+      view: view || 'default',
+      rendererVersion: NIF_RENDERER_VERSION,
+      orientationVersion: THUMBNAIL_ORIENTATION_VERSION,
+    };
+    const key = thumbnailOrientationCacheKey(identity);
+    this.thumbnailOrientationMetadata ??= new Map();
+    let metadata = this.thumbnailOrientationMetadata.get(key) || null;
+
+    if (!metadata && this.thumbnailOrientationCacheReadable !== false && this.database?.get) {
+      try {
+        const stored = await this.database.get('asset-metadata', key);
+        if (isThumbnailOrientationMetadata(stored, key)) metadata = stored;
+      } catch (error) {
+        this.thumbnailOrientationCacheReadable = false;
+        this.reportThumbnailOrientationCacheFailure(error);
+      }
+    }
+    if (metadata) {
+      this.thumbnailOrientationMetadata.set(key, metadata);
+      if (debug) logThumbnailOrientation(result.path, metadata, true);
+      return metadata;
+    }
+    if (!viewer || !shouldCommit()) return null;
+
+    const detected = typeof viewer.detectThumbnailOrientation === 'function'
+      ? await viewer.detectThumbnailOrientation({ view, debug, label: result.path })
+      : defaultThumbnailOrientation();
+    if (!shouldCommit()) return null;
+    const thumbnailFlip180 = detected.thumbnailRotationY === 180 || detected.thumbnailFlip180 === true;
+    metadata = {
+      key,
+      kind: 'thumbnail-orientation',
+      path: normalizeAssetPath(result.path, { root: 'meshes' }),
+      sourceFingerprint: identity.sourceFingerprint,
+      assetVersion: identity.assetVersion,
+      rendererVersion: identity.rendererVersion,
+      orientationVersion: identity.orientationVersion,
+      view: identity.view,
+      thumbnailRotationY: thumbnailFlip180 ? 180 : 0,
+      thumbnailFlip180,
+      currentCoverage: Number(detected.currentCoverage) || 0,
+      flippedCoverage: Number(detected.flippedCoverage) || 0,
+      coverageRatio: detected.coverageRatio ?? 1,
+      currentVisibleMeshPixels: Number(detected.currentVisibleMeshPixels) || 0,
+      currentProjectedBoundingBoxArea: Number(detected.currentProjectedBoundingBoxArea) || 0,
+      flippedVisibleMeshPixels: Number(detected.flippedVisibleMeshPixels) || 0,
+      flippedProjectedBoundingBoxArea: Number(detected.flippedProjectedBoundingBoxArea) || 0,
+      updatedAt: Date.now(),
+    };
+    this.thumbnailOrientationMetadata.set(key, metadata);
+
+    if (this.thumbnailOrientationCacheWritable !== false && this.database?.put) {
+      try {
+        await this.database.put('asset-metadata', metadata);
+      } catch (error) {
+        this.thumbnailOrientationCacheWritable = false;
+        this.reportThumbnailOrientationCacheFailure(error);
+      }
+    }
+    return metadata;
   }
 
   reportThumbnailCacheFailure(error) {
     if (this.thumbnailCacheWarningLogged) return;
     this.thumbnailCacheWarningLogged = true;
     console.warn('thumbnail persistence unavailable; using session thumbnails', error);
+  }
+
+  reportThumbnailOrientationCacheFailure(error) {
+    if (this.thumbnailOrientationCacheWarningLogged) return;
+    this.thumbnailOrientationCacheWarningLogged = true;
+    console.warn('thumbnail orientation persistence unavailable; using session metadata', error);
   }
 
   async cacheThumbnail(record, result, options = {}) {
@@ -1340,6 +1448,10 @@ export class LibraryWorkspace {
     this.thumbnailCacheReadable = true;
     this.thumbnailCacheWritable = true;
     this.thumbnailCacheWarningLogged = false;
+    this.thumbnailOrientationMetadata?.clear();
+    this.thumbnailOrientationCacheReadable = true;
+    this.thumbnailOrientationCacheWritable = true;
+    this.thumbnailOrientationCacheWarningLogged = false;
     this.refreshImportedThumbnailsForAssetChange();
     this.status('Generated thumbnail cache cleared.');
   }
@@ -1359,6 +1471,10 @@ export class LibraryWorkspace {
     this.thumbnailCacheReadable = true;
     this.thumbnailCacheWritable = true;
     this.thumbnailCacheWarningLogged = false;
+    this.thumbnailOrientationMetadata?.clear();
+    this.thumbnailOrientationCacheReadable = true;
+    this.thumbnailOrientationCacheWritable = true;
+    this.thumbnailOrientationCacheWarningLogged = false;
     this.applyLoadOrder();
     this.render();
     this.status('All local Library cache data cleared; built-in static data is unchanged.');
@@ -1466,6 +1582,42 @@ function newestThumbnailEntry(entries, record, path, variant) {
     if (!newest || createdAt >= newestCreatedAt) newest = entry;
   }
   return newest;
+}
+
+function isThumbnailOrientationMetadata(value, key) {
+  return value?.key === key
+    && value.kind === 'thumbnail-orientation'
+    && (value.thumbnailRotationY === 0 || value.thumbnailRotationY === 180)
+    && typeof value.thumbnailFlip180 === 'boolean';
+}
+
+function defaultThumbnailOrientation() {
+  return {
+    currentCoverage: 0,
+    flippedCoverage: 0,
+    coverageRatio: 1,
+    thumbnailFlip180: false,
+    thumbnailRotationY: 0,
+  };
+}
+
+function logThumbnailOrientation(path, metadata, cached = false) {
+  console.debug('[OAAB thumbnail orientation]', path, {
+    currentCoverage: metadata.currentCoverage,
+    flippedCoverage: metadata.flippedCoverage,
+    ratio: metadata.coverageRatio,
+    thumbnailFlip180: metadata.thumbnailFlip180,
+    cached,
+  });
+}
+
+function thumbnailOrientationDebugEnabled(doc) {
+  if (globalThis.OAAB_THUMBNAIL_ORIENTATION_DEBUG === true) return true;
+  try {
+    return new URLSearchParams(doc?.defaultView?.location?.search || '').has('thumbnailOrientationDebug');
+  } catch {
+    return false;
+  }
 }
 
 function assetSourceFingerprint(asset) {

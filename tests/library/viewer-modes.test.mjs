@@ -7,6 +7,10 @@ import {
   cameraDirectionForView,
   isEditorMarkerName,
   isViewerObjectVisible,
+  THUMBNAIL_FLIP_COVERAGE_DELTA,
+  THUMBNAIL_FLIP_COVERAGE_RATIO,
+  THUMBNAIL_ORIENTATION_RENDER_SIZE,
+  thumbnailOrientationFromCoverage,
   thumbnailViewForRecord,
 } from '../../src/library/renderer/viewer-modes.js';
 
@@ -53,4 +57,22 @@ test('head bodyparts use the legacy front-facing thumbnail view', () => {
   assert.equal(cameraDistanceScaleForView(), 1);
   assert.equal(cameraFrameMarginForView('front'), 1.25);
   assert.equal(cameraFrameMarginForView(), 1);
+});
+
+test('backside detection uses the named ratio and absolute coverage thresholds', () => {
+  assert.equal(THUMBNAIL_ORIENTATION_RENDER_SIZE, 128);
+  assert.equal(THUMBNAIL_FLIP_COVERAGE_RATIO, 1.75);
+  assert.equal(THUMBNAIL_FLIP_COVERAGE_DELTA, 0.08);
+
+  assert.deepEqual(thumbnailOrientationFromCoverage(0.2, 0.36), {
+    currentCoverage: 0.2,
+    flippedCoverage: 0.36,
+    coverageRatio: 1.7999999999999998,
+    thumbnailFlip180: true,
+    thumbnailRotationY: 180,
+  });
+  assert.equal(thumbnailOrientationFromCoverage(0.1, 0.175).thumbnailFlip180, false);
+  assert.equal(thumbnailOrientationFromCoverage(0.2, 0.34).thumbnailFlip180, false);
+  assert.equal(thumbnailOrientationFromCoverage(0, 0.1).thumbnailFlip180, true);
+  assert.equal(thumbnailOrientationFromCoverage(0, 0).coverageRatio, 1);
 });

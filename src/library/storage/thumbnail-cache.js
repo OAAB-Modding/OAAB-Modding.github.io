@@ -2,7 +2,10 @@ import { normalizeAssetPath } from '../resolver/path-utils.js';
 
 // Bump this whenever the rendered result changes. The cache key then leaves
 // older captures in IndexedDB without ever displaying them as current.
-export const NIF_RENDERER_VERSION = '11';
+export const NIF_RENDERER_VERSION = '12';
+// Bump when the comparison algorithm or its thresholds change independently
+// of the final renderer, so persisted front/back decisions are regenerated.
+export const THUMBNAIL_ORIENTATION_VERSION = '1';
 export const THUMBNAIL_VARIANT_GRID = 'grid';
 export const THUMBNAIL_VARIANT_PREVIEW = 'preview';
 
@@ -68,6 +71,19 @@ export function thumbnailCacheKey({
   if (!sourceFingerprint || !assetVersion) throw new TypeError('Thumbnail identity requires source and asset fingerprints');
   const normalized = normalizeAssetPath(path, { root: 'meshes' });
   return `thumbnail:v3:${rendererVersion}:${encodeURIComponent(variant)}:${encodeURIComponent(sourceFingerprint)}:${encodeURIComponent(normalized)}:${assetVersion}`;
+}
+
+export function thumbnailOrientationCacheKey({
+  sourceFingerprint,
+  path,
+  assetVersion,
+  view = 'default',
+  rendererVersion = NIF_RENDERER_VERSION,
+  orientationVersion = THUMBNAIL_ORIENTATION_VERSION,
+}) {
+  if (!sourceFingerprint || !assetVersion) throw new TypeError('Thumbnail orientation identity requires source and asset fingerprints');
+  const normalized = normalizeAssetPath(path, { root: 'meshes' });
+  return `thumbnail-orientation:v${orientationVersion}:${rendererVersion}:${encodeURIComponent(view || 'default')}:${encodeURIComponent(sourceFingerprint)}:${encodeURIComponent(normalized)}:${assetVersion}`;
 }
 
 export async function fingerprintBytes(bytes) {

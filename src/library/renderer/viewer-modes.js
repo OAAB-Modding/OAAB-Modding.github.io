@@ -1,3 +1,7 @@
+export const THUMBNAIL_ORIENTATION_RENDER_SIZE = 128;
+export const THUMBNAIL_FLIP_COVERAGE_RATIO = 1.75;
+export const THUMBNAIL_FLIP_COVERAGE_DELTA = 0.08;
+
 export function isEditorMarkerName(name) {
   return String(name || '').toLowerCase().includes('editormarker');
 }
@@ -21,6 +25,24 @@ export function thumbnailViewForRecord(record = {}) {
     : '';
 }
 
+export function thumbnailOrientationFromCoverage(currentCoverage, flippedCoverage) {
+  const current = normalizedCoverage(currentCoverage);
+  const flipped = normalizedCoverage(flippedCoverage);
+  const ratio = current > 0
+    ? flipped / current
+    : (flipped > 0 ? Number.POSITIVE_INFINITY : 1);
+  const thumbnailFlip180 = flipped >= current * THUMBNAIL_FLIP_COVERAGE_RATIO
+    && flipped - current >= THUMBNAIL_FLIP_COVERAGE_DELTA;
+
+  return {
+    currentCoverage: current,
+    flippedCoverage: flipped,
+    coverageRatio: ratio,
+    thumbnailFlip180,
+    thumbnailRotationY: thumbnailFlip180 ? 180 : 0,
+  };
+}
+
 export function isViewerObjectVisible(userData = {}, {
   markersVisible = true,
   collisionVisible = false,
@@ -28,4 +50,9 @@ export function isViewerObjectVisible(userData = {}, {
   return !userData.hidden
     && (!userData.marker || markersVisible)
     && (!userData.collision || collisionVisible);
+}
+
+function normalizedCoverage(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, number) : 0;
 }

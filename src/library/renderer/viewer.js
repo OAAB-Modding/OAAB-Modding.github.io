@@ -13,9 +13,25 @@ import {
   cameraDirectionForView,
   isEditorMarkerName,
   isViewerObjectVisible,
+  THUMBNAIL_ORIENTATION_RENDER_SIZE,
+  thumbnailOrientationFromCoverage,
 } from './viewer-modes.js';
 
 const FALLBACK_COLOR = 0xd45a8b;
+const THUMBNAIL_VERTICAL_AXIS = new THREE.Vector3(0, 1, 0);
+const THUMBNAIL_MASK_MATERIAL = new THREE.MeshBasicMaterial({
+  color: 0xffffff,
+  side: THREE.FrontSide,
+  depthTest: true,
+  depthWrite: true,
+  transparent: false,
+  blending: THREE.NoBlending,
+  toneMapped: false,
+});
+const THUMBNAIL_MASK_PIXELS = new Uint8Array(
+  THUMBNAIL_ORIENTATION_RENDER_SIZE * THUMBNAIL_ORIENTATION_RENDER_SIZE * 4,
+);
+let thumbnailMaskRenderTarget = null;
 
 export class NifViewer {
   constructor({ canvas, resolver, onStatus = () => {} }) {
@@ -217,6 +233,7 @@ export class NifViewer {
     quality = 0.86,
     includeGrid = false,
     view = '',
+    thumbnailRotationY = 0,
   } = {}) {
     const oldSize = this.renderer.getSize(new THREE.Vector2());
     const oldPixelRatio = this.renderer.getPixelRatio();
@@ -224,6 +241,7 @@ export class NifViewer {
     const oldGridVisible = this.grid.visible;
     const oldCameraPosition = this.camera.position.clone();
     const oldTarget = this.controls.target.clone();
+    const oldModelQuaternion = this.modelRoot.quaternion.clone();
     try {
       if (!includeGrid) this.grid.visible = false;
       // Capture the requested logical size exactly. The interactive viewer
@@ -234,11 +252,14 @@ export class NifViewer {
       this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();
       if (view) this.#applyCameraView(view);
+      applyThumbnailRotation(this.modelRoot, oldModelQuaternion, thumbnailRotationY);
       this.renderer.render(this.scene, this.camera);
       return await new Promise((resolve, reject) => {
         this.canvas.toBlob(value => value ? resolve(value) : reject(new Error('Unable to encode thumbnail')), type, quality);
       });
     } finally {
+      this.modelRoot.quaternion.copy(oldModelQuaternion);
+      this.modelRoot.updateWorldMatrix(true, true);
       this.grid.visible = oldGridVisible;
       this.renderer.setPixelRatio(oldPixelRatio);
       this.renderer.setSize(oldSize.x, oldSize.y, false);
@@ -250,6 +271,44 @@ export class NifViewer {
         this.controls.update();
       }
       this.resize();
+    }
+  }
+
+  detectThumbnailOrientation({ view = '', debug = false, label = '' } = {}) {
+    const oldAspect = this.camera.aspect;
+    const oldCameraPosition = this.camera.position.clone();
+    const oldTarget = this.controls.target.clone();
+    try {
+      // The final thumbnails are square, so establish that projection once and
+      // leave the camera untouched between the current and 180-degree passes.
+      this.camera.aspect = 1;
+      this.camera.updateProjectionMatrix();
+      if (view) this.#applyCameraView(view);
+      const result = detectBacksideWithVisibilityMask({
+        renderer: this.renderer,
+        scene: this.scene,
+        camera: this.camera,
+        modelRoot: this.modelRoot,
+        grid: this.grid,
+        axes: this.axes,
+      });
+      if (debug) {
+        console.debug('[OAAB thumbnail orientation]', label || this.modelRoot.name, {
+          currentCoverage: result.currentCoverage,
+          flippedCoverage: result.flippedCoverage,
+          ratio: result.coverageRatio,
+          thumbnailFlip180: result.thumbnailFlip180,
+        });
+      }
+      return result;
+    } finally {
+      this.camera.aspect = oldAspect;
+      this.camera.updateProjectionMatrix();
+      if (view) {
+        this.camera.position.copy(oldCameraPosition);
+        this.controls.target.copy(oldTarget);
+        this.controls.update();
+      }
     }
   }
 
@@ -466,6 +525,7 @@ export class NifViewer {
       mesh.userData.collision = !!meshPacket.collision;
       mesh.userData.marker = isEditorMarkerName(mesh.name);
       mesh.userData.hidden = !!meshPacket.hidden;
+      mesh.userData.thumbnailGeometry = true;
       mesh.material = this.normalInspector
         ? mesh.userData.normalMaterial
         : mesh.userData.renderMaterial;
@@ -492,6 +552,7 @@ export class NifViewer {
       particleMesh.matrixAutoUpdate = false;
       particleMesh.frustumCulled = false;
       particleMesh.userData.hidden = !!particlePacket.hidden;
+      particleMesh.userData.thumbnailGeometry = false;
       this.#syncObjectVisibility(particleMesh);
       this.modelRoot.add(particleMesh);
     }
@@ -571,6 +632,175 @@ export class NifViewer {
   #status(stage, message) {
     this.onStatus({ stage, message });
   }
+}
+
+function detectBacksideWithVisibilityMask({
+  renderer,
+  scene,
+  camera,
+  modelRoot,
+  grid,
+  axes,
+}) {
+  const target = thumbnailVisibilityRenderTarget();
+  const originalQuaternion = modelRoot.quaternion.clone();
+  const originalBackground = scene.background;
+  const originalOverrideMaterial = scene.overrideMaterial;
+  const originalRenderTarget = renderer.getRenderTarget();
+  const originalClearColor = renderer.getClearColor(new THREE.Color());
+  const originalClearAlpha = renderer.getClearAlpha();
+  const originalAutoClear = renderer.autoClear;
+  const originalScissorTest = renderer.getScissorTest();
+  const originalViewport = renderer.getViewport(new THREE.Vector4());
+  const originalScissor = renderer.getScissor(new THREE.Vector4());
+  const originalGridVisible = grid.visible;
+  const originalAxesVisible = axes.visible;
+  const visibility = [];
+
+  modelRoot.traverse(object => {
+    if (!object.isMesh) return;
+    visibility.push([object, object.visible]);
+    // Detection intentionally excludes editor markers, collision, particles,
+    // and hidden nodes even if the interactive viewer is showing them.
+    object.visible = object.visible
+      && object.userData.thumbnailGeometry === true
+      && !object.userData.marker
+      && !object.userData.collision
+      && !object.userData.hidden;
+  });
+
+  try {
+    grid.visible = false;
+    axes.visible = false;
+    scene.background = null;
+    scene.overrideMaterial = THUMBNAIL_MASK_MATERIAL;
+    renderer.autoClear = false;
+    renderer.setScissorTest(false);
+    renderer.setClearColor(0x000000, 0);
+    renderer.setRenderTarget(target);
+
+    const current = renderThumbnailVisibilityCoverage({ renderer, scene, camera, modelRoot, target });
+    applyThumbnailRotation(modelRoot, originalQuaternion, 180);
+    const flipped = renderThumbnailVisibilityCoverage({ renderer, scene, camera, modelRoot, target });
+
+    return {
+      ...thumbnailOrientationFromCoverage(current.coverage, flipped.coverage),
+      currentVisibleMeshPixels: current.visibleMeshPixels,
+      currentProjectedBoundingBoxArea: current.projectedBoundingBoxArea,
+      flippedVisibleMeshPixels: flipped.visibleMeshPixels,
+      flippedProjectedBoundingBoxArea: flipped.projectedBoundingBoxArea,
+    };
+  } finally {
+    modelRoot.quaternion.copy(originalQuaternion);
+    modelRoot.updateWorldMatrix(true, true);
+    for (const [object, visible] of visibility) object.visible = visible;
+    grid.visible = originalGridVisible;
+    axes.visible = originalAxesVisible;
+    scene.background = originalBackground;
+    scene.overrideMaterial = originalOverrideMaterial;
+    renderer.setRenderTarget(originalRenderTarget);
+    renderer.setViewport(originalViewport);
+    renderer.setScissor(originalScissor);
+    renderer.setScissorTest(originalScissorTest);
+    renderer.setClearColor(originalClearColor, originalClearAlpha);
+    renderer.autoClear = originalAutoClear;
+  }
+}
+
+function renderThumbnailVisibilityCoverage({ renderer, scene, camera, modelRoot, target }) {
+  modelRoot.updateWorldMatrix(true, true);
+  camera.updateMatrixWorld();
+  renderer.clear(true, true, true);
+  renderer.render(scene, camera);
+  renderer.readRenderTargetPixels(
+    target,
+    0,
+    0,
+    THUMBNAIL_ORIENTATION_RENDER_SIZE,
+    THUMBNAIL_ORIENTATION_RENDER_SIZE,
+    THUMBNAIL_MASK_PIXELS,
+  );
+
+  let visibleMeshPixels = 0;
+  for (let offset = 3; offset < THUMBNAIL_MASK_PIXELS.length; offset += 4) {
+    if (THUMBNAIL_MASK_PIXELS[offset] !== 0) visibleMeshPixels += 1;
+  }
+  const projectedBoundingBoxArea = projectedVisibleMeshBoundsArea(modelRoot, camera);
+  return {
+    visibleMeshPixels,
+    projectedBoundingBoxArea,
+    coverage: projectedBoundingBoxArea > 0
+      ? visibleMeshPixels / projectedBoundingBoxArea
+      : 0,
+  };
+}
+
+function projectedVisibleMeshBoundsArea(modelRoot, camera) {
+  const box = new THREE.Box3();
+  const objectBox = new THREE.Box3();
+  modelRoot.traverse(object => {
+    if (!object.isMesh || !object.visible || object.userData.thumbnailGeometry !== true) return;
+    objectBox.setFromObject(object);
+    if (!objectBox.isEmpty()) box.union(objectBox);
+  });
+  if (box.isEmpty()) return 0;
+
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  const point = new THREE.Vector3();
+  for (const x of [box.min.x, box.max.x]) {
+    for (const y of [box.min.y, box.max.y]) {
+      for (const z of [box.min.z, box.max.z]) {
+        point.set(x, y, z).project(camera);
+        if (![point.x, point.y].every(Number.isFinite)) continue;
+        const screenX = (point.x * 0.5 + 0.5) * THUMBNAIL_ORIENTATION_RENDER_SIZE;
+        const screenY = (point.y * 0.5 + 0.5) * THUMBNAIL_ORIENTATION_RENDER_SIZE;
+        minX = Math.min(minX, screenX);
+        minY = Math.min(minY, screenY);
+        maxX = Math.max(maxX, screenX);
+        maxY = Math.max(maxY, screenY);
+      }
+    }
+  }
+  if (![minX, minY, maxX, maxY].every(Number.isFinite)) return 0;
+  minX = THREE.MathUtils.clamp(minX, 0, THUMBNAIL_ORIENTATION_RENDER_SIZE);
+  minY = THREE.MathUtils.clamp(minY, 0, THUMBNAIL_ORIENTATION_RENDER_SIZE);
+  maxX = THREE.MathUtils.clamp(maxX, 0, THUMBNAIL_ORIENTATION_RENDER_SIZE);
+  maxY = THREE.MathUtils.clamp(maxY, 0, THUMBNAIL_ORIENTATION_RENDER_SIZE);
+  return Math.max(0, maxX - minX) * Math.max(0, maxY - minY);
+}
+
+function applyThumbnailRotation(modelRoot, originalQuaternion, rotationY) {
+  modelRoot.quaternion.copy(originalQuaternion);
+  const radians = THREE.MathUtils.degToRad(Number(rotationY) || 0);
+  if (radians) {
+    modelRoot.quaternion.premultiply(
+      new THREE.Quaternion().setFromAxisAngle(THUMBNAIL_VERTICAL_AXIS, radians),
+    );
+  }
+  modelRoot.updateWorldMatrix(true, true);
+}
+
+function thumbnailVisibilityRenderTarget() {
+  if (thumbnailMaskRenderTarget) return thumbnailMaskRenderTarget;
+  thumbnailMaskRenderTarget = new THREE.WebGLRenderTarget(
+    THUMBNAIL_ORIENTATION_RENDER_SIZE,
+    THUMBNAIL_ORIENTATION_RENDER_SIZE,
+    {
+      format: THREE.RGBAFormat,
+      type: THREE.UnsignedByteType,
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter,
+      depthBuffer: true,
+      stencilBuffer: false,
+      generateMipmaps: false,
+    },
+  );
+  thumbnailMaskRenderTarget.texture.name = 'OAAB thumbnail visibility mask';
+  thumbnailMaskRenderTarget.texture.colorSpace = THREE.NoColorSpace;
+  return thumbnailMaskRenderTarget;
 }
 
 function createNormalInspectorMaterial(sourceMaterial, wireframe) {

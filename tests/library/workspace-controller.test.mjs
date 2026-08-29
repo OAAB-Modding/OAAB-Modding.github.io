@@ -90,6 +90,15 @@ test('background thumbnails capture from their dedicated viewer', async () => {
     },
   };
   const backgroundViewer = {
+    detectThumbnailOrientation() {
+      return {
+        currentCoverage: 0.1,
+        flippedCoverage: 0.3,
+        coverageRatio: 3,
+        thumbnailFlip180: true,
+        thumbnailRotationY: 180,
+      };
+    },
     async captureThumbnail(options) {
       backgroundCaptures += 1;
       captureOptions = options;
@@ -103,6 +112,9 @@ test('background thumbnails capture from their dedicated viewer', async () => {
         recordId: 'demo',
         recordSource: 'plugin:demo',
         meshSourceFingerprint: 'local-files:42',
+        thumbnailRotationY: 180,
+        thumbnailFlip180: true,
+        thumbnailOrientationKey: `thumbnail-orientation:v1:${NIF_RENDERER_VERSION}:default:local-files%3A42:meshes%2Fdemo.nif:asset-hash`,
       });
       return { url: 'blob:background' };
     },
@@ -118,7 +130,7 @@ test('background thumbnails capture from their dedicated viewer', async () => {
   assert.equal(committed, true);
   assert.equal(backgroundCaptures, 1);
   assert.equal(interactiveCaptures, 0);
-  assert.deepEqual(captureOptions, { includeGrid: false });
+  assert.deepEqual(captureOptions, { includeGrid: false, thumbnailRotationY: 180 });
   assert.match(cacheIdentity.sourceFingerprint, /textures\/demo\.dds:plugin-folder:data-files:84/);
   assert.equal(importedUrl, 'blob:background');
 });
@@ -152,6 +164,90 @@ test('generated head thumbnails request the front-facing camera preset', async (
 
   assert.equal(cached.url, 'blob:face');
   assert.deepEqual(captureOptions, { includeGrid: false, view: 'front' });
+});
+
+test('front/back orientation metadata is detected once and reused across thumbnail variants', async () => {
+  const workspace = workspaceWithoutConstructor();
+  const record = { id: 'demo', source: 'plugin:demo' };
+  const result = {
+    path: 'meshes/demo.nif',
+    asset: { source: 'local-files', lastModified: 42 },
+    assetFingerprint: 'asset-hash',
+    textureDiagnostics: [],
+  };
+  let orientationReads = 0;
+  const orientationWrites = [];
+  workspace.database = {
+    async get(store, key) {
+      assert.equal(store, 'asset-metadata');
+      assert.match(key, /^thumbnail-orientation:/);
+      orientationReads += 1;
+      return null;
+    },
+    async put(store, metadata) {
+      assert.equal(store, 'asset-metadata');
+      orientationWrites.push(metadata);
+    },
+  };
+  workspace.thumbnailCache = {
+    async get() { return null; },
+    async put(identity) { return { url: `blob:${identity.variant}` }; },
+  };
+  let detections = 0;
+  const captures = [];
+  const viewer = {
+    detectThumbnailOrientation() {
+      detections += 1;
+      return {
+        currentCoverage: 0.12,
+        flippedCoverage: 0.42,
+        coverageRatio: 3.5,
+        thumbnailFlip180: true,
+        thumbnailRotationY: 180,
+      };
+    },
+    async captureThumbnail(options) {
+      captures.push(options);
+      return new Blob(['thumbnail']);
+    },
+  };
+
+  await workspace.getOrCreateThumbnail(record, result, { viewer, variant: 'grid' });
+  await workspace.getOrCreateThumbnail(record, result, { viewer, variant: 'preview' });
+
+  assert.equal(detections, 1);
+  assert.equal(orientationReads, 1);
+  assert.equal(orientationWrites.length, 1);
+  assert.equal(orientationWrites[0].thumbnailRotationY, 180);
+  assert.equal(orientationWrites[0].thumbnailFlip180, true);
+  assert.deepEqual(captures, [
+    { includeGrid: false, thumbnailRotationY: 180 },
+    { includeGrid: false, thumbnailRotationY: 180 },
+  ]);
+});
+
+test('cached thumbnails skip backside detection entirely', async () => {
+  const workspace = workspaceWithoutConstructor();
+  const cached = { url: 'blob:cached' };
+  workspace.thumbnailCache = { async get() { return cached; } };
+
+  const result = await workspace.getOrCreateThumbnail(
+    { id: 'demo', source: 'plugin:demo' },
+    {
+      path: 'meshes/demo.nif',
+      asset: { source: 'local-files', lastModified: 42 },
+      assetFingerprint: 'asset-hash',
+      textureDiagnostics: [],
+    },
+    {
+      viewer: {
+        detectThumbnailOrientation() { throw new Error('must not detect'); },
+        captureThumbnail() { throw new Error('must not capture'); },
+      },
+    },
+  );
+
+  assert.equal(result, cached);
 });
 
 test('thumbnail persistence failures fall back to a session URL', async () => {
