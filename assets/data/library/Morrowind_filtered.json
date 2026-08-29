@@ -174918,6 +174918,186 @@
     }
   },
   {
+    "type": "Lockpick",
+    "flags": "",
+    "id": "pick_apprentice_01",
+    "name": "Apprentice's Lockpick",
+    "script": "",
+    "mesh": "m\\Pick_Apprentice_01.NIF",
+    "icon": "m\\Tx_pick_A_01.tga",
+    "data": {
+      "weight": 0.25,
+      "value": 10,
+      "uses": 25,
+      "quality": 1.0
+    }
+  },
+  {
+    "type": "Lockpick",
+    "flags": "",
+    "id": "pick_grandmaster",
+    "name": "Grandmaster's Pick",
+    "script": "",
+    "mesh": "m\\Pick_Grandmaster_01.nif",
+    "icon": "m\\Tx_pick_G_01.tga",
+    "data": {
+      "weight": 0.25,
+      "value": 200,
+      "uses": 25,
+      "quality": 1.4
+    }
+  },
+  {
+    "type": "Lockpick",
+    "flags": "",
+    "id": "pick_journeyman_01",
+    "name": "Journeyman's Lockpick",
+    "script": "",
+    "mesh": "m\\Pick_Journeyman_01.NIF",
+    "icon": "m\\Tx_pick_J_01.tga",
+    "data": {
+      "weight": 0.25,
+      "value": 50,
+      "uses": 25,
+      "quality": 1.1
+    }
+  },
+  {
+    "type": "Lockpick",
+    "flags": "",
+    "id": "pick_master",
+    "name": "Master's Lockpick",
+    "script": "",
+    "mesh": "m\\Pick_Master_01.nif",
+    "icon": "m\\Tx_pick_M_01.tga",
+    "data": {
+      "weight": 0.25,
+      "value": 100,
+      "uses": 25,
+      "quality": 1.3
+    }
+  },
+  {
+    "type": "Lockpick",
+    "flags": "",
+    "id": "pick_secretmaster",
+    "name": "Secret Master's Lockpick",
+    "script": "",
+    "mesh": "m\\Pick_SecretMaster_01.nif",
+    "icon": "m\\Tx_pick_S_01.tga",
+    "data": {
+      "weight": 0.25,
+      "value": 500,
+      "uses": 25,
+      "quality": 1.5
+    }
+  },
+  {
+    "type": "Lockpick",
+    "flags": "",
+    "id": "skeleton_key",
+    "name": "The Skeleton Key",
+    "script": "",
+    "mesh": "m\\Skeleton_key.NIF",
+    "icon": "m\\tx_skeleton_key.tga",
+    "data": {
+      "weight": 0.5,
+      "value": 1000,
+      "uses": 50,
+      "quality": 5.0
+    }
+  },
+  {
+    "type": "Probe",
+    "flags": "",
+    "id": "probe_apprentice_01",
+    "name": "Apprentice's Probe",
+    "script": "",
+    "mesh": "m\\Probe_Apprentice_01.NIF",
+    "icon": "m\\Tx_probe_A_01.tga",
+    "data": {
+      "weight": 1.0,
+      "value": 10,
+      "uses": 25,
+      "quality": 0.5
+    }
+  },
+  {
+    "type": "Probe",
+    "flags": "",
+    "id": "probe_bent",
+    "name": "Bent Probe",
+    "script": "",
+    "mesh": "m\\Probe_Apprentice_01.NIF",
+    "icon": "m\\Tx_probe_A_01.tga",
+    "data": {
+      "weight": 0.25,
+      "value": 2,
+      "uses": 5,
+      "quality": 0.25
+    }
+  },
+  {
+    "type": "Probe",
+    "flags": "",
+    "id": "probe_grandmaster",
+    "name": "Grandmaster's Probe",
+    "script": "",
+    "mesh": "m\\Probe_Grandmaster_01.nif",
+    "icon": "m\\Tx_probe_G_01.tga",
+    "data": {
+      "weight": 0.25,
+      "value": 200,
+      "uses": 25,
+      "quality": 1.25
+    }
+  },
+  {
+    "type": "Probe",
+    "flags": "",
+    "id": "probe_journeyman_01",
+    "name": "Journeyman's Probe",
+    "script": "",
+    "mesh": "m\\Probe_Journeyman_01.NIF",
+    "icon": "m\\Tx_probe_J_01.tga",
+    "data": {
+      "weight": 0.25,
+      "value": 50,
+      "uses": 25,
+      "quality": 0.75
+    }
+  },
+  {
+    "type": "Probe",
+    "flags": "",
+    "id": "probe_master",
+    "name": "Master's Probe",
+    "script": "",
+    "mesh": "m\\Probe_Master_01.nif",
+    "icon": "m\\Tx_probe_M_01.tga",
+    "data": {
+      "weight": 0.25,
+      "value": 100,
+      "uses": 25,
+      "quality": 1.0
+    }
+  },
+  {
+    "type": "Probe",
+    "flags": "",
+    "id": "probe_secretmaster",
+    "name": "Secret Master's Probe",
+    "script": "",
+    "mesh": "m\\Probe_SecretMaster_01.nif",
+    "icon": "m\\Tx_probe_S_01.tga",
+    "data": {
+      "weight": 0.25,
+      "value": 500,
+      "uses": 25,
+      "quality": 1.5
+    }
+  },
+  {
     "type": "Ingredient",
     "flags": "",
     "id": "food_kwama_egg_01",
