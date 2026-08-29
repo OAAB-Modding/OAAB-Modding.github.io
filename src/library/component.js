@@ -122,7 +122,11 @@ export function createLibraryComponent(DCLogic) {
         if (!e.metaKey && !e.ctrlKey && !e.altKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
           if (e.preventDefault) e.preventDefault();
           if (e.stopPropagation) e.stopPropagation();
-          this.showAdjacentBookPreview(e.key === 'ArrowRight' ? 1 : -1);
+          if ((this.state.bookPreview.searchMatchCount || 0) > 1) {
+            this.showAdjacentBookTextMatch(e.key === 'ArrowRight' ? 1 : -1);
+          } else {
+            this.showAdjacentBookPreview(e.key === 'ArrowRight' ? 1 : -1);
+          }
           return;
         }
         return;

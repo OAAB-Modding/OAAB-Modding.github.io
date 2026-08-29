@@ -156,6 +156,7 @@ test('imported plugins reuse built-in book, magic, light, and record-type featur
   assert.deepEqual(byId.get('creatures_test').leveledCreatures, [['creature_test', 2]]);
   assert.equal(byId.get('book_test').bookRef.source, 'plugin');
   assert.match(byId.get('book_test').bookRef.searchText, /Second line/);
+  assert.equal(byId.get('book_test').bookRef.searchFormat, 'plugin');
   assert.equal(byId.get('light_test').lightHex, '#0a141e');
   assert.equal(byId.get('light_test').lightTint, 'rgb(10, 20, 30)');
   assert.match(byId.get('light_test').img, /marker_light\.webp$/);
@@ -165,7 +166,7 @@ test('imported plugins reuse built-in book, magic, light, and record-type featur
   assert.deepEqual(preview.blocks.map(block => block.text), ['Title & Text', 'Second line']);
 });
 
-test('book text mode searches OAAB, vanilla, and parser-opened books', () => {
+test('book text mode searches OAAB, vanilla, and parser-opened books', async () => {
   const Component = createLibraryComponent(TestLogic);
   const component = new Component();
   const oaabRecord = {
@@ -228,6 +229,40 @@ test('book text mode searches OAAB, vanilla, and parser-opened books', () => {
   assert.deepEqual(values.items.map(item => item.id), ['oaab_book']);
   assert.equal(values.searchModeLabel, 'Text');
   assert.equal(values.searchPlaceholder, 'Search book text');
+
+  const repeated = component.bookPreviewPayloadWithSearch({
+    id: 'repeated_book',
+    blocks: [{ isParagraph: true, text: 'Stars above, stars below, and STARS within.' }],
+  }, 'stars');
+  assert.equal(repeated.searchMatchCount, 3);
+  let matchData = component.bookPreviewSearchData(repeated);
+  assert.equal(matchData.matchLabel, '1 of 3 matches');
+  assert.equal(matchData.blocks[0].parts.filter(part => part.className.includes('library-book-text-match')).length, 3);
+  assert.match(matchData.blocks[0].parts.find(part => part.matchIndex === '0').className, /current/);
+
+  const scrolled = [];
+  component.scrollBookPreviewMatch = (index, behavior) => scrolled.push([index, behavior]);
+  component.state.bookPreview = repeated;
+  component.showAdjacentBookTextMatch(1);
+  assert.equal(component.state.bookPreview.searchMatchIndex, 1);
+  assert.deepEqual(scrolled, [[1, 'smooth']]);
+  matchData = component.bookPreviewSearchData(component.state.bookPreview);
+  assert.match(matchData.blocks[0].parts.find(part => part.matchIndex === '1').className, /current/);
+
+  const markdownPreview = component.bookSearchPreviewPayload({
+    id: 'markdown_book',
+    name: 'Markdown Book',
+    bookRef: {
+      searchText: '## A Heading\n\nVisit [Balmora](https://example.test/balmora) today.',
+      searchFormat: 'markdown',
+    },
+  });
+  assert.deepEqual(markdownPreview.blocks.map(block => block.text), ['A Heading', 'Visit Balmora today.']);
+
+  component.openBookPreviewForItem(vanilla, 'friend & enter');
+  await Promise.resolve();
+  assert.equal(component.state.bookPreview.searchTerm, 'friend & enter');
+  assert.equal(component.state.bookPreview.searchMatchCount, 1);
 });
 
 test('imported plugin contents remain searchable alongside built-in records', () => {

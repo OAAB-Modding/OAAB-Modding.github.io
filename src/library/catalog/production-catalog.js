@@ -125,6 +125,7 @@ export function withProductionCatalog(Base) {
               anchor,
               title: entry.title,
               searchText: this.markdownSection(entry.markdown, anchor),
+              searchFormat: 'markdown',
             };
           });
         });
@@ -507,6 +508,7 @@ export function withProductionCatalog(Base) {
           title: record.name || record.id || 'Book',
           text: bookText,
           searchText: bookText,
+          searchFormat: 'plugin',
         } : null,
         detail: this.detailSourceRecord(raw),
         imported: true,

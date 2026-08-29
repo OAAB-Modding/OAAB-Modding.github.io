@@ -36,7 +36,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=library-catalog-sources-20260826">
+<link rel="stylesheet" href="../style.css?v=library-book-search-20260828">
 <link rel="stylesheet" href="./workspace.css?v=20260828">
 <script src="../theme.js"></script>
 </helmet>
@@ -822,6 +822,24 @@
       <sc-if value="{{ bookPreviewSourceUrl }}" hint-placeholder-val="{{ false }}">
         <a href="{{ bookPreviewSourceUrl }}" target="_blank" rel="noopener" class="library-book-source">Wiki</a>
       </sc-if>
+      <sc-if value="{{ showBookPreviewSearchMatches }}" hint-placeholder-val="{{ false }}">
+        <div class="library-book-match-nav" aria-label="Book text search matches">
+          <span class="library-book-match-term">“{{ bookPreviewSearchTerm }}”</span>
+          <span class="library-book-match-controls">
+            <sc-if value="{{ bookPreviewHasMultipleMatches }}" hint-placeholder-val="{{ true }}">
+              <button type="button" onClick="{{ previousBookTextMatch }}" title="Previous match" aria-label="Previous match" class="library-book-match-button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+            </sc-if>
+            <span class="library-book-match-count" aria-live="polite">{{ bookPreviewSearchMatchLabel }}</span>
+            <sc-if value="{{ bookPreviewHasMultipleMatches }}" hint-placeholder-val="{{ true }}">
+              <button type="button" onClick="{{ nextBookTextMatch }}" title="Next match" aria-label="Next match" class="library-book-match-button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+            </sc-if>
+          </span>
+        </div>
+      </sc-if>
     </div>
     <div class="library-book-body">
       <sc-if value="{{ bookPreviewLoading }}" hint-placeholder-val="{{ false }}">
@@ -832,10 +850,10 @@
       </sc-if>
       <sc-for list="{{ bookPreviewBlocks }}" as="block" hint-placeholder-count="14">
         <sc-if value="{{ block.isHeading }}" hint-placeholder-val="{{ false }}">
-          <h2 class="library-book-heading">{{ block.text }}</h2>
+          <h2 class="library-book-heading"><sc-for list="{{ block.parts }}" as="part" hint-placeholder-count="3"><span data-book-match="{{ part.matchIndex }}" class="{{ part.className }}">{{ part.text }}</span></sc-for></h2>
         </sc-if>
         <sc-if value="{{ block.isQuote }}" hint-placeholder-val="{{ false }}">
-          <blockquote class="library-book-quote">{{ block.text }}</blockquote>
+          <blockquote class="library-book-quote"><sc-for list="{{ block.parts }}" as="part" hint-placeholder-count="3"><span data-book-match="{{ part.matchIndex }}" class="{{ part.className }}">{{ part.text }}</span></sc-for></blockquote>
         </sc-if>
         <sc-if value="{{ block.isRule }}" hint-placeholder-val="{{ false }}">
           <hr class="library-book-rule">
@@ -846,7 +864,7 @@
           </figure>
         </sc-if>
         <sc-if value="{{ block.isParagraph }}" hint-placeholder-val="{{ true }}">
-          <p class="library-book-paragraph">{{ block.text }}</p>
+          <p class="library-book-paragraph"><sc-for list="{{ block.parts }}" as="part" hint-placeholder-count="3"><span data-book-match="{{ part.matchIndex }}" class="{{ part.className }}">{{ part.text }}</span></sc-for></p>
         </sc-if>
       </sc-for>
     </div>

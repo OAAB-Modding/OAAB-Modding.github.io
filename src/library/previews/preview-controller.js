@@ -101,11 +101,13 @@ export function withLibraryPreviews(Base) {
         title: record.name || record.id || 'Book',
         text: searchText,
         searchText,
+        searchFormat: 'plugin',
       } : null;
     }
     return Object.assign({}, ref, {
       title: record.name || ref.title || record.id || ref.file,
       searchText: searchText || ref.searchText || '',
+      searchFormat: searchText ? 'plugin' : (ref.searchFormat || 'markdown'),
     });
   }
 
@@ -145,6 +147,7 @@ export function withLibraryPreviews(Base) {
       uespTitle: title,
       wikiUrl: this.uespPageUrl(title),
       searchText: String(record.text || '').trim(),
+      searchFormat: 'plugin',
     };
   }
 
@@ -641,8 +644,155 @@ export function withLibraryPreviews(Base) {
       });
   }
 
-  openBookPreviewForItem(item) {
+  bookSearchPreviewPayload(item) {
+    const ref = item && item.bookRef;
+    const text = String((ref && (ref.searchText || ref.text)) || '');
+    const blocks = ref && ref.searchFormat === 'markdown'
+      ? this.markdownBookBlocks(text, ref)
+      : this.pluginBookBlocks(text);
+    return {
+      id: (item && item.id) || '',
+      title: (item && (item.name || item.id)) || (ref && ref.title) || 'Book',
+      meta: '',
+      sourceUrl: (ref && ref.wikiUrl) || '',
+      loading: false,
+      error: '',
+      blocks: blocks.length ? blocks : [{ isParagraph: true, text: 'No readable text was found in this record.' }],
+    };
+  }
+
+  normalizedBookTextMap(value) {
+    const source = String(value || '');
+    let text = '';
+    const map = [];
+    let whitespace = false;
+    for (let index = 0; index < source.length; index++) {
+      const char = source[index];
+      if (/\s/.test(char)) {
+        if (whitespace || !text) continue;
+        whitespace = true;
+        text += ' ';
+        map.push({ start: index, end: index + 1 });
+        continue;
+      }
+      whitespace = false;
+      const folded = char.toLowerCase();
+      text += folded;
+      for (let offset = 0; offset < folded.length; offset++) {
+        map.push({ start: index, end: index + 1 });
+      }
+    }
+    if (text.endsWith(' ')) {
+      text = text.slice(0, -1);
+      map.pop();
+    }
+    return { text, map };
+  }
+
+  bookPreviewSearchData(preview) {
+    const source = preview || {};
+    const blocks = Array.isArray(source.blocks) ? source.blocks : [];
+    const term = String(source.searchTerm || '').replace(/\s+/g, ' ').trim();
+    const needle = term.toLowerCase();
+    const matches = [];
+    if (needle) {
+      blocks.forEach((block, blockIndex) => {
+        if (!block || (!block.isHeading && !block.isQuote && !block.isParagraph)) return;
+        const normalized = this.normalizedBookTextMap(block.text || '');
+        let from = 0;
+        while (from <= normalized.text.length - needle.length) {
+          const found = normalized.text.indexOf(needle, from);
+          if (found === -1) break;
+          const first = normalized.map[found];
+          const last = normalized.map[found + needle.length - 1];
+          if (first && last) matches.push({ blockIndex, start: first.start, end: last.end });
+          from = found + Math.max(needle.length, 1);
+        }
+      });
+    }
+    const matchCount = matches.length;
+    const requestedIndex = Number.isFinite(source.searchMatchIndex) ? source.searchMatchIndex : 0;
+    const currentMatchIndex = matchCount ? Math.max(0, Math.min(matchCount - 1, requestedIndex)) : -1;
+    const byBlock = new Map();
+    matches.forEach((match, matchIndex) => {
+      const list = byBlock.get(match.blockIndex) || [];
+      list.push(Object.assign({ matchIndex }, match));
+      byBlock.set(match.blockIndex, list);
+    });
+    const decoratedBlocks = blocks.map((block, blockIndex) => {
+      if (!block || (!block.isHeading && !block.isQuote && !block.isParagraph)) return block;
+      const text = String(block.text || '');
+      const blockMatches = byBlock.get(blockIndex) || [];
+      const parts = [];
+      let cursor = 0;
+      blockMatches.forEach(match => {
+        if (match.start > cursor) {
+          parts.push({ text: text.slice(cursor, match.start), className: '', matchIndex: '' });
+        }
+        parts.push({
+          text: text.slice(match.start, match.end),
+          className: match.matchIndex === currentMatchIndex
+            ? 'library-book-text-match library-book-text-match-current'
+            : 'library-book-text-match',
+          matchIndex: String(match.matchIndex),
+        });
+        cursor = match.end;
+      });
+      if (cursor < text.length || !parts.length) {
+        parts.push({ text: text.slice(cursor), className: '', matchIndex: '' });
+      }
+      return Object.assign({}, block, { parts });
+    });
+    return {
+      blocks: decoratedBlocks,
+      term,
+      matchCount,
+      currentMatchIndex,
+      hasMatches: matchCount > 0,
+      hasMultipleMatches: matchCount > 1,
+      matchLabel: matchCount === 1 ? '1 match' : (matchCount ? (currentMatchIndex + 1) + ' of ' + matchCount + ' matches' : ''),
+    };
+  }
+
+  bookPreviewPayloadWithSearch(payload, searchTerm) {
+    const preview = Object.assign({}, payload, {
+      searchTerm: String(searchTerm || '').replace(/\s+/g, ' ').trim(),
+      searchMatchIndex: 0,
+    });
+    const search = this.bookPreviewSearchData(preview);
+    preview.searchMatchCount = search.matchCount;
+    return preview;
+  }
+
+  scrollBookPreviewMatch(matchIndex, behavior) {
+    if (typeof requestAnimationFrame !== 'function' || matchIndex < 0) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      try {
+        const doc = this.activeDoc();
+        const body = doc.querySelector('.library-book-body');
+        const match = body && body.querySelector('[data-book-match="' + matchIndex + '"]');
+        if (!body || !match) return;
+        const bodyRect = body.getBoundingClientRect();
+        const matchRect = match.getBoundingClientRect();
+        const top = body.scrollTop + matchRect.top - bodyRect.top - Math.max(18, (body.clientHeight - matchRect.height) * 0.36);
+        body.scrollTo({ top: Math.max(0, top), behavior: behavior || 'smooth' });
+      } catch (e) {}
+    }));
+  }
+
+  showAdjacentBookTextMatch(step) {
+    const preview = this.state.bookPreview;
+    const count = preview && preview.searchMatchCount ? preview.searchMatchCount : 0;
+    if (!preview || count < 2) return;
+    const current = Number.isFinite(preview.searchMatchIndex) ? preview.searchMatchIndex : 0;
+    const next = (current + step + count) % count;
+    this.setState({ bookPreview: Object.assign({}, preview, { searchMatchIndex: next }) });
+    this.scrollBookPreviewMatch(next, 'smooth');
+  }
+
+  openBookPreviewForItem(item, searchTerm) {
     if (!item || !item.bookRef) return;
+    const activeSearchTerm = String(searchTerm || '').replace(/\s+/g, ' ').trim();
     const loadingPayload = {
       id: item.id || '',
       title: item.name || item.id || 'Book',
@@ -651,15 +801,23 @@ export function withLibraryPreviews(Base) {
       loading: true,
       error: '',
       blocks: [],
+      searchTerm: activeSearchTerm,
+      searchMatchIndex: 0,
+      searchMatchCount: 0,
     };
     this.setState({
       bookPreview: loadingPayload,
       compactActionsId: null,
     });
-    this.fetchBookPreview(item)
+    const previewRequest = activeSearchTerm && (item.bookRef.searchText || item.bookRef.text)
+      ? Promise.resolve(this.bookSearchPreviewPayload(item))
+      : this.fetchBookPreview(item);
+    previewRequest
       .then(payload => {
         if (this.state.bookPreview && this.state.bookPreview.id === payload.id) {
-          this.setState({ bookPreview: payload });
+          const searchablePayload = this.bookPreviewPayloadWithSearch(payload, activeSearchTerm);
+          this.setState({ bookPreview: searchablePayload });
+          if (searchablePayload.searchMatchCount) this.scrollBookPreviewMatch(0, 'auto');
         }
       })
       .catch(err => {
@@ -684,7 +842,7 @@ export function withLibraryPreviews(Base) {
     if (idx < 0) return;
     const next = list[(idx + step + list.length) % list.length];
     if (!next || !next.bookRef) return;
-    this.openBookPreviewForItem(next);
+    this.openBookPreviewForItem(next, cur.searchTerm || '');
   }
 
   renderPreviewPayload(x) {

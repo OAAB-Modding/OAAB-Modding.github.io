@@ -593,6 +593,7 @@ export function withLibraryRenderValues(Base) {
     const renderPreviewItem = renderPreview?.id ? this.findCatalogItem(renderPreview.id) : null;
     const renderPreviewRecord = renderPreviewItem?.record;
     const renderPreviewDetails = renderPreviewRecord?.raw || renderPreviewItem?.detail || {};
+    const bookPreviewSearch = this.bookPreviewSearchData(this.state.bookPreview);
 
     return {
       yes: true,
@@ -951,7 +952,7 @@ export function withLibraryRenderValues(Base) {
         if (e && e.stopPropagation) e.stopPropagation();
         const id = e.currentTarget && e.currentTarget.dataset ? (e.currentTarget.dataset.bookId || '') : '';
         const item = this.findCatalogItem(id);
-        this.openBookPreviewForItem(item);
+        this.openBookPreviewForItem(item, bookTextQuery);
       },
       openContentsDetails: (e) => {
         if (e && e.preventDefault) e.preventDefault();
@@ -983,6 +984,16 @@ export function withLibraryRenderValues(Base) {
       },
       stopBookTextClick: (e) => {
         if (e && e.stopPropagation) e.stopPropagation();
+      },
+      previousBookTextMatch: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        this.showAdjacentBookTextMatch(-1);
+      },
+      nextBookTextMatch: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        this.showAdjacentBookTextMatch(1);
       },
       closeEnchantmentDetails: (e) => {
         if (e && e.preventDefault) e.preventDefault();
@@ -1388,7 +1399,11 @@ export function withLibraryRenderValues(Base) {
       bookPreviewSourceUrl: this.state.bookPreview ? (this.state.bookPreview.sourceUrl || '') : '',
       bookPreviewLoading: !!(this.state.bookPreview && this.state.bookPreview.loading),
       bookPreviewError: this.state.bookPreview ? (this.state.bookPreview.error || '') : '',
-      bookPreviewBlocks: this.state.bookPreview ? (this.state.bookPreview.blocks || []) : [],
+      bookPreviewBlocks: bookPreviewSearch.blocks,
+      showBookPreviewSearchMatches: bookPreviewSearch.hasMatches,
+      bookPreviewHasMultipleMatches: bookPreviewSearch.hasMultipleMatches,
+      bookPreviewSearchTerm: bookPreviewSearch.term,
+      bookPreviewSearchMatchLabel: bookPreviewSearch.matchLabel,
       showEnchantmentPreview: !!this.state.enchantmentPreview,
       enchantmentPreviewTitle: this.state.enchantmentPreview ? this.state.enchantmentPreview.title : '',
       enchantmentPreviewIsSpell: !!(this.state.enchantmentPreview && this.state.enchantmentPreview.kind === 'spell'),
