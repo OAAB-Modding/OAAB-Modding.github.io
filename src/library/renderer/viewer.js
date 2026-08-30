@@ -8,6 +8,17 @@ import { Tes3WorkerClient } from '../workers/tes3-worker-client.js';
 import { fingerprintBytes } from '../storage/thumbnail-cache.js';
 import { captureTransparentPng } from './capture.js';
 import {
+  animationGroupTime,
+  controllerAnimationTime,
+  externalKfPath,
+  mergeExternalAnimationPacket,
+  sampleQuaternionCurve,
+  sampleScalarCurve,
+  sampleStep,
+  sampleVectorCurve,
+  selectIdleAnimationGroup,
+} from './nif-animation.js';
+import {
   cameraDistanceScaleForView,
   cameraFrameMarginForView,
   cameraDirectionForView,
@@ -105,16 +116,42 @@ export class NifViewer {
     return this.worker.version();
   }
 
-  async load(path, { display = true, resolveTextures = true } = {}) {
+  async load(path, {
+    display = true,
+    resolveTextures = true,
+    resolveAnimation = false,
+  } = {}) {
     const generation = ++this.loadGeneration;
     const normalized = normalizeAssetPath(path, { root: 'meshes' });
     this.#status('resolving', `Resolving ${normalized}`);
 
     const startedAt = performance.now();
     const asset = await this.resolver.resolve(normalized);
-    const assetFingerprint = await fingerprintBytes(asset.bytes);
+    let assetFingerprint = await fingerprintBytes(asset.bytes);
     this.#status('parsing', `Parsing ${normalized} in WebAssembly`);
     const packet = await this.worker.parseNif(asset.bytes);
+
+    let animationAsset = null;
+    const animationPath = resolveAnimation ? externalKfPath(normalized) : null;
+    if (animationPath) {
+      try {
+        animationAsset = await this.resolver.resolve(animationPath);
+      } catch {
+        // External x*.kf files are optional; many static and inline-animated
+        // NIFs do not have one.
+      }
+    }
+    if (animationAsset) {
+      this.#status('parsing', `Parsing ${animationPath} in WebAssembly`);
+      try {
+        const animationPacket = await this.worker.parseNif(animationAsset.bytes);
+        mergeExternalAnimationPacket(packet, animationPacket);
+        assetFingerprint = `${assetFingerprint}:${await fingerprintBytes(animationAsset.bytes)}`;
+      } catch (error) {
+        packet.warnings = packet.warnings || [];
+        packet.warnings.push(`External animation ${animationPath} could not be parsed: ${error.message}`);
+      }
+    }
 
     if (generation !== this.loadGeneration) throw new Error('Load superseded by a newer request');
 
@@ -126,6 +163,8 @@ export class NifViewer {
     const result = {
       path: normalized,
       asset,
+      animationAsset,
+      animationPath: animationAsset ? animationPath : null,
       packet,
       textureDiagnostics,
       assetFingerprint,
@@ -398,6 +437,7 @@ export class NifViewer {
 
   animate() {
     this.animationFrame = requestAnimationFrame(this.animate);
+    this.#applyAnimations((performance.now() - (this.animationEpoch || performance.now())) / 1000);
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
@@ -480,6 +520,21 @@ export class NifViewer {
         .map((entry) => [entry.path, entry.texture]),
     );
     this.loadedTextures = new Set(textures.values());
+    this.resolvedTextureMap = textures;
+    this.animationObjects = new Map();
+    this.animationTargets = new Map();
+    this.animations = packet.animations || [];
+    this.idleAnimationGroup = selectIdleAnimationGroup(packet.animationGroups || []);
+    this.skinBindings = [];
+
+    for (const nodePacket of packet.nodes || []) {
+      const node = new THREE.Group();
+      node.name = nodePacket.name || nodePacket.blockType;
+      applyPacketTransform(node, nodePacket.localTransform || nodePacket.transform);
+      this.#registerAnimationObject(nodePacket.id, node, [node.name]);
+      const parent = this.animationObjects.get(nodePacket.parentId) || this.modelRoot;
+      parent.add(node);
+    }
 
     for (const meshPacket of packet.meshes || []) {
       if (!meshPacket.vertices.length || !meshPacket.indices.length) continue;
@@ -512,21 +567,29 @@ export class NifViewer {
         !!rawTexture,
         hasVertexColors,
       );
-      const mesh = new THREE.Mesh(geometry, material);
+      const skinBinding = createSkinBinding(geometry, material, meshPacket.skin);
+      const mesh = skinBinding?.mesh || new THREE.Mesh(geometry, material);
       mesh.name = meshPacket.name || meshPacket.blockType;
-      mesh.matrix.fromArray(meshPacket.transform);
-      mesh.matrixAutoUpdate = false;
+      applyPacketTransform(mesh, meshPacket.localTransform || meshPacket.transform);
       mesh.userData.renderMaterial = material;
       mesh.userData.normalMaterial = createNormalInspectorMaterial(material, this.wireframe);
       mesh.userData.collision = !!meshPacket.collision;
       mesh.userData.marker = isEditorMarkerName(mesh.name);
       mesh.userData.hidden = !!meshPacket.hidden;
       mesh.userData.thumbnailGeometry = true;
+      mesh.userData.animationVisible = true;
       mesh.material = this.normalInspector
         ? mesh.userData.normalMaterial
         : mesh.userData.renderMaterial;
       this.#syncObjectVisibility(mesh);
-      this.modelRoot.add(mesh);
+      const parent = this.animationObjects.get(meshPacket.parentId) || this.modelRoot;
+      parent.add(mesh);
+      this.#registerAnimationObject(
+        meshPacket.id,
+        mesh,
+        [...(meshPacket.animationTargets || []), mesh.name],
+      );
+      if (skinBinding) this.skinBindings.push(skinBinding);
     }
 
     for (const particlePacket of packet.particles || []) {
@@ -544,21 +607,107 @@ export class NifViewer {
       );
       const particleMesh = new THREE.Mesh(geometry, material);
       particleMesh.name = particlePacket.name || particlePacket.blockType;
-      particleMesh.matrix.fromArray(particlePacket.transform);
-      particleMesh.matrixAutoUpdate = false;
+      applyPacketTransform(
+        particleMesh,
+        particlePacket.localTransform || particlePacket.transform,
+      );
       particleMesh.frustumCulled = false;
       particleMesh.userData.hidden = !!particlePacket.hidden;
       particleMesh.userData.thumbnailGeometry = false;
+      particleMesh.userData.animationVisible = true;
       this.#syncObjectVisibility(particleMesh);
-      this.modelRoot.add(particleMesh);
+      const parent = this.animationObjects.get(particlePacket.parentId) || this.modelRoot;
+      parent.add(particleMesh);
+      this.#registerAnimationObject(
+        particlePacket.id,
+        particleMesh,
+        [...(particlePacket.animationTargets || []), particleMesh.name],
+      );
+    }
+
+    this.animationEpoch = performance.now();
+    this.#applyAnimations(0);
+    for (const binding of this.skinBindings) {
+      binding.mesh.computeBoundingBox();
+      binding.mesh.computeBoundingSphere();
+    }
+  }
+
+  #registerAnimationObject(id, object, names = []) {
+    if (id != null) this.animationObjects.set(id, object);
+    for (const name of names.filter(Boolean)) {
+      const key = String(name).toLowerCase();
+      if (!this.animationTargets.has(key)) this.animationTargets.set(key, []);
+      const objects = this.animationTargets.get(key);
+      if (!objects.includes(object)) objects.push(object);
     }
   }
 
   #syncObjectVisibility(object) {
-    object.visible = isViewerObjectVisible(object.userData, {
+    object.visible = object.userData.animationVisible !== false && isViewerObjectVisible(object.userData, {
       markersVisible: this.markersVisible,
       collisionVisible: this.collisionVisible,
     });
+  }
+
+  #applyAnimations(elapsed) {
+    if (!this.animationObjects) return;
+    const idleTime = this.idleAnimationGroup
+      ? animationGroupTime(this.idleAnimationGroup, elapsed)
+      : null;
+
+    for (const animation of this.animations || []) {
+      if (!animation.active) continue;
+      const targets = animation.targetId != null
+        ? [this.animationObjects.get(animation.targetId)].filter(Boolean)
+        : this.animationTargets.get(String(animation.target || '').toLowerCase()) || [];
+      if (!targets.length) continue;
+      const data = animation.data || {};
+      const controllerTime = controllerAnimationTime(animation, elapsed);
+      const timelineTime = idleTime ?? finiteAnimationStart(animation);
+
+      if (data.kind === 'keyframe') {
+        for (const target of targets) applyKeyframeTransform(target, data, timelineTime);
+      } else if (data.kind === 'visibility') {
+        const visible = sampleStep(data.keys, idleTime ?? controllerTime, true);
+        for (const target of targets) {
+          if (target.isMesh) {
+            target.userData.animationVisible = visible;
+            this.#syncObjectVisibility(target);
+          } else {
+            target.visible = visible;
+          }
+        }
+      } else if (data.kind === 'uv') {
+        const uOffset = sampleScalarCurve(data.uOffset, controllerTime, 0);
+        const vOffset = sampleScalarCurve(data.vOffset, controllerTime, 0);
+        const uTiling = sampleScalarCurve(data.uTiling, controllerTime, 1);
+        const vTiling = sampleScalarCurve(data.vTiling, controllerTime, 1);
+        for (const target of renderObjectsBelow(targets)) {
+          if (target.material?.userData?.nifParticle) continue;
+          const map = target.material?.map;
+          if (!map) continue;
+          map.offset.set(uOffset, vOffset);
+          map.repeat.set(uTiling, vTiling);
+        }
+      } else if (data.kind === 'flip' && data.textures?.length && data.secsPerFrame > 0) {
+        const index = Math.floor(
+          Math.max(0, controllerTime - (data.flipStartTime || 0)) / data.secsPerFrame,
+        ) % data.textures.length;
+        let path = null;
+        try { path = normalizeAssetPath(data.textures[index], { root: 'textures' }); } catch {}
+        const texture = path ? this.resolvedTextureMap?.get(path) : null;
+        if (!texture) continue;
+        for (const target of renderObjectsBelow(targets)) {
+          if (target.material) setMaterialMap(target.material, texture);
+        }
+      }
+    }
+
+    this.modelRoot.updateWorldMatrix(true, true);
+    for (const binding of this.skinBindings || []) {
+      updateSkinBinding(binding, this.animationObjects);
+    }
   }
 
   #createMaterial(packet, texture, expectedTexture, hasVertexColors) {
@@ -610,6 +759,7 @@ export class NifViewer {
     this.modelRoot.traverse((object) => {
       if (!object.isMesh && !object.isPoints) return;
       object.geometry?.dispose();
+      object.skeleton?.dispose();
       const materials = new Set([
         ...(Array.isArray(object.material) ? object.material : [object.material]),
         object.userData.renderMaterial,
@@ -622,12 +772,154 @@ export class NifViewer {
     });
     for (const texture of this.loadedTextures || []) texture.dispose();
     this.loadedTextures = null;
+    this.resolvedTextureMap = null;
+    this.animationObjects = null;
+    this.animationTargets = null;
+    this.animations = null;
+    this.idleAnimationGroup = null;
+    this.skinBindings = null;
     this.modelRoot.clear();
   }
 
   #status(stage, message) {
     this.onStatus({ stage, message });
   }
+}
+
+function applyPacketTransform(object, values) {
+  object.matrix.fromArray(values || new THREE.Matrix4().elements);
+  object.matrixAutoUpdate = false;
+  object.userData.animationBase = {
+    position: new THREE.Vector3(),
+    quaternion: new THREE.Quaternion(),
+    scale: new THREE.Vector3(),
+  };
+  object.matrix.decompose(
+    object.userData.animationBase.position,
+    object.userData.animationBase.quaternion,
+    object.userData.animationBase.scale,
+  );
+}
+
+function applyKeyframeTransform(target, data, time) {
+  const base = target.userData.animationBase;
+  if (!base) return;
+  const translations = normalizeCurve(data.translations);
+  const rotations = normalizeCurve(data.rotations);
+  const scales = normalizeCurve(data.scales);
+  const position = translations.keys.length
+    ? sampleVectorCurve(translations, time, base.position.toArray())
+    : base.position.toArray();
+  const quaternion = rotations.keys.length
+    ? sampleQuaternionCurve(rotations, time, base.quaternion.toArray())
+    : base.quaternion.toArray();
+  const scaleValue = scales.keys.length
+    ? Math.abs(sampleScalarCurve(scales, time, base.scale.x))
+    : null;
+  const scale = scaleValue == null
+    ? base.scale
+    : new THREE.Vector3(scaleValue, scaleValue, scaleValue);
+  target.matrix.compose(
+    new THREE.Vector3(...position),
+    new THREE.Quaternion(...quaternion),
+    scale,
+  );
+  target.matrixWorldNeedsUpdate = true;
+}
+
+function normalizeCurve(curve) {
+  return Array.isArray(curve)
+    ? { interpolation: 'Linear', keys: curve }
+    : curve || { interpolation: 'Linear', keys: [] };
+}
+
+function createSkinBinding(geometry, material, skin) {
+  const vertexCount = geometry.getAttribute('position')?.count || 0;
+  if (!skin?.bones?.length
+    || skin.indices?.length !== vertexCount * 4
+    || skin.weights?.length !== vertexCount * 4) {
+    return null;
+  }
+
+  const indices = skin.indices instanceof Uint16Array
+    ? skin.indices
+    : Uint16Array.from(skin.indices);
+  const weights = skin.weights instanceof Float32Array
+    ? skin.weights
+    : Float32Array.from(skin.weights);
+  geometry.setAttribute('skinIndex', new THREE.BufferAttribute(indices, 4));
+  geometry.setAttribute('skinWeight', new THREE.BufferAttribute(weights, 4));
+
+  const skinTransform = new THREE.Matrix4().fromArray(skin.transform);
+  const bindMatrix = skinTransform.clone().invert();
+  const bones = skin.bones.map(() => new THREE.Bone());
+  const boneInverses = skin.bones.map((bone) => new THREE.Matrix4()
+    .fromArray(bone.transform)
+    .multiply(skinTransform));
+  const skeleton = new THREE.Skeleton(bones, boneInverses);
+  const mesh = new THREE.SkinnedMesh(geometry, material);
+  mesh.bindMode = 'detached';
+  mesh.bind(skeleton, bindMatrix);
+  // The static geometry bounds describe the bind pose. Disable frustum culling
+  // so an animated limb cannot disappear after deforming outside that box.
+  mesh.frustumCulled = false;
+  return {
+    mesh,
+    skeleton,
+    rootNodeId: skin.rootNodeId,
+    boneNodeIds: skin.bones.map(bone => bone.nodeId),
+    rootParentInverse: new THREE.Matrix4(),
+  };
+}
+
+function updateSkinBinding(binding, objects) {
+  const rootNode = objects.get(binding.rootNodeId);
+  const rootParent = rootNode?.parent || binding.mesh.parent;
+  if (rootParent) binding.rootParentInverse.copy(rootParent.matrixWorld).invert();
+  else binding.rootParentInverse.identity();
+
+  for (let index = 0; index < binding.skeleton.bones.length; index += 1) {
+    const boneNode = objects.get(binding.boneNodeIds[index]);
+    const bone = binding.skeleton.bones[index];
+    if (boneNode) {
+      bone.matrixWorld.multiplyMatrices(binding.rootParentInverse, boneNode.matrixWorld);
+    } else {
+      // Synthetic unweighted vertices use an identity live-bone transform;
+      // their adjusted inverse bind matrix cancels the overall skin transform.
+      bone.matrixWorld.identity();
+    }
+  }
+  binding.skeleton.update();
+}
+
+function renderObjectsBelow(targets) {
+  const objects = new Set();
+  for (const target of targets) {
+    target.traverse((object) => {
+      if (object.isMesh || object.isPoints) objects.add(object);
+    });
+  }
+  return objects;
+}
+
+function setMaterialMap(material, texture) {
+  material.map = texture;
+  if (material.uniforms?.particleMap) {
+    material.uniforms.particleMap.value = texture;
+    material.uniforms.hasParticleMap.value = true;
+  } else {
+    material.needsUpdate = true;
+  }
+  applyTextureMapSettings(
+    texture,
+    material.userData?.clampMode,
+    material.userData?.filterMode,
+  );
+}
+
+function finiteAnimationStart(animation) {
+  const value = Number(animation?.startTime);
+  return Number.isFinite(value) ? value : 0;
 }
 
 function detectBacksideWithVisibilityMask({
@@ -800,32 +1092,11 @@ function thumbnailVisibilityRenderTarget() {
 }
 
 function createNormalInspectorMaterial(sourceMaterial, wireframe) {
-  const material = new THREE.ShaderMaterial({
+  const material = new THREE.MeshNormalMaterial({
     side: sourceMaterial.side,
     wireframe,
     depthTest: sourceMaterial.depthTest,
     depthWrite: sourceMaterial.depthWrite,
-    toneMapped: false,
-    vertexShader: `
-      varying vec3 vWorldNormal;
-
-      void main() {
-        vec3 viewNormal = normalize(normalMatrix * normal);
-        vWorldNormal = normalize(vec3(
-          dot(viewMatrix[0].xyz, viewNormal),
-          dot(viewMatrix[1].xyz, viewNormal),
-          dot(viewMatrix[2].xyz, viewNormal)
-        ));
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      varying vec3 vWorldNormal;
-
-      void main() {
-        gl_FragColor = vec4(vWorldNormal * 0.5 + 0.5, 1.0);
-      }
-    `,
   });
   material.userData.normalInspector = true;
   return material;

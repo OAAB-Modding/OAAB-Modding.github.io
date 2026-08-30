@@ -1,15 +1,15 @@
-use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use serde::Serialize;
 use tes3::nif::{
     Map as NifTextureMap, NiAVObject, NiAlphaProperty, NiAutoNormalParticles, NiFlipController,
     NiFloatKey, NiGeometry, NiGeometryData, NiKey, NiKeyframeController, NiMaterialProperty,
     NiNode, NiObjectNET, NiParticleSystemController, NiParticles, NiParticlesData, NiPosKey,
-    NiRotKey, NiRotatingParticles, NiSourceTexture, NiStencilProperty, NiStream,
-    NiTexturingProperty, NiTimeController, NiTriShape, NiTriShapeData, NiTriStrips,
-    NiTriStripsData, NiType, NiUVController, NiVertexColorProperty, NiVisController,
-    NiZBufferProperty, TextureMap, TextureSource,
-    glam::{Affine3A, Mat4},
+    NiRotKey, NiRotatingParticles, NiSequenceStreamHelper, NiSourceTexture, NiStencilProperty,
+    NiStream, NiStringExtraData, NiTextKeyExtraData, NiTexturingProperty, NiTimeController,
+    NiTriShape, NiTriShapeData, NiTriStrips, NiTriStripsData, NiType, NiUVController,
+    NiVertexColorProperty, NiVisController, NiZBufferProperty, TextureMap, TextureSource,
+    glam::{Affine3A, Mat3, Mat4, Vec3},
 };
 
 const SUPPORTED_BLOCKS: &[&str] = &[
@@ -33,6 +33,9 @@ const SUPPORTED_BLOCKS: &[&str] = &[
     "NiVisData",
     "NiKeyframeController",
     "NiKeyframeData",
+    "NiTextKeyExtraData",
+    "NiSequenceStreamHelper",
+    "NiStringExtraData",
     "NiSkinInstance",
     "NiSkinData",
     "NiSkinPartition",
@@ -53,6 +56,7 @@ pub struct RenderPacket {
     pub meshes: Vec<MeshPacket>,
     pub particles: Vec<ParticlePacket>,
     pub animations: Vec<AnimationPacket>,
+    pub animation_groups: Vec<AnimationGroupPacket>,
     pub textures: Vec<String>,
     pub block_counts: BTreeMap<String, usize>,
     pub unsupported_blocks: Vec<UnsupportedBlock>,
@@ -63,8 +67,11 @@ pub struct RenderPacket {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NodePacket {
+    pub id: u32,
+    pub parent_id: Option<u32>,
     pub name: String,
     pub block_type: String,
+    pub local_transform: Vec<f32>,
     pub transform: Vec<f32>,
     pub collision: bool,
 }
@@ -72,8 +79,11 @@ pub struct NodePacket {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MeshPacket {
+    pub id: u32,
+    pub parent_id: Option<u32>,
     pub name: String,
     pub block_type: String,
+    pub local_transform: Vec<f32>,
     pub transform: Vec<f32>,
     pub vertices: Vec<f32>,
     pub normals: Vec<f32>,
@@ -87,13 +97,17 @@ pub struct MeshPacket {
     pub skinned: bool,
     pub bone_count: usize,
     pub skin_partition_count: usize,
+    pub skin: Option<SkinPacket>,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParticlePacket {
+    pub id: u32,
+    pub parent_id: Option<u32>,
     pub name: String,
     pub block_type: String,
+    pub local_transform: Vec<f32>,
     pub transform: Vec<f32>,
     pub positions: Vec<f32>,
     pub colors: Vec<f32>,
@@ -109,6 +123,7 @@ pub struct ParticlePacket {
 pub struct AnimationPacket {
     pub controller_type: String,
     pub target: String,
+    pub target_id: Option<u32>,
     pub active: bool,
     pub cycle_type: String,
     pub frequency: f32,
@@ -119,6 +134,34 @@ pub struct AnimationPacket {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnimationGroupPacket {
+    pub name: String,
+    pub start_time: f32,
+    pub stop_time: f32,
+    pub loop_start_time: Option<f32>,
+    pub loop_stop_time: Option<f32>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkinPacket {
+    pub root_node_id: Option<u32>,
+    pub transform: Vec<f32>,
+    pub bones: Vec<SkinBonePacket>,
+    pub indices: Vec<u16>,
+    pub weights: Vec<f32>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkinBonePacket {
+    pub node_id: Option<u32>,
+    pub name: String,
+    pub transform: Vec<f32>,
+}
+
+#[derive(Debug, Serialize)]
 #[serde(
     tag = "kind",
     rename_all = "camelCase",
@@ -126,10 +169,10 @@ pub struct AnimationPacket {
 )]
 pub enum AnimationData {
     Uv {
-        u_offset: Vec<ScalarKey>,
-        v_offset: Vec<ScalarKey>,
-        u_tiling: Vec<ScalarKey>,
-        v_tiling: Vec<ScalarKey>,
+        u_offset: ScalarCurvePacket,
+        v_offset: ScalarCurvePacket,
+        u_tiling: ScalarCurvePacket,
+        v_tiling: ScalarCurvePacket,
     },
     Flip {
         affected_map: u32,
@@ -141,28 +184,65 @@ pub enum AnimationData {
         keys: Vec<VisibilityKey>,
     },
     Keyframe {
-        translations: Vec<VectorKey>,
-        rotations: Vec<QuaternionKey>,
-        scales: Vec<ScalarKey>,
+        translations: VectorCurvePacket,
+        rotations: QuaternionCurvePacket,
+        scales: ScalarCurvePacket,
     },
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScalarCurvePacket {
+    pub interpolation: String,
+    pub keys: Vec<ScalarKey>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VectorCurvePacket {
+    pub interpolation: String,
+    pub keys: Vec<VectorKey>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QuaternionCurvePacket {
+    pub interpolation: String,
+    pub keys: Vec<QuaternionKey>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ScalarKey {
     pub time: f32,
     pub value: f32,
+    pub in_tan: Option<f32>,
+    pub out_tan: Option<f32>,
+    pub tension: Option<f32>,
+    pub continuity: Option<f32>,
+    pub bias: Option<f32>,
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct VectorKey {
     pub time: f32,
     pub value: [f32; 3],
+    pub in_tan: Option<[f32; 3]>,
+    pub out_tan: Option<[f32; 3]>,
+    pub tension: Option<f32>,
+    pub continuity: Option<f32>,
+    pub bias: Option<f32>,
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QuaternionKey {
     pub time: f32,
     pub value: [f32; 4],
+    pub tension: Option<f32>,
+    pub continuity: Option<f32>,
+    pub bias: Option<f32>,
 }
 
 #[derive(Debug, Serialize)]
@@ -248,6 +328,7 @@ pub struct PacketStats {
 
 struct ParseContext<'a> {
     stream: &'a NiStream,
+    object_ids: HashMap<NiKey, u32>,
     nodes: Vec<NodePacket>,
     meshes: Vec<MeshPacket>,
     particles: Vec<ParticlePacket>,
@@ -255,6 +336,14 @@ struct ParseContext<'a> {
     textures: BTreeSet<String>,
     warnings: Vec<String>,
     visited: HashSet<NiKey>,
+}
+
+#[derive(Clone, Copy)]
+struct ParentContext {
+    transform: Affine3A,
+    collision: bool,
+    depth: usize,
+    id: Option<u32>,
 }
 
 pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
@@ -275,8 +364,16 @@ pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
         })
         .collect();
 
+    let object_ids = stream
+        .objects
+        .keys()
+        .enumerate()
+        .map(|(index, key)| (key, index as u32))
+        .collect();
+    let animation_groups = extract_animation_groups(&stream);
     let mut context = ParseContext {
         stream: &stream,
+        object_ids,
         nodes: Vec::new(),
         meshes: Vec::new(),
         particles: Vec::new(),
@@ -290,9 +387,12 @@ pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
         walk_object(
             &mut context,
             root.key,
-            Affine3A::IDENTITY,
-            false,
-            0,
+            ParentContext {
+                transform: Affine3A::IDENTITY,
+                collision: false,
+                depth: 0,
+                id: None,
+            },
             &[],
             &[],
         );
@@ -344,6 +444,7 @@ pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
         meshes: context.meshes,
         particles: context.particles,
         animations: context.animations,
+        animation_groups,
         textures: context.textures.into_iter().collect(),
         block_counts,
         unsupported_blocks,
@@ -355,13 +456,11 @@ pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
 fn walk_object(
     context: &mut ParseContext<'_>,
     key: NiKey,
-    parent_transform: Affine3A,
-    parent_collision: bool,
-    depth: usize,
+    parent: ParentContext,
     animation_targets: &[String],
     inherited_properties: &[NiKey],
 ) {
-    if depth > 256 {
+    if parent.depth > 256 {
         context
             .warnings
             .push("Scene graph exceeded the 256-node traversal limit".to_owned());
@@ -380,13 +479,18 @@ fn walk_object(
     let block_type = type_name(object);
 
     if let Ok(node) = <&NiNode>::try_from(object) {
-        let collision = parent_collision
+        let id = context.object_ids.get(&key).copied().unwrap_or(u32::MAX);
+        let collision = parent.collision
             || block_type == "RootCollisionNode"
             || looks_like_collision(&node.name);
-        let transform = parent_transform * node.transform();
+        let local_transform = node.transform();
+        let transform = parent.transform * local_transform;
         context.nodes.push(NodePacket {
+            id,
+            parent_id: parent.id,
             name: node.name.clone(),
             block_type,
+            local_transform: matrix_array(local_transform),
             transform: matrix_array(transform),
             collision,
         });
@@ -400,9 +504,12 @@ fn walk_object(
             walk_object(
                 context,
                 child.key,
-                transform,
-                collision,
-                depth + 1,
+                ParentContext {
+                    transform,
+                    collision,
+                    depth: parent.depth + 1,
+                    id: Some(id),
+                },
                 &child_targets,
                 &child_properties,
             );
@@ -414,9 +521,9 @@ fn walk_object(
     if let Ok(shape) = <&NiTriShape>::try_from(object) {
         add_tri_shape(
             context,
+            key,
             shape,
-            parent_transform,
-            parent_collision,
+            parent,
             animation_targets,
             inherited_properties,
         );
@@ -427,9 +534,9 @@ fn walk_object(
     if let Ok(strips) = <&NiTriStrips>::try_from(object) {
         add_tri_strips(
             context,
+            key,
             strips,
-            parent_transform,
-            parent_collision,
+            parent,
             animation_targets,
             inherited_properties,
         );
@@ -440,9 +547,10 @@ fn walk_object(
     if let Ok(particles) = <&NiAutoNormalParticles>::try_from(object) {
         add_particles(
             context,
+            key,
             particles,
             "NiAutoNormalParticles",
-            parent_transform,
+            parent,
             animation_targets,
             inherited_properties,
         );
@@ -453,9 +561,10 @@ fn walk_object(
     if let Ok(particles) = <&NiRotatingParticles>::try_from(object) {
         add_particles(
             context,
+            key,
             particles,
             "NiRotatingParticles",
-            parent_transform,
+            parent,
             animation_targets,
             inherited_properties,
         );
@@ -466,9 +575,10 @@ fn walk_object(
     if let Ok(particles) = <&NiParticles>::try_from(object) {
         add_particles(
             context,
+            key,
             particles,
             "NiParticles",
-            parent_transform,
+            parent,
             animation_targets,
             inherited_properties,
         );
@@ -478,9 +588,9 @@ fn walk_object(
 
 fn add_tri_shape(
     context: &mut ParseContext<'_>,
+    key: NiKey,
     shape: &NiTriShape,
-    parent_transform: Affine3A,
-    parent_collision: bool,
+    parent: ParentContext,
     animation_targets: &[String],
     inherited_properties: &[NiKey],
 ) {
@@ -502,12 +612,14 @@ fn add_tri_shape(
         .collect();
     add_mesh(
         context,
+        key,
         shape,
         data.as_ref(),
         indices,
         "NiTriShape",
-        parent_transform,
-        parent_collision,
+        parent.transform,
+        parent.collision,
+        parent.id,
         animation_targets,
         inherited_properties,
     );
@@ -515,9 +627,9 @@ fn add_tri_shape(
 
 fn add_tri_strips(
     context: &mut ParseContext<'_>,
+    key: NiKey,
     strips: &NiTriStrips,
-    parent_transform: Affine3A,
-    parent_collision: bool,
+    parent: ParentContext,
     animation_targets: &[String],
     inherited_properties: &[NiKey],
 ) {
@@ -559,12 +671,14 @@ fn add_tri_strips(
 
     add_mesh(
         context,
+        key,
         strips,
         data.as_ref(),
         indices,
         "NiTriStrips",
-        parent_transform,
-        parent_collision,
+        parent.transform,
+        parent.collision,
+        parent.id,
         animation_targets,
         inherited_properties,
     );
@@ -573,12 +687,14 @@ fn add_tri_strips(
 #[allow(clippy::too_many_arguments)]
 fn add_mesh<T>(
     context: &mut ParseContext<'_>,
+    key: NiKey,
     shape: &T,
     data: &NiGeometryData,
     indices: Vec<u32>,
     block_type: &str,
     parent_transform: Affine3A,
     parent_collision: bool,
+    parent_id: Option<u32>,
     animation_targets: &[String],
     inherited_properties: &[NiKey],
 ) where
@@ -605,18 +721,28 @@ fn add_mesh<T>(
         .stream
         .get_as::<_, tes3::nif::NiSkinInstance>(geometry.skin_instance);
     let skin_data = skin.and_then(|instance| context.stream.get(instance.data));
-    if skin.is_some() {
-        context.warnings.push(format!(
-            "Skinning for \"{}\" is displayed in its bind pose",
-            object_net.name
-        ));
-    }
+    let vertex_count = data.vertices.len();
+    let skin_packet = skin.zip(skin_data).and_then(|(instance, data)| {
+        skin_packet(
+            context.stream,
+            &context.object_ids,
+            &mut context.warnings,
+            instance,
+            data,
+            vertex_count,
+            &object_net.name,
+        )
+    });
 
     let collision = parent_collision || looks_like_collision(&object_net.name);
+    let local_transform = av_object.transform();
     context.meshes.push(MeshPacket {
+        id: context.object_ids.get(&key).copied().unwrap_or(u32::MAX),
+        parent_id,
         name: object_net.name.clone(),
         block_type: block_type.to_owned(),
-        transform: matrix_array(parent_transform * av_object.transform()),
+        local_transform: matrix_array(local_transform),
+        transform: matrix_array(parent_transform * local_transform),
         vertices: data
             .vertices
             .iter()
@@ -643,14 +769,149 @@ fn add_mesh<T>(
         skin_partition_count: skin_data
             .and_then(|data| context.stream.get(data.skin_partition))
             .map_or(0, |partition| partition.partitions.len()),
+        skin: skin_packet,
     });
+}
+
+fn skin_packet(
+    stream: &NiStream,
+    object_ids: &HashMap<NiKey, u32>,
+    warnings: &mut Vec<String>,
+    instance: &tes3::nif::NiSkinInstance,
+    data: &tes3::nif::NiSkinData,
+    vertex_count: usize,
+    mesh_name: &str,
+) -> Option<SkinPacket> {
+    if instance.bones.is_empty() || data.bone_data.is_empty() {
+        warnings.push(format!(
+            "Skinning for \"{mesh_name}\" has no usable bones; using bind pose"
+        ));
+        return None;
+    }
+
+    let bone_count = instance.bones.len().min(data.bone_data.len());
+    if instance.bones.len() != data.bone_data.len() {
+        warnings.push(format!(
+            "Skinning for \"{mesh_name}\" has mismatched bone links and bind transforms"
+        ));
+    }
+
+    let mut influences = vec![Vec::<(u16, f32)>::new(); vertex_count];
+    let mut invalid_weights = 0usize;
+    for (bone_index, bone_data) in data.bone_data.iter().take(bone_count).enumerate() {
+        let Ok(bone_index) = u16::try_from(bone_index) else {
+            warnings.push(format!(
+                "Skinning for \"{mesh_name}\" exceeds the supported bone-index range"
+            ));
+            return None;
+        };
+        for &(vertex_index, weight) in &bone_data.vertex_weights {
+            if weight.is_finite()
+                && weight > 0.0
+                && let Some(vertex) = influences.get_mut(usize::from(vertex_index))
+            {
+                vertex.push((bone_index, weight));
+            } else {
+                invalid_weights += 1;
+            }
+        }
+    }
+
+    let skin_transform = affine_from_parts(data.rotation, data.translation, data.scale);
+    let mut bones = instance
+        .bones
+        .iter()
+        .zip(data.bone_data.iter())
+        .take(bone_count)
+        .map(|(bone, bone_data)| SkinBonePacket {
+            node_id: object_ids.get(&bone.key).copied(),
+            name: stream
+                .get(*bone)
+                .map(|object| object.name.clone())
+                .unwrap_or_default(),
+            transform: matrix_array(affine_from_parts(
+                bone_data.rotation,
+                bone_data.translation,
+                bone_data.scale,
+            )),
+        })
+        .collect::<Vec<_>>();
+
+    let unweighted_count = influences.iter().filter(|vertex| vertex.is_empty()).count();
+    let fallback_bone = if unweighted_count > 0 {
+        let Ok(index) = u16::try_from(bones.len()) else {
+            return None;
+        };
+        bones.push(SkinBonePacket {
+            node_id: None,
+            name: "__unweighted__".to_owned(),
+            transform: matrix_array(skin_transform.inverse()),
+        });
+        Some(index)
+    } else {
+        None
+    };
+
+    let mut indices = Vec::with_capacity(vertex_count * 4);
+    let mut weights = Vec::with_capacity(vertex_count * 4);
+    let mut trimmed_vertices = 0usize;
+    for vertex in &mut influences {
+        vertex.sort_by(|left, right| right.1.total_cmp(&left.1));
+        if vertex.len() > 4 {
+            vertex.truncate(4);
+            trimmed_vertices += 1;
+        }
+        if vertex.is_empty()
+            && let Some(fallback_bone) = fallback_bone
+        {
+            vertex.push((fallback_bone, 1.0));
+        }
+        let total = vertex.iter().map(|(_, weight)| *weight).sum::<f32>();
+        for slot in 0..4 {
+            let (bone, weight) = vertex.get(slot).copied().unwrap_or((0, 0.0));
+            indices.push(bone);
+            weights.push(if total > 0.0 { weight / total } else { 0.0 });
+        }
+    }
+
+    if invalid_weights > 0 {
+        warnings.push(format!(
+            "Skinning for \"{mesh_name}\" ignored {invalid_weights} invalid vertex weights"
+        ));
+    }
+    if trimmed_vertices > 0 {
+        warnings.push(format!(
+            "Skinning for \"{mesh_name}\" kept the four strongest influences on {trimmed_vertices} vertices"
+        ));
+    }
+    if unweighted_count > 0 {
+        warnings.push(format!(
+            "Skinning for \"{mesh_name}\" preserved {unweighted_count} unweighted vertices"
+        ));
+    }
+
+    Some(SkinPacket {
+        root_node_id: object_ids.get(&instance.root.key).copied(),
+        transform: matrix_array(skin_transform),
+        bones,
+        indices,
+        weights,
+    })
+}
+
+fn affine_from_parts(rotation: Mat3, translation: Vec3, scale: f32) -> Affine3A {
+    Affine3A {
+        matrix3: (rotation * scale).transpose().into(),
+        translation: translation.into(),
+    }
 }
 
 fn add_particles<T>(
     context: &mut ParseContext<'_>,
+    key: NiKey,
     particles: &T,
     block_type: &str,
-    parent_transform: Affine3A,
+    parent: ParentContext,
     animation_targets: &[String],
     inherited_properties: &[NiKey],
 ) where
@@ -716,10 +977,14 @@ fn add_particles<T>(
         .map(|index| data.sizes.get(index).copied().unwrap_or(1.0))
         .collect();
     let material = material_packet(context, av_object, inherited_properties);
+    let local_transform = av_object.transform();
     context.particles.push(ParticlePacket {
+        id: context.object_ids.get(&key).copied().unwrap_or(u32::MAX),
+        parent_id: parent.id,
         name: object_net.name.clone(),
         block_type: block_type.to_owned(),
-        transform: matrix_array(parent_transform * av_object.transform()),
+        local_transform: matrix_array(local_transform),
+        transform: matrix_array(parent.transform * local_transform),
         positions,
         colors,
         sizes,
@@ -760,19 +1025,21 @@ fn preview_active_particle_count(
 }
 
 fn extract_animations(context: &mut ParseContext<'_>) {
+    let external_kf_targets = external_kf_targets(context.stream);
     for controller in context.stream.objects_of_type::<NiUVController>() {
         let Some(data) = context.stream.get(controller.data) else {
             continue;
         };
         context.animations.push(animation_packet(
             context.stream,
+            &context.object_ids,
             &controller.base,
             "NiUVController",
             AnimationData::Uv {
-                u_offset: scalar_keys(&data.u_offset_data.keys),
-                v_offset: scalar_keys(&data.v_offset_data.keys),
-                u_tiling: scalar_keys(&data.u_tiling_data.keys),
-                v_tiling: scalar_keys(&data.v_tiling_data.keys),
+                u_offset: scalar_curve(&data.u_offset_data.keys),
+                v_offset: scalar_curve(&data.v_offset_data.keys),
+                u_tiling: scalar_curve(&data.u_tiling_data.keys),
+                v_tiling: scalar_curve(&data.v_tiling_data.keys),
             },
         ));
     }
@@ -789,6 +1056,7 @@ fn extract_animations(context: &mut ParseContext<'_>) {
         context.textures.extend(textures.iter().cloned());
         context.animations.push(animation_packet(
             context.stream,
+            &context.object_ids,
             &controller.base,
             "NiFlipController",
             AnimationData::Flip {
@@ -805,6 +1073,7 @@ fn extract_animations(context: &mut ParseContext<'_>) {
         };
         context.animations.push(animation_packet(
             context.stream,
+            &context.object_ids,
             &controller.base,
             "NiVisController",
             AnimationData::Visibility {
@@ -819,25 +1088,51 @@ fn extract_animations(context: &mut ParseContext<'_>) {
             },
         ));
     }
-    for controller in context.stream.objects_of_type::<NiKeyframeController>() {
+    for (controller_link, controller) in context
+        .stream
+        .objects_of_type_with_link::<NiKeyframeController>()
+    {
         let Some(data) = context.stream.get(controller.data) else {
             continue;
         };
-        context.animations.push(animation_packet(
+        let mut packet = animation_packet(
             context.stream,
+            &context.object_ids,
             &controller.base,
             "NiKeyframeController",
             AnimationData::Keyframe {
-                translations: vector_keys(&data.translations.keys),
-                rotations: quaternion_keys(&data.rotations.keys),
-                scales: scalar_keys(&data.scales.keys),
+                translations: vector_curve(&data.translations.keys),
+                rotations: quaternion_curve(&data.rotations.keys),
+                scales: scalar_curve(&data.scales.keys),
             },
-        ));
+        );
+        if let Some(target) = external_kf_targets.get(&controller_link.key) {
+            packet.target.clone_from(target);
+            packet.target_id = None;
+        }
+        context.animations.push(packet);
     }
+}
+
+fn external_kf_targets(stream: &NiStream) -> HashMap<NiKey, String> {
+    if stream
+        .objects_of_type::<NiSequenceStreamHelper>()
+        .next()
+        .is_none()
+    {
+        return HashMap::new();
+    }
+
+    stream
+        .objects_of_type_with_link::<NiKeyframeController>()
+        .zip(stream.objects_of_type::<NiStringExtraData>())
+        .map(|((controller, _), target)| (controller.key, target.value.clone()))
+        .collect()
 }
 
 fn animation_packet(
     stream: &NiStream,
+    object_ids: &HashMap<NiKey, u32>,
     controller: &NiTimeController,
     controller_type: &str,
     data: AnimationData,
@@ -849,6 +1144,7 @@ fn animation_packet(
     AnimationPacket {
         controller_type: controller_type.to_owned(),
         target,
+        target_id: object_ids.get(&controller.target.key).copied(),
         active: controller.active(),
         cycle_type: format!("{:?}", controller.cycle_type()),
         frequency: controller.frequency,
@@ -859,82 +1155,231 @@ fn animation_packet(
     }
 }
 
-fn scalar_keys(keys: &NiFloatKey) -> Vec<ScalarKey> {
-    match keys {
-        NiFloatKey::LinKey(keys) => keys
-            .iter()
-            .map(|key| ScalarKey {
-                time: key.time,
-                value: key.value,
-            })
-            .collect(),
-        NiFloatKey::BezKey(keys) => keys
-            .iter()
-            .map(|key| ScalarKey {
-                time: key.time,
-                value: key.value,
-            })
-            .collect(),
-        NiFloatKey::TCBKey(keys) => keys
-            .iter()
-            .map(|key| ScalarKey {
-                time: key.time,
-                value: key.value,
-            })
-            .collect(),
+fn extract_animation_groups(stream: &NiStream) -> Vec<AnimationGroupPacket> {
+    let mut groups = Vec::new();
+    for data in stream.objects_of_type::<NiTextKeyExtraData>() {
+        for (start_index, key) in data.keys.iter().enumerate() {
+            for line in key
+                .value
+                .lines()
+                .map(str::trim)
+                .filter(|line| !line.is_empty())
+            {
+                let Some(prefix) = strip_suffix_ignore_ascii_case(line, " start") else {
+                    continue;
+                };
+                let prefix_lower = prefix.to_ascii_lowercase();
+                if prefix_lower.ends_with(" loop") || prefix_lower.ends_with(" follow") {
+                    continue;
+                }
+                let stop_suffix = if [" chop", " slash", " thrust"]
+                    .iter()
+                    .any(|suffix| prefix_lower.ends_with(suffix))
+                {
+                    " small follow stop"
+                } else if prefix_lower.ends_with(" shoot") {
+                    " follow stop"
+                } else {
+                    " stop"
+                };
+                let stop_text = format!("{prefix}{stop_suffix}");
+                let Some((stop_index, stop_time)) = data.keys[start_index..]
+                    .iter()
+                    .enumerate()
+                    .find_map(|(offset, candidate)| {
+                        candidate
+                            .value
+                            .lines()
+                            .map(str::trim)
+                            .any(|line| line.eq_ignore_ascii_case(&stop_text))
+                            .then_some((start_index + offset, candidate.time))
+                    })
+                else {
+                    continue;
+                };
+
+                let loop_start_text = format!("{prefix} loop start");
+                let loop_stop_text = format!("{prefix} loop stop");
+                let mut loop_start_time = None;
+                let mut loop_stop_time = None;
+                for candidate in &data.keys[start_index..=stop_index] {
+                    for candidate_line in candidate.value.lines().map(str::trim) {
+                        if candidate_line.eq_ignore_ascii_case(&loop_start_text) {
+                            loop_start_time = Some(candidate.time);
+                        } else if candidate_line.eq_ignore_ascii_case(&loop_stop_text) {
+                            loop_stop_time = Some(candidate.time);
+                        }
+                    }
+                }
+
+                groups.push(AnimationGroupPacket {
+                    name: prefix.trim().trim_end_matches(':').to_owned(),
+                    start_time: key.time,
+                    stop_time,
+                    loop_start_time,
+                    loop_stop_time,
+                });
+            }
+        }
+        if !groups.is_empty() {
+            break;
+        }
+    }
+    groups
+}
+
+fn strip_suffix_ignore_ascii_case<'a>(value: &'a str, suffix: &str) -> Option<&'a str> {
+    value
+        .get(value.len().checked_sub(suffix.len())?..)
+        .filter(|candidate| candidate.eq_ignore_ascii_case(suffix))?;
+    value.get(..value.len() - suffix.len())
+}
+
+fn scalar_curve(keys: &NiFloatKey) -> ScalarCurvePacket {
+    let (interpolation, keys) = match keys {
+        NiFloatKey::LinKey(keys) => (
+            "Linear",
+            keys.iter()
+                .map(|key| ScalarKey {
+                    time: key.time,
+                    value: key.value,
+                    in_tan: None,
+                    out_tan: None,
+                    tension: None,
+                    continuity: None,
+                    bias: None,
+                })
+                .collect(),
+        ),
+        NiFloatKey::BezKey(keys) => (
+            "Bezier",
+            keys.iter()
+                .map(|key| ScalarKey {
+                    time: key.time,
+                    value: key.value,
+                    in_tan: Some(key.in_tan),
+                    out_tan: Some(key.out_tan),
+                    tension: None,
+                    continuity: None,
+                    bias: None,
+                })
+                .collect(),
+        ),
+        NiFloatKey::TCBKey(keys) => (
+            "TCB",
+            keys.iter()
+                .map(|key| ScalarKey {
+                    time: key.time,
+                    value: key.value,
+                    in_tan: None,
+                    out_tan: None,
+                    tension: Some(key.tension),
+                    continuity: Some(key.continuity),
+                    bias: Some(key.bias),
+                })
+                .collect(),
+        ),
+    };
+    ScalarCurvePacket {
+        interpolation: interpolation.to_owned(),
+        keys,
     }
 }
 
-fn vector_keys(keys: &NiPosKey) -> Vec<VectorKey> {
-    match keys {
-        NiPosKey::LinKey(keys) => keys
-            .iter()
-            .map(|key| VectorKey {
-                time: key.time,
-                value: key.value.to_array(),
-            })
-            .collect(),
-        NiPosKey::BezKey(keys) => keys
-            .iter()
-            .map(|key| VectorKey {
-                time: key.time,
-                value: key.value.to_array(),
-            })
-            .collect(),
-        NiPosKey::TCBKey(keys) => keys
-            .iter()
-            .map(|key| VectorKey {
-                time: key.time,
-                value: key.value.to_array(),
-            })
-            .collect(),
+fn vector_curve(keys: &NiPosKey) -> VectorCurvePacket {
+    let (interpolation, keys) = match keys {
+        NiPosKey::LinKey(keys) => (
+            "Linear",
+            keys.iter()
+                .map(|key| VectorKey {
+                    time: key.time,
+                    value: key.value.to_array(),
+                    in_tan: None,
+                    out_tan: None,
+                    tension: None,
+                    continuity: None,
+                    bias: None,
+                })
+                .collect(),
+        ),
+        NiPosKey::BezKey(keys) => (
+            "Bezier",
+            keys.iter()
+                .map(|key| VectorKey {
+                    time: key.time,
+                    value: key.value.to_array(),
+                    in_tan: Some(key.in_tan.to_array()),
+                    out_tan: Some(key.out_tan.to_array()),
+                    tension: None,
+                    continuity: None,
+                    bias: None,
+                })
+                .collect(),
+        ),
+        NiPosKey::TCBKey(keys) => (
+            "TCB",
+            keys.iter()
+                .map(|key| VectorKey {
+                    time: key.time,
+                    value: key.value.to_array(),
+                    in_tan: None,
+                    out_tan: None,
+                    tension: Some(key.tension),
+                    continuity: Some(key.continuity),
+                    bias: Some(key.bias),
+                })
+                .collect(),
+        ),
+    };
+    VectorCurvePacket {
+        interpolation: interpolation.to_owned(),
+        keys,
     }
 }
 
-fn quaternion_keys(keys: &NiRotKey) -> Vec<QuaternionKey> {
-    match keys {
-        NiRotKey::LinKey(keys) => keys
-            .iter()
-            .map(|key| QuaternionKey {
-                time: key.time,
-                value: key.value.to_array(),
-            })
-            .collect(),
-        NiRotKey::BezKey(keys) => keys
-            .iter()
-            .map(|key| QuaternionKey {
-                time: key.time,
-                value: key.value.to_array(),
-            })
-            .collect(),
-        NiRotKey::TCBKey(keys) => keys
-            .iter()
-            .map(|key| QuaternionKey {
-                time: key.time,
-                value: key.value.to_array(),
-            })
-            .collect(),
-        NiRotKey::EulerKey(_) => Vec::new(),
+fn quaternion_curve(keys: &NiRotKey) -> QuaternionCurvePacket {
+    let (interpolation, keys) = match keys {
+        NiRotKey::LinKey(keys) => (
+            "Linear",
+            keys.iter()
+                .map(|key| QuaternionKey {
+                    time: key.time,
+                    value: key.value.to_array(),
+                    tension: None,
+                    continuity: None,
+                    bias: None,
+                })
+                .collect(),
+        ),
+        NiRotKey::BezKey(keys) => (
+            "Bezier",
+            keys.iter()
+                .map(|key| QuaternionKey {
+                    time: key.time,
+                    value: key.value.to_array(),
+                    tension: None,
+                    continuity: None,
+                    bias: None,
+                })
+                .collect(),
+        ),
+        NiRotKey::TCBKey(keys) => (
+            "TCB",
+            keys.iter()
+                .map(|key| QuaternionKey {
+                    time: key.time,
+                    value: key.value.to_array(),
+                    tension: Some(key.tension),
+                    continuity: Some(key.continuity),
+                    bias: Some(key.bias),
+                })
+                .collect(),
+        ),
+        NiRotKey::EulerKey(_) => ("Euler", Vec::new()),
+    };
+    QuaternionCurvePacket {
+        interpolation: interpolation.to_owned(),
+        keys,
     }
 }
 
@@ -1052,8 +1497,9 @@ mod advanced_tests {
     use super::*;
     use tes3::nif::{
         ApplyMode, BoneData, LightingMode, NiAutoNormalParticlesData, NiFlipController,
-        NiKeyframeData, NiLinFloatKey, NiLinPosKey, NiLinRotKey, NiPerParticleData, NiSkinData,
-        NiSkinInstance, NiSkinPartition, NiSourceTexture, NiTexturingProperty, NiTriShape,
+        NiKeyframeData, NiLinFloatKey, NiLinPosKey, NiLinRotKey, NiPerParticleData,
+        NiSequenceStreamHelper, NiSkinData, NiSkinInstance, NiSkinPartition, NiSourceTexture,
+        NiStringExtraData, NiTextKey, NiTextKeyExtraData, NiTexturingProperty, NiTriShape,
         NiTriShapeData, NiUVData, NiVisData, NiVisKey, SourceVertexMode, TextureSource,
         glam::{Quat, vec3, vec4},
     };
@@ -1068,10 +1514,24 @@ mod advanced_tests {
 
     #[allow(clippy::field_reassign_with_default)]
     #[test]
-    fn advanced_packet_covers_controllers_particles_and_bind_pose_skinning() {
+    fn advanced_packet_covers_controllers_particles_idle_groups_and_skinning() {
         let mut stream = NiStream::new();
         let node = stream.insert(NiNode::default());
         stream.get_mut(node).unwrap().name = "AnimatedRoot".to_owned();
+        let text_keys = stream.insert(NiTextKeyExtraData {
+            keys: vec![
+                NiTextKey {
+                    time: 1.0,
+                    value: "Idle: Start\r\nIdle: Loop Start".to_owned(),
+                },
+                NiTextKey {
+                    time: 2.0,
+                    value: "Idle: Loop Stop\r\nIdle: Stop".to_owned(),
+                },
+            ],
+            ..Default::default()
+        });
+        stream.get_mut(node).unwrap().extra_data = text_keys.cast();
         let vertex_color_property = stream.insert(NiVertexColorProperty {
             source_vertex_mode: SourceVertexMode::AmbientDiffuse,
             lighting_mode: LightingMode::EmissiveAmbientDiffuse,
@@ -1177,7 +1637,10 @@ mod advanced_tests {
         });
         let skin_data = stream.insert(NiSkinData {
             skin_partition: partition,
-            bone_data: vec![BoneData::default()],
+            bone_data: vec![BoneData {
+                vertex_weights: vec![(0, 1.0), (1, 1.0), (2, 1.0)],
+                ..Default::default()
+            }],
             ..Default::default()
         });
         let skin = stream.insert(NiSkinInstance {
@@ -1211,6 +1674,10 @@ mod advanced_tests {
         let packet = parse_nif_packet(&bytes).expect("parse advanced fixture");
 
         assert_eq!(packet.animations.len(), 4);
+        assert_eq!(packet.animation_groups.len(), 1);
+        assert_eq!(packet.animation_groups[0].name, "Idle");
+        assert_eq!(packet.animation_groups[0].loop_start_time, Some(1.0));
+        assert_eq!(packet.animation_groups[0].loop_stop_time, Some(2.0));
         assert_eq!(packet.stats.animations, 4);
         assert_eq!(packet.stats.particles, 1);
         assert_eq!(packet.particles.len(), 1);
@@ -1222,6 +1689,11 @@ mod advanced_tests {
         assert!(packet.meshes[0].skinned);
         assert_eq!(packet.meshes[0].bone_count, 1);
         assert_eq!(packet.meshes[0].skin_partition_count, 1);
+        let skin = packet.meshes[0].skin.as_ref().expect("skinning packet");
+        assert_eq!(skin.root_node_id, Some(packet.nodes[0].id));
+        assert_eq!(skin.bones.len(), 1);
+        assert_eq!(skin.indices.len(), 12);
+        assert_eq!(skin.weights, [1.0, 0.0, 0.0, 0.0].repeat(3));
         assert_eq!(packet.meshes[0].colors.len(), 12);
         assert_eq!(
             packet.meshes[0].material.vertex_color_mode,
@@ -1236,5 +1708,44 @@ mod advanced_tests {
                 .textures
                 .contains(&"textures\\animated.dds".to_owned())
         );
+    }
+
+    #[test]
+    fn external_kf_controller_names_bind_from_string_extra_data() {
+        let mut stream = NiStream::new();
+        let root = stream.insert(NiSequenceStreamHelper::default());
+        let text = stream.insert(NiTextKeyExtraData {
+            keys: vec![
+                NiTextKey {
+                    time: 0.0,
+                    value: "Idle: Start".to_owned(),
+                },
+                NiTextKey {
+                    time: 1.0,
+                    value: "Idle: Stop".to_owned(),
+                },
+            ],
+            ..Default::default()
+        });
+        let target = stream.insert(NiStringExtraData {
+            value: "Bip01 Pelvis".to_owned(),
+            ..Default::default()
+        });
+        stream.get_mut(text).unwrap().base.next = target.cast();
+
+        let data = stream.insert(NiKeyframeData::default());
+        let controller = stream.insert(NiKeyframeController {
+            data,
+            ..Default::default()
+        });
+        let helper = stream.get_mut(root).unwrap();
+        helper.base.extra_data = text.cast();
+        helper.base.controller = controller.cast();
+        stream.roots.push(root.cast());
+
+        let packet = parse_nif_packet(&stream.save_bytes().unwrap()).expect("parse external KF");
+        assert_eq!(packet.animations.len(), 1);
+        assert_eq!(packet.animations[0].target, "Bip01 Pelvis");
+        assert_eq!(packet.animation_groups[0].name, "Idle");
     }
 }

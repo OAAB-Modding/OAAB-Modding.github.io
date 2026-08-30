@@ -1,4 +1,4 @@
-const CACHE_NAME = 'oaab-library-runtime-v3';
+const CACHE_NAME = 'oaab-library-runtime-v4';
 const CACHE_PREFIX = 'oaab-library-runtime-';
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -57,5 +57,5 @@ function isRuntimeAsset(url) {
   if (isApplicationCode(url)) return true;
   if (url.origin === self.location.origin && url.pathname.startsWith('/library/')) return true;
   return /(?:cdn\.jsdelivr\.net\/gh\/OAAB-Modding\/Data|raw\.githubusercontent\.com\/OAAB-Modding\/Data)/i.test(url.href)
-    && /\.(?:nif|dds|tga|bmp|png|jpe?g)$/i.test(url.pathname);
+    && /\.(?:nif|kf|dds|tga|bmp|png|jpe?g)$/i.test(url.pathname);
 }

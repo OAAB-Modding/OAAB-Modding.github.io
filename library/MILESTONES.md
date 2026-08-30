@@ -27,7 +27,7 @@ uploading users' ESP, ESM, BSA, or loose asset files.
 | Phase 6 — Camera/preview | **Complete** | Framing, controls, debug toggles, and hidden-by-default collision are shared by lab and production. |
 | Phases 7–11 | **Complete** | Local plugins/assets, BSA indexes, source priority, and dependency diagnostics are integrated. |
 | Phases 12–17 | **Complete** | One live viewer, IndexedDB thumbnails/data, runtime HTTP cache, and OAAB enrichment are integrated. |
-| Phases 18 & 20 | **Complete** | Load order, selected controller playback, particles, and bind-pose skin support are implemented. |
+| Phases 18 & 20 | **Complete** | Load order, idle controller playback, particles, and deforming skin support are implemented. |
 | Phase 19 — Cells | **Removed** | Cell/reference data is outside the object-focused Library scope. |
 
 ## Completed proof-of-concept milestone
@@ -174,8 +174,9 @@ culling/stencil/depth properties where represented by the current packet.
 
 Supported or recognized blocks and all current limitations are maintained in
 [`lab/UNSUPPORTED.md`](lab/UNSUPPORTED.md). Phase 20 added selected controller
-playback, camera-facing particle rendering, and bind-pose skinning diagnostics; morph
-controllers, deforming skinning, and complex texture effects remain deferred.
+playback, camera-facing particle rendering, idle text-key selection, and weighted
+skin deformation, including sibling `x<model>.kf` animation binding; morph
+controllers and complex texture effects remain deferred.
 
 Exit criteria met:
 
@@ -533,11 +534,13 @@ focused on the records that can appear in the catalogue.
 
 The render packet and shared viewer now support UV, flipbook, visibility, and
 keyframe controller playback; `NiParticles`, `NiAutoNormalParticles`, and
-`NiRotatingParticles` render as individually sized, camera-facing quads; and skin instances,
-data, and partitions render in stable bind pose with diagnostics. A synthetic
+`NiRotatingParticles` render as individually sized, camera-facing quads; text-key
+groups select and loop the canonical idle animation; and skin instances/data
+deform through a GPU bone palette with normalized vertex weights. A synthetic
 Rust fixture covers every added block family, and the public lab corpus asserts
-representative animation/particle output. Deforming skinning and particle
-simulation remain explicitly documented fallbacks rather than silent failure.
+representative animation, particle, and creature-skinning output. External KF
+files outside the sibling `x<model>.kf` convention and particle simulation remain
+explicitly documented fallbacks rather than silent failure.
 
 Add features incrementally for `NiUVController`, `NiFlipController`,
 `NiVisController`, `NiKeyframeController`, `NiSkinInstance`, `NiSkinData`,

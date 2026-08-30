@@ -395,9 +395,14 @@ test('an offscreen loading thumbnail loses commit priority when the viewport cha
   assert.deepEqual(cancelledGenerations, [7]);
 });
 
-test('background thumbnail jobs resolve textures before capture', async () => {
+test('background creature thumbnails resolve textures and external animation before capture', async () => {
   const workspace = workspaceWithoutConstructor();
-  const record = { id: 'demo', source: 'plugin:demo', mesh: 'meshes/demo.nif' };
+  const record = {
+    id: 'demo',
+    source: 'plugin:demo',
+    type: 'Creature',
+    mesh: 'meshes/demo.nif',
+  };
   const key = 'plugin:demo\0demo';
   let loadOptions;
   const statuses = [];
@@ -422,7 +427,7 @@ test('background thumbnail jobs resolve textures before capture', async () => {
 
   await workspace.pumpThumbnailQueue();
 
-  assert.deepEqual(loadOptions, { resolveTextures: true });
+  assert.deepEqual(loadOptions, { resolveTextures: true, resolveAnimation: true });
   assert.deepEqual(statuses, ['loading']);
   assert.equal(workspace.thumbnailJobs.get(key).status, 'done');
 });

@@ -19,15 +19,26 @@ function typedRenderPacket(packet) {
     const IndexArray = maxIndex > 0xffff ? Uint32Array : Uint16Array;
     mesh.indices = transferArray(IndexArray.from(values), transfers);
     mesh.transform = transferArray(Float32Array.from(mesh.transform || []), transfers);
+    mesh.localTransform = transferArray(Float32Array.from(mesh.localTransform || []), transfers);
+    if (mesh.skin) {
+      mesh.skin.indices = transferArray(Uint16Array.from(mesh.skin.indices || []), transfers);
+      mesh.skin.weights = transferArray(Float32Array.from(mesh.skin.weights || []), transfers);
+      mesh.skin.transform = transferArray(Float32Array.from(mesh.skin.transform || []), transfers);
+      for (const bone of mesh.skin.bones || []) {
+        bone.transform = transferArray(Float32Array.from(bone.transform || []), transfers);
+      }
+    }
   }
   for (const node of packet.nodes || []) {
     node.transform = transferArray(Float32Array.from(node.transform || []), transfers);
+    node.localTransform = transferArray(Float32Array.from(node.localTransform || []), transfers);
   }
   for (const particle of packet.particles || []) {
     particle.positions = transferArray(Float32Array.from(particle.positions || []), transfers);
     particle.colors = transferArray(Float32Array.from(particle.colors || []), transfers);
     particle.sizes = transferArray(Float32Array.from(particle.sizes || []), transfers);
     particle.transform = transferArray(Float32Array.from(particle.transform || []), transfers);
+    particle.localTransform = transferArray(Float32Array.from(particle.localTransform || []), transfers);
   }
   return { packet, transfers };
 }

@@ -80,7 +80,7 @@ async function loadCurrent() {
     const url = new URL(location.href);
     url.searchParams.set('mesh', elements.input.value);
     history.replaceState(null, '', url);
-    const result = await viewer.load(path);
+    const result = await viewer.load(path, { resolveAnimation: true });
     renderDiagnostics(result);
   } finally {
     setBusy(false);
@@ -101,7 +101,11 @@ async function runFixtureCorpus() {
       row.innerHTML = `<span>…</span><span>${escapeHtml(fixture.path)}</span><span>running</span>`;
       elements.fixtureResultList.append(row);
       try {
-        const result = await viewer.load(fixture.path, { display: false, resolveTextures: false });
+        const result = await viewer.load(fixture.path, {
+          display: false,
+          resolveTextures: false,
+          resolveAnimation: (fixture.expect?.minSkinnedMeshes || 0) > 0,
+        });
         validateFixture(fixture, result.packet);
         row.className = 'pass';
         row.innerHTML = `<span>✓</span><span>${escapeHtml(fixture.path)}</span><span>${result.packet.stats.meshes} meshes · ${result.packet.stats.triangles} tris</span>`;
@@ -123,6 +127,8 @@ function validateFixture(fixture, packet) {
   const minTriangles = fixture.expect?.minTriangles ?? 1;
   const minParticles = fixture.expect?.minParticles ?? 0;
   const minAnimations = fixture.expect?.minAnimations ?? 0;
+  const minSkinnedMeshes = fixture.expect?.minSkinnedMeshes ?? 0;
+  const minAnimationGroups = fixture.expect?.minAnimationGroups ?? 0;
   if ((packet.stats?.meshes || 0) < minMeshes) {
     throw new Error(`expected at least ${minMeshes} renderable mesh`);
   }
@@ -134,6 +140,13 @@ function validateFixture(fixture, packet) {
   }
   if ((packet.stats?.animations || 0) < minAnimations) {
     throw new Error(`expected at least ${minAnimations} animation controller`);
+  }
+  const skinnedMeshes = (packet.meshes || []).filter(mesh => mesh.skin).length;
+  if (skinnedMeshes < minSkinnedMeshes) {
+    throw new Error(`expected at least ${minSkinnedMeshes} deforming skinned mesh`);
+  }
+  if ((packet.animationGroups || []).length < minAnimationGroups) {
+    throw new Error(`expected at least ${minAnimationGroups} animation text-key group`);
   }
   for (const block of fixture.expect?.blocks || []) {
     if (!packet.blockCounts?.[block]) throw new Error(`expected ${block}`);

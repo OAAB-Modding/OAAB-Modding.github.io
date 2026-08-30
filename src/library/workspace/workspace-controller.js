@@ -669,7 +669,9 @@ export class LibraryWorkspace {
     try {
       const viewer = await this.ensureViewer(live, status);
       this.setViewerDownloadState(false, record.id);
-      const result = await viewer.load(record.mesh);
+      const result = await viewer.load(record.mesh, {
+        resolveAnimation: isCreatureRecord(record),
+      });
       status.textContent = `${record.mesh} · drag to rotate · middle/right drag to pan · wheel to zoom`;
       this.setViewerDownloadState(true, record.id);
       await this.cacheThumbnail(record, result);
@@ -1182,7 +1184,10 @@ export class LibraryWorkspace {
         try {
           const viewer = await this.ensureThumbnailViewer();
           if (!isCurrent()) continue;
-          const loadPromise = viewer.load(entry.record.mesh, { resolveTextures: true });
+          const loadPromise = viewer.load(entry.record.mesh, {
+            resolveTextures: true,
+            resolveAnimation: isCreatureRecord(entry.record),
+          });
           const loadingJob = this.thumbnailJobs.get(entry.key);
           if (loadingJob && isCurrent() && Number.isFinite(viewer.loadGeneration)) {
             loadingJob.viewerGeneration = viewer.loadGeneration;
@@ -1307,7 +1312,10 @@ export class LibraryWorkspace {
         return;
       }
       const viewer = await this.ensureThumbnailViewer();
-      const result = await viewer.load(preview.mesh, { resolveTextures: true });
+      const result = await viewer.load(preview.mesh, {
+        resolveTextures: true,
+        resolveAnimation: isCreatureRecord(item.record),
+      });
       const generated = await this.getOrCreateThumbnail(item.record, result, {
         viewer,
         variant: THUMBNAIL_VARIANT_PREVIEW,
@@ -1361,9 +1369,11 @@ export class LibraryWorkspace {
     try {
       const viewer = await this.ensureViewer(host, status);
       if (!isCurrent()) return;
-      const result = await viewer.load(preview.mesh);
-      if (!isCurrent()) return;
       const item = this.component.findCatalogItem(preview.id);
+      const result = await viewer.load(preview.mesh, {
+        resolveAnimation: isCreatureRecord(item?.record || preview),
+      });
+      if (!isCurrent()) return;
       if (item?.imported && item.record) {
         await this.cacheThumbnail(item.record, result, { viewer, shouldCommit: isCurrent });
         if (!isCurrent()) return;
@@ -1554,6 +1564,11 @@ function sourceName(record) {
 
 function thumbnailRecordKey(record) {
   return `${record?.source || ''}\0${String(record?.id || '').toLowerCase()}`;
+}
+
+function isCreatureRecord(record) {
+  const type = String(record?.type || '').trim().toLowerCase();
+  return type === 'creature' || type === 'crea';
 }
 
 function compareThumbnailPriority(left, right) {
