@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   cameraDistanceScaleForView,
@@ -75,4 +76,13 @@ test('backside detection uses the named ratio and absolute coverage thresholds',
   assert.equal(thumbnailOrientationFromCoverage(0.2, 0.34).thumbnailFlip180, false);
   assert.equal(thumbnailOrientationFromCoverage(0, 0.1).thumbnailFlip180, true);
   assert.equal(thumbnailOrientationFromCoverage(0, 0).coverageRatio, 1);
+});
+
+test('skinned bones are evaluated relative to the skin root rather than its parent', () => {
+  const source = readFileSync(
+    new URL('../../src/library/renderer/viewer.js', import.meta.url),
+    'utf8',
+  );
+  assert.match(source, /binding\.rootInverse\.copy\(rootNode\.matrixWorld\)\.invert\(\)/);
+  assert.doesNotMatch(source, /rootNode\?\.parent/);
 });

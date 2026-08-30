@@ -868,21 +868,20 @@ function createSkinBinding(geometry, material, skin) {
     skeleton,
     rootNodeId: skin.rootNodeId,
     boneNodeIds: skin.bones.map(bone => bone.nodeId),
-    rootParentInverse: new THREE.Matrix4(),
+    rootInverse: new THREE.Matrix4(),
   };
 }
 
 function updateSkinBinding(binding, objects) {
   const rootNode = objects.get(binding.rootNodeId);
-  const rootParent = rootNode?.parent || binding.mesh.parent;
-  if (rootParent) binding.rootParentInverse.copy(rootParent.matrixWorld).invert();
-  else binding.rootParentInverse.identity();
+  if (rootNode) binding.rootInverse.copy(rootNode.matrixWorld).invert();
+  else binding.rootInverse.identity();
 
   for (let index = 0; index < binding.skeleton.bones.length; index += 1) {
     const boneNode = objects.get(binding.boneNodeIds[index]);
     const bone = binding.skeleton.bones[index];
     if (boneNode) {
-      bone.matrixWorld.multiplyMatrices(binding.rootParentInverse, boneNode.matrixWorld);
+      bone.matrixWorld.multiplyMatrices(binding.rootInverse, boneNode.matrixWorld);
     } else {
       // Synthetic unweighted vertices use an identity live-bone transform;
       // their adjusted inverse bind matrix cancels the overall skin transform.
