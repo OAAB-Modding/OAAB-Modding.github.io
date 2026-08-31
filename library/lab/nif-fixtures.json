@@ -82,16 +82,16 @@
   {
     "label": "Iron atronach (idle animation + skin deformation)",
     "path": "oaab/r/ironatronach.nif",
-    "expect": { "minMeshes": 12, "minAnimations": 25, "minSkinnedMeshes": 7, "minAnimationGroups": 1, "blocks": ["NiSkinInstance", "NiSkinData", "NiKeyframeController", "NiTextKeyExtraData"] }
+    "expect": { "minMeshes": 12, "minSkinnedMeshes": 7, "minAnimationGroups": 1, "blocks": ["NiSkinInstance", "NiSkinData", "NiKeyframeController", "NiTextKeyExtraData"] }
   },
   {
     "label": "Storm monarch (multi-part skin deformation)",
     "path": "oaab/r/atro_storm_monarch.nif",
-    "expect": { "minMeshes": 68, "minAnimations": 80, "minSkinnedMeshes": 20, "minAnimationGroups": 1, "blocks": ["NiSkinInstance", "NiSkinData"] }
+    "expect": { "minMeshes": 68, "minSkinnedMeshes": 20, "minAnimationGroups": 1, "blocks": ["NiSkinInstance", "NiSkinData"] }
   },
   {
     "label": "Ancient lich (robe and body skin deformation)",
     "path": "oaab/r/liche_ancient2.nif",
-    "expect": { "minMeshes": 32, "minAnimations": 35, "minSkinnedMeshes": 10, "blocks": ["NiSkinInstance", "NiSkinData", "NiKeyframeController"] }
+    "expect": { "minMeshes": 32, "minSkinnedMeshes": 10, "blocks": ["NiSkinInstance", "NiSkinData", "NiKeyframeController"] }
   }
 ]

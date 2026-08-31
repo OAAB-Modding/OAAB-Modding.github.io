@@ -141,7 +141,7 @@ function validateFixture(fixture, packet) {
   if ((packet.stats?.animations || 0) < minAnimations) {
     throw new Error(`expected at least ${minAnimations} animation controller`);
   }
-  const skinnedMeshes = (packet.meshes || []).filter(mesh => mesh.skin).length;
+  const skinnedMeshes = (packet.meshes || []).filter(mesh => mesh.skinned).length;
   if (skinnedMeshes < minSkinnedMeshes) {
     throw new Error(`expected at least ${minSkinnedMeshes} deforming skinned mesh`);
   }

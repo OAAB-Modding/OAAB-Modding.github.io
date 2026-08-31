@@ -1,5 +1,5 @@
 import initWasm, {
-  parse_nif as parseNif,
+  parse_nif_with_animation as parseNifWithAnimation,
   parse_plugin as parsePlugin,
   parser_version as parserVersion,
 } from '../../../wasm/pkg/oaab_tes3_wasm.js';
@@ -49,7 +49,7 @@ function transferArray(array, transfers) {
 }
 
 self.addEventListener('message', async (event) => {
-  const { id, op, bytes } = event.data || {};
+  const { id, op, bytes, animationBytes } = event.data || {};
   if (!id) return;
 
   try {
@@ -65,7 +65,10 @@ self.addEventListener('message', async (event) => {
     }
     if (op !== 'parseNif') throw new Error(`Unknown TES3 worker operation: ${op}`);
 
-    const json = parseNif(new Uint8Array(bytes));
+    const json = parseNifWithAnimation(
+      new Uint8Array(bytes),
+      new Uint8Array(animationBytes || new ArrayBuffer(0)),
+    );
     const { packet, transfers } = typedRenderPacket(JSON.parse(json));
     self.postMessage({ id, ok: true, result: packet }, transfers);
   } catch (error) {

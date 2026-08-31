@@ -3,10 +3,10 @@ mod plugin;
 
 use wasm_bindgen::prelude::*;
 
-pub use nif::{RenderPacket, parse_nif_packet};
+pub use nif::{RenderPacket, parse_nif_packet, parse_nif_packet_with_animation};
 pub use plugin::{PluginPacket, parse_plugin_packet};
 
-const PARSER_VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), "+tes3-44ea38c");
+const PARSER_VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), "+tes3-bf6aa1a");
 
 #[wasm_bindgen(start)]
 pub fn start() {
@@ -24,6 +24,18 @@ pub fn parser_version() -> String {
 #[wasm_bindgen]
 pub fn parse_nif(bytes: &[u8]) -> Result<String, JsValue> {
     let packet = parse_nif_packet(bytes).map_err(|error| JsValue::from_str(&error))?;
+    serde_json::to_string(&packet).map_err(|error| JsValue::from_str(&error.to_string()))
+}
+
+/// Parse a model and its optional external keyframe stream, apply a canonical
+/// idle/start pose, then let TES3 bake all skin deformation before serialization.
+#[wasm_bindgen]
+pub fn parse_nif_with_animation(bytes: &[u8], animation_bytes: &[u8]) -> Result<String, JsValue> {
+    let packet = parse_nif_packet_with_animation(
+        bytes,
+        (!animation_bytes.is_empty()).then_some(animation_bytes),
+    )
+    .map_err(|error| JsValue::from_str(&error))?;
     serde_json::to_string(&packet).map_err(|error| JsValue::from_str(&error.to_string()))
 }
 

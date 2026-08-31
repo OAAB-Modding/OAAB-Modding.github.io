@@ -2,6 +2,7 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export const parse_nif: (a: number, b: number, c: number) => void;
+export const parse_nif_with_animation: (a: number, b: number, c: number, d: number, e: number) => void;
 export const parse_plugin: (a: number, b: number, c: number) => void;
 export const parser_version: (a: number) => void;
 export const start: () => void;

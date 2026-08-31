@@ -35,6 +35,42 @@ export function parse_nif(bytes) {
 }
 
 /**
+ * Parse a model and its optional external keyframe stream, apply a canonical
+ * idle/start pose, then let TES3 bake all skin deformation before serialization.
+ * @param {Uint8Array} bytes
+ * @param {Uint8Array} animation_bytes
+ * @returns {string}
+ */
+export function parse_nif_with_animation(bytes, animation_bytes) {
+    let deferred4_0;
+    let deferred4_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArray8ToWasm0(animation_bytes, wasm.__wbindgen_export2);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.parse_nif_with_animation(retptr, ptr0, len0, ptr1, len1);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr3 = r0;
+        var len3 = r1;
+        if (r3) {
+            ptr3 = 0; len3 = 0;
+            throw takeObject(r2);
+        }
+        deferred4_0 = ptr3;
+        deferred4_1 = len3;
+        return getStringFromWasm0(ptr3, len3);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export(deferred4_0, deferred4_1, 1);
+    }
+}
+
+/**
  * Parse a TES3 ESP/ESM into the source-neutral object records consumed by the
  * Library. The worker owns the input buffer so plugin bytes never leave
  * the browser or cross the main thread more than once.

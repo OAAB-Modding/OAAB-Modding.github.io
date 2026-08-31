@@ -97,6 +97,16 @@ test('skinned meshes are reparented to their skin root without changing their wo
   assert.match(source, /skinRoot\.attach\(mesh\);\s*captureAnimationBase\(mesh\)/);
 });
 
+test('name-bound keyframes target only objects with that exact name', () => {
+  const source = readFileSync(
+    new URL('../../src/library/renderer/viewer.js', import.meta.url),
+    'utf8',
+  );
+  assert.match(source, /this\.keyframeTargets = new Map\(\)/);
+  assert.match(source, /object\.name[\s\S]*?this\.keyframeTargets\.get\(ownKey\)/);
+  assert.match(source, /data\.kind === 'keyframe'\s*\? this\.keyframeTargets\s*: this\.animationTargets/);
+});
+
 test('camera and thumbnail bounds exclude descendants of invisible scene nodes', () => {
   const source = readFileSync(
     new URL('../../src/library/renderer/viewer.js', import.meta.url),

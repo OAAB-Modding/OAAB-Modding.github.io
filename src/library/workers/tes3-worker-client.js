@@ -13,9 +13,13 @@ export class Tes3WorkerClient {
     return this.#request('version');
   }
 
-  parseNif(bytes) {
+  parseNif(bytes, animationBytes = null) {
     const buffer = toStandaloneArrayBuffer(bytes);
-    return this.#request('parseNif', { bytes: buffer }, [buffer]);
+    const animationBuffer = animationBytes
+      ? toStandaloneArrayBuffer(animationBytes)
+      : new ArrayBuffer(0);
+    const transfers = animationBuffer.byteLength ? [buffer, animationBuffer] : [buffer];
+    return this.#request('parseNif', { bytes: buffer, animationBytes: animationBuffer }, transfers);
   }
 
   parsePlugin(bytes) {

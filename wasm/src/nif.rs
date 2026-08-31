@@ -12,6 +12,8 @@ use tes3::nif::{
     glam::{Affine3A, Mat3, Mat4, Vec3},
 };
 
+mod pose;
+
 const SUPPORTED_BLOCKS: &[&str] = &[
     "NiNode",
     "NiTriShape",
@@ -133,7 +135,7 @@ pub struct AnimationPacket {
     pub data: AnimationData,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AnimationGroupPacket {
     pub name: String,
@@ -324,11 +326,13 @@ pub struct PacketStats {
     pub triangles: usize,
     pub particles: usize,
     pub animations: usize,
+    pub baked_skins: usize,
 }
 
 struct ParseContext<'a> {
     stream: &'a NiStream,
     object_ids: HashMap<NiKey, u32>,
+    deformed_skins: HashMap<NiKey, SkinStats>,
     nodes: Vec<NodePacket>,
     meshes: Vec<MeshPacket>,
     particles: Vec<ParticlePacket>,
@@ -336,6 +340,12 @@ struct ParseContext<'a> {
     textures: BTreeSet<String>,
     warnings: Vec<String>,
     visited: HashSet<NiKey>,
+}
+
+#[derive(Clone, Copy)]
+struct SkinStats {
+    bone_count: usize,
+    partition_count: usize,
 }
 
 #[derive(Clone, Copy)]
@@ -347,8 +357,42 @@ struct ParentContext {
 }
 
 pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
-    let stream =
+    parse_nif_packet_with_animation(bytes, None)
+}
+
+pub fn parse_nif_packet_with_animation(
+    bytes: &[u8],
+    animation_bytes: Option<&[u8]>,
+) -> Result<RenderPacket, String> {
+    let mut stream =
         NiStream::from_bytes(bytes).map_err(|error| format!("NIF parse failed: {error}"))?;
+
+    let mut initial_warnings = Vec::new();
+    let external = animation_bytes
+        .filter(|bytes| !bytes.is_empty())
+        .and_then(|bytes| match NiStream::from_bytes(bytes) {
+            Ok(stream) => Some(stream),
+            Err(error) => {
+                initial_warnings.push(format!("External animation could not be parsed: {error}"));
+                None
+            }
+        });
+    let applied_pose = pose::apply_idle_pose(&mut stream, external.as_ref());
+    initial_warnings.extend(applied_pose.warnings);
+
+    let original_skins = skin_stats(&stream);
+    stream.apply_skin_deforms();
+    let deformed_skins = original_skins
+        .into_iter()
+        .filter(|(key, _)| {
+            stream
+                .objects
+                .get(*key)
+                .and_then(|object| <&NiGeometry>::try_from(object).ok())
+                .is_some_and(|geometry| geometry.skin_instance.is_null())
+        })
+        .collect::<HashMap<_, _>>();
+    let baked_skin_count = deformed_skins.len();
 
     let mut block_counts = BTreeMap::new();
     for object in stream.objects.values() {
@@ -370,16 +414,17 @@ pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
         .enumerate()
         .map(|(index, key)| (key, index as u32))
         .collect();
-    let animation_groups = extract_animation_groups(&stream);
+    let animation_groups = applied_pose.animation_groups;
     let mut context = ParseContext {
         stream: &stream,
         object_ids,
+        deformed_skins,
         nodes: Vec::new(),
         meshes: Vec::new(),
         particles: Vec::new(),
         animations: Vec::new(),
         textures: BTreeSet::new(),
-        warnings: Vec::new(),
+        warnings: initial_warnings,
         visited: HashSet::new(),
     };
 
@@ -398,6 +443,11 @@ pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
         );
     }
     extract_animations(&mut context);
+    if baked_skin_count > 0 {
+        context
+            .animations
+            .retain(|animation| !matches!(animation.data, AnimationData::Keyframe { .. }));
+    }
 
     // Include external textures not attached to a rendered base map in the
     // diagnostic dependency list (glow, dark, decal and controller textures).
@@ -436,6 +486,7 @@ pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
             .map(|particle| particle.positions.len() / 3)
             .sum(),
         animations: context.animations.len(),
+        baked_skins: baked_skin_count,
     };
 
     Ok(RenderPacket {
@@ -451,6 +502,25 @@ pub fn parse_nif_packet(bytes: &[u8]) -> Result<RenderPacket, String> {
         warnings: context.warnings,
         stats,
     })
+}
+
+fn skin_stats(stream: &NiStream) -> HashMap<NiKey, SkinStats> {
+    stream
+        .objects_of_type_with_link::<NiGeometry>()
+        .filter_map(|(link, geometry)| {
+            let instance = stream.get(geometry.skin_instance)?;
+            let data = stream.get(instance.data);
+            Some((
+                link.key,
+                SkinStats {
+                    bone_count: instance.bones.len(),
+                    partition_count: data
+                        .and_then(|data| stream.get(data.skin_partition))
+                        .map_or(0, |partition| partition.partitions.len()),
+                },
+            ))
+        })
+        .collect()
 }
 
 fn walk_object(
@@ -721,6 +791,7 @@ fn add_mesh<T>(
         .stream
         .get_as::<_, tes3::nif::NiSkinInstance>(geometry.skin_instance);
     let skin_data = skin.and_then(|instance| context.stream.get(instance.data));
+    let deformed_skin = context.deformed_skins.get(&key).copied();
     let vertex_count = data.vertices.len();
     let skin_packet = skin.zip(skin_data).and_then(|(instance, data)| {
         skin_packet(
@@ -764,11 +835,16 @@ fn add_mesh<T>(
         collision,
         hidden: av_object.app_culled(),
         animation_targets: animation_target_names(animation_targets, &object_net.name),
-        skinned: skin.is_some(),
-        bone_count: skin.map_or(0, |instance| instance.bones.len()),
+        skinned: skin.is_some() || deformed_skin.is_some(),
+        bone_count: skin
+            .map(|instance| instance.bones.len())
+            .or_else(|| deformed_skin.map(|stats| stats.bone_count))
+            .unwrap_or_default(),
         skin_partition_count: skin_data
             .and_then(|data| context.stream.get(data.skin_partition))
-            .map_or(0, |partition| partition.partitions.len()),
+            .map(|partition| partition.partitions.len())
+            .or_else(|| deformed_skin.map(|stats| stats.partition_count))
+            .unwrap_or_default(),
         skin: skin_packet,
     });
 }
@@ -1673,12 +1749,13 @@ mod advanced_tests {
         let bytes = stream.save_bytes().expect("serialize advanced fixture");
         let packet = parse_nif_packet(&bytes).expect("parse advanced fixture");
 
-        assert_eq!(packet.animations.len(), 4);
+        assert_eq!(packet.animations.len(), 3);
         assert_eq!(packet.animation_groups.len(), 1);
         assert_eq!(packet.animation_groups[0].name, "Idle");
         assert_eq!(packet.animation_groups[0].loop_start_time, Some(1.0));
         assert_eq!(packet.animation_groups[0].loop_stop_time, Some(2.0));
-        assert_eq!(packet.stats.animations, 4);
+        assert_eq!(packet.stats.animations, 3);
+        assert_eq!(packet.stats.baked_skins, 1);
         assert_eq!(packet.stats.particles, 1);
         assert_eq!(packet.particles.len(), 1);
         assert_eq!(packet.particles[0].positions.len(), 3);
@@ -1689,11 +1766,7 @@ mod advanced_tests {
         assert!(packet.meshes[0].skinned);
         assert_eq!(packet.meshes[0].bone_count, 1);
         assert_eq!(packet.meshes[0].skin_partition_count, 1);
-        let skin = packet.meshes[0].skin.as_ref().expect("skinning packet");
-        assert_eq!(skin.root_node_id, Some(packet.nodes[0].id));
-        assert_eq!(skin.bones.len(), 1);
-        assert_eq!(skin.indices.len(), 12);
-        assert_eq!(skin.weights, [1.0, 0.0, 0.0, 0.0].repeat(3));
+        assert!(packet.meshes[0].skin.is_none());
         assert_eq!(packet.meshes[0].colors.len(), 12);
         assert_eq!(
             packet.meshes[0].material.vertex_color_mode,
@@ -1708,6 +1781,50 @@ mod advanced_tests {
                 .textures
                 .contains(&"textures\\animated.dds".to_owned())
         );
+    }
+
+    #[allow(clippy::field_reassign_with_default)]
+    #[test]
+    fn unskinned_geometry_keeps_its_keyframe_animation() {
+        let mut stream = NiStream::new();
+        let node = stream.insert(NiNode::default());
+        stream.get_mut(node).unwrap().name = "AnimatedRoot".to_owned();
+
+        let mut keyframe_data = NiKeyframeData::default();
+        keyframe_data.translations.keys = NiPosKey::LinKey(vec![NiLinPosKey {
+            time: 0.0,
+            value: vec3(1.0, 2.0, 3.0),
+        }]);
+        let keyframe_data = stream.insert(keyframe_data);
+        let mut keyframe = NiKeyframeController::default();
+        keyframe.base.flags |= 0x0008;
+        keyframe.base.target = node.cast();
+        keyframe.data = keyframe_data;
+        let keyframe = stream.insert(keyframe);
+        stream.get_mut(node).unwrap().controller = keyframe.cast();
+
+        let mut shape_data = NiTriShapeData::default();
+        shape_data.vertices = vec![
+            vec3(0.0, 0.0, 0.0),
+            vec3(1.0, 0.0, 0.0),
+            vec3(0.0, 1.0, 0.0),
+        ];
+        shape_data.triangles = vec![[0, 1, 2]];
+        let shape_data = stream.insert(shape_data);
+        let mut shape = NiTriShape::default();
+        shape.geometry_data = shape_data.cast();
+        let shape = stream.insert(shape);
+        stream.get_mut(node).unwrap().children.push(shape.cast());
+        stream.roots.push(node.cast());
+
+        let packet =
+            parse_nif_packet(&stream.save_bytes().unwrap()).expect("parse unskinned fixture");
+        assert_eq!(packet.stats.baked_skins, 0);
+        assert_eq!(packet.animations.len(), 1);
+        assert!(matches!(
+            packet.animations[0].data,
+            AnimationData::Keyframe { .. }
+        ));
     }
 
     #[test]

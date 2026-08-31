@@ -9,6 +9,12 @@
 export function parse_nif(bytes: Uint8Array): string;
 
 /**
+ * Parse a model and its optional external keyframe stream, apply a canonical
+ * idle/start pose, then let TES3 bake all skin deformation before serialization.
+ */
+export function parse_nif_with_animation(bytes: Uint8Array, animation_bytes: Uint8Array): string;
+
+/**
  * Parse a TES3 ESP/ESM into the source-neutral object records consumed by the
  * Library. The worker owns the input buffer so plugin bytes never leave
  * the browser or cross the main thread more than once.
@@ -24,6 +30,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly parse_nif: (a: number, b: number, c: number) => void;
+    readonly parse_nif_with_animation: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly parse_plugin: (a: number, b: number, c: number) => void;
     readonly parser_version: (a: number) => void;
     readonly start: () => void;

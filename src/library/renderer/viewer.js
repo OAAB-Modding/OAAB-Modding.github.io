@@ -128,9 +128,6 @@ export class NifViewer {
     const startedAt = performance.now();
     const asset = await this.resolver.resolve(normalized);
     let assetFingerprint = await fingerprintBytes(asset.bytes);
-    this.#status('parsing', `Parsing ${normalized} in WebAssembly`);
-    const packet = await this.worker.parseNif(asset.bytes);
-
     let animationAsset = null;
     const animationPath = resolveAnimation ? externalKfPath(normalized) : null;
     if (animationPath) {
@@ -142,11 +139,15 @@ export class NifViewer {
       }
     }
     if (animationAsset) {
+      assetFingerprint = `${assetFingerprint}:${await fingerprintBytes(animationAsset.bytes)}`;
+    }
+    this.#status('parsing', `Applying TES3 idle pose and skin deformation to ${normalized}`);
+    const packet = await this.worker.parseNif(asset.bytes, animationAsset?.bytes);
+    if (animationAsset && !(packet.stats?.bakedSkins > 0)) {
       this.#status('parsing', `Parsing ${animationPath} in WebAssembly`);
       try {
         const animationPacket = await this.worker.parseNif(animationAsset.bytes);
         mergeExternalAnimationPacket(packet, animationPacket);
-        assetFingerprint = `${assetFingerprint}:${await fingerprintBytes(animationAsset.bytes)}`;
       } catch (error) {
         packet.warnings = packet.warnings || [];
         packet.warnings.push(`External animation ${animationPath} could not be parsed: ${error.message}`);
@@ -523,6 +524,7 @@ export class NifViewer {
     this.resolvedTextureMap = textures;
     this.animationObjects = new Map();
     this.animationTargets = new Map();
+    this.keyframeTargets = new Map();
     this.animations = packet.animations || [];
     this.idleAnimationGroup = selectIdleAnimationGroup(packet.animationGroups || []);
     this.skinBindings = [];
@@ -639,6 +641,12 @@ export class NifViewer {
 
   #registerAnimationObject(id, object, names = []) {
     if (id != null) this.animationObjects.set(id, object);
+    if (object.name) {
+      const ownKey = String(object.name).toLowerCase();
+      if (!this.keyframeTargets.has(ownKey)) this.keyframeTargets.set(ownKey, []);
+      const ownObjects = this.keyframeTargets.get(ownKey);
+      if (!ownObjects.includes(object)) ownObjects.push(object);
+    }
     for (const name of names.filter(Boolean)) {
       const key = String(name).toLowerCase();
       if (!this.animationTargets.has(key)) this.animationTargets.set(key, []);
@@ -662,11 +670,14 @@ export class NifViewer {
 
     for (const animation of this.animations || []) {
       if (!animation.active) continue;
+      const data = animation.data || {};
+      const nameTargets = data.kind === 'keyframe'
+        ? this.keyframeTargets
+        : this.animationTargets;
       const targets = animation.targetId != null
         ? [this.animationObjects.get(animation.targetId)].filter(Boolean)
-        : this.animationTargets.get(String(animation.target || '').toLowerCase()) || [];
+        : nameTargets.get(String(animation.target || '').toLowerCase()) || [];
       if (!targets.length) continue;
-      const data = animation.data || {};
       const controllerTime = controllerAnimationTime(animation, elapsed);
       const timelineTime = idleTime ?? finiteAnimationStart(animation);
 
@@ -779,6 +790,7 @@ export class NifViewer {
     this.resolvedTextureMap = null;
     this.animationObjects = null;
     this.animationTargets = null;
+    this.keyframeTargets = null;
     this.animations = null;
     this.idleAnimationGroup = null;
     this.skinBindings = null;
