@@ -377,7 +377,7 @@ export class NifViewer {
     this.modelRoot.updateWorldMatrix(true, true);
 
     const box = new THREE.Box3();
-    this.modelRoot.traverse(object => {
+    this.modelRoot.traverseVisible(object => {
       if (!object.visible || !object.geometry) return;
       const objectBox = new THREE.Box3().setFromObject(object);
       if (objectBox.isEmpty()) return;
@@ -584,6 +584,10 @@ export class NifViewer {
       this.#syncObjectVisibility(mesh);
       const parent = this.animationObjects.get(meshPacket.parentId) || this.modelRoot;
       parent.add(mesh);
+      if (skinBinding) {
+        const skinRoot = this.animationObjects.get(skinBinding.rootNodeId);
+        correctSkinParenting(mesh, skinRoot);
+      }
       this.#registerAnimationObject(
         meshPacket.id,
         mesh,
@@ -789,6 +793,10 @@ export class NifViewer {
 function applyPacketTransform(object, values) {
   object.matrix.fromArray(values || new THREE.Matrix4().elements);
   object.matrixAutoUpdate = false;
+  captureAnimationBase(object);
+}
+
+function captureAnimationBase(object) {
   object.userData.animationBase = {
     position: new THREE.Vector3(),
     quaternion: new THREE.Quaternion(),
@@ -799,6 +807,16 @@ function applyPacketTransform(object, values) {
     object.userData.animationBase.quaternion,
     object.userData.animationBase.scale,
   );
+}
+
+function correctSkinParenting(mesh, skinRoot) {
+  if (!skinRoot || mesh.parent === skinRoot) return;
+  // NiGeometry may be nested below an ordinary animated node even though its
+  // NiSkinInstance deforms it relative to a different root. Keeping both
+  // relationships applies that ancestor motion twice. Match the TES3 importer:
+  // parent the skinned mesh to the skin root while preserving its world pose.
+  skinRoot.attach(mesh);
+  captureAnimationBase(mesh);
 }
 
 function applyKeyframeTransform(target, data, time) {
@@ -1025,7 +1043,7 @@ function renderThumbnailVisibilityCoverage({ renderer, scene, camera, modelRoot,
 function projectedVisibleMeshBoundsArea(modelRoot, camera) {
   const box = new THREE.Box3();
   const objectBox = new THREE.Box3();
-  modelRoot.traverse(object => {
+  modelRoot.traverseVisible(object => {
     if (!object.isMesh || !object.visible || object.userData.thumbnailGeometry !== true) return;
     objectBox.setFromObject(object);
     if (!objectBox.isEmpty()) box.union(objectBox);

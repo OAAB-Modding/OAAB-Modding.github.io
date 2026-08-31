@@ -2,7 +2,7 @@ import { normalizeAssetPath } from '../resolver/path-utils.js';
 
 // Bump this whenever the rendered result changes. The cache key then leaves
 // older captures in IndexedDB without ever displaying them as current.
-export const NIF_RENDERER_VERSION = '15';
+export const NIF_RENDERER_VERSION = '16';
 // Bump when the comparison algorithm or its thresholds change independently
 // of the final renderer, so persisted front/back decisions are regenerated.
 export const THUMBNAIL_ORIENTATION_VERSION = '1';

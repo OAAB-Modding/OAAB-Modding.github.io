@@ -1,4 +1,4 @@
-const CACHE_NAME = 'oaab-library-runtime-v4';
+const CACHE_NAME = 'oaab-library-runtime-v5';
 const CACHE_PREFIX = 'oaab-library-runtime-';
 
 self.addEventListener('install', () => self.skipWaiting());

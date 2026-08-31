@@ -86,3 +86,22 @@ test('skinned bones are evaluated relative to the skin root rather than its pare
   assert.match(source, /binding\.rootInverse\.copy\(rootNode\.matrixWorld\)\.invert\(\)/);
   assert.doesNotMatch(source, /rootNode\?\.parent/);
 });
+
+test('skinned meshes are reparented to their skin root without changing their world pose', () => {
+  const source = readFileSync(
+    new URL('../../src/library/renderer/viewer.js', import.meta.url),
+    'utf8',
+  );
+  assert.match(source, /correctSkinParenting\(mesh, skinRoot\)/);
+  assert.match(source, /skinRoot\.attach\(mesh\)/);
+  assert.match(source, /skinRoot\.attach\(mesh\);\s*captureAnimationBase\(mesh\)/);
+});
+
+test('camera and thumbnail bounds exclude descendants of invisible scene nodes', () => {
+  const source = readFileSync(
+    new URL('../../src/library/renderer/viewer.js', import.meta.url),
+    'utf8',
+  );
+  assert.match(source, /frameModel\(\)[\s\S]*?modelRoot\.traverseVisible\(object =>/);
+  assert.match(source, /function projectedVisibleMeshBoundsArea[\s\S]*?modelRoot\.traverseVisible\(object =>/);
+});
