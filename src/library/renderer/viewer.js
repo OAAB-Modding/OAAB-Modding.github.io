@@ -99,11 +99,11 @@ export class NifViewer {
     // The lower intensity made darker materials nearly disappear compared with
     // the pre-rendered thumbnails, so use a brighter ambient base without
     // bringing back the localized hot spots from directional key/fill lights.
-    this.scene.add(new THREE.HemisphereLight(0xfff0d5, 0x392d28, 2.25));
-    const keyLight = new THREE.DirectionalLight(0xffdec0, 2.0);
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x4b4b4b, 2.25));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
     keyLight.position.set(3, 5, 4);
     this.scene.add(keyLight);
-    const fillLight = new THREE.DirectionalLight(0xa9c7ff, 0.7);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.7);
     fillLight.position.set(-4, 2, -3);
     this.scene.add(fillLight);
 
