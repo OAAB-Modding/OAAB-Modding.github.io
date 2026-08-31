@@ -9,7 +9,8 @@
   cursor: pointer;
 }
 
-.library-workspace-opened { overflow: hidden; }
+.library-workspace-opened,
+.library-render-opened { overflow: hidden; }
 
 .library-workspace-backdrop {
   position: fixed;

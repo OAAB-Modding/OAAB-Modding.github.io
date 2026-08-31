@@ -294,6 +294,7 @@ export function createLibraryComponent(DCLogic) {
     if (this._measureNav) window.removeEventListener('resize', this._measureNav);
     if (this._raf) cancelAnimationFrame(this._raf);
     this.syncContentsScrollLock(true);
+    this.syncRenderScrollLock(true);
     this._workspace?.dispose();
   }
 
@@ -302,6 +303,7 @@ export function createLibraryComponent(DCLogic) {
   componentDidUpdate() {
     this.applyTheme();
     this.syncContentsScrollLock();
+    this.syncRenderScrollLock();
     this.updateDetailStickyTop();
     this.updateDetailScrollWidth();
     if (this._onScroll) this._onScroll();

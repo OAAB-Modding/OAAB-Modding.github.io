@@ -56,6 +56,7 @@ export function withLibraryUi(Base) {
       pip.document.addEventListener('keydown', this._onKey, true);
       this.applyTheme();
       this.syncContentsScrollLock();
+      this.syncRenderScrollLock();
       this.setState({ aot: true });
       requestAnimationFrame(() => {
         this.updateDetailStickyTop();
@@ -78,6 +79,7 @@ export function withLibraryUi(Base) {
         document.addEventListener('mousedown', this._onDocDown, true);
         document.addEventListener('keydown', this._onKey, true);
         this.syncContentsScrollLock();
+        this.syncRenderScrollLock();
         this.setState({ aot: false });
         requestAnimationFrame(() => {
           this.updateDetailStickyTop();
@@ -145,6 +147,27 @@ export function withLibraryUi(Base) {
       this._onContentsTouchStart = null;
       this._onContentsTouchMove = null;
       this._contentsTouchY = 0;
+    } catch (e) {}
+  }
+
+  syncRenderScrollLock(forceUnlock) {
+    try {
+      const lockDoc = this.activeDoc();
+      const shouldLock = !forceUnlock && !!this.state.renderPreview;
+      const oldDoc = this._renderScrollLockDoc;
+
+      if (oldDoc && oldDoc !== lockDoc) {
+        oldDoc.body?.classList.remove('library-render-opened');
+        this._renderScrollLockDoc = null;
+      }
+
+      if (shouldLock) {
+        lockDoc.body?.classList.add('library-render-opened');
+        this._renderScrollLockDoc = lockDoc;
+      } else {
+        lockDoc.body?.classList.remove('library-render-opened');
+        this._renderScrollLockDoc = null;
+      }
     } catch (e) {}
   }
 
