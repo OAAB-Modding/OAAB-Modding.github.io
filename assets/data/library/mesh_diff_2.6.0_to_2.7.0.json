@@ -1,0 +1,144 @@
+{
+  "from": "2.6.0",
+  "to": "2.7.0",
+  "range": "2.6.0..2.7.0",
+  "count": 34,
+  "meshes": [
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/b/mannequin.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/b/mannequin_stand.nif"
+    },
+    {
+      "status": "M",
+      "path": "00 Core/meshes/oaab/e/glowbugsparticles.nif"
+    },
+    {
+      "status": "M",
+      "path": "00 Core/meshes/oaab/e/glowbugsparticles02.nif"
+    },
+    {
+      "status": "M",
+      "path": "00 Core/meshes/oaab/e/lava_fall_00.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/e/light_ray_large_purp.nif"
+    },
+    {
+      "status": "M",
+      "path": "00 Core/meshes/oaab/e/water_rectr256_02.nif"
+    },
+    {
+      "status": "M",
+      "path": "00 Core/meshes/oaab/e/water_rectr256_03.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/h/collaltartop01.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/h/marker_container.nif"
+    },
+    {
+      "status": "M",
+      "path": "00 Core/meshes/oaab/i/cave_py_gnd_rock_01.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/k/mann_adlocutio.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/k/mann_adlocutio2.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/k/mann_contrapposto.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/k/mann_relax.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/k/xmann_adlocutio.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/k/xmann_adlocutio2.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/k/xmann_contrapposto.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/k/xmann_relax.nif"
+    },
+    {
+      "status": "M",
+      "path": "00 Core/meshes/oaab/m/0s_wood_tankard.nif"
+    },
+    {
+      "status": "M",
+      "path": "00 Core/meshes/oaab/t/mv_cliff_05.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/u/com_churn.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/u/com_churnassembly.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/u/com_churnhandle.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/u/com_churnlid.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/u/comrchscrollreader.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/u/necro_altar.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/u/necro_tap_01.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/u/necro_tap_torn_01.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/u/necro_tap_torn_02.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/u/xnecro_altar.nif"
+    },
+    {
+      "status": "M",
+      "path": "00 Core/meshes/oaab/x/comCryptEnt.nif"
+    },
+    {
+      "status": "A",
+      "path": "00 Core/meshes/oaab/x/comcryptwinon.nif"
+    },
+    {
+      "status": "A",
+      "path": "09 Epic Plants Patch/meshes/oaab/f/marshmerrows_01.nif"
+    }
+  ]
+}
